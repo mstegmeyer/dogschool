@@ -71,6 +71,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         foreach ($types as $t) {
             $indexed[$t->getCode()] = $t;
         }
+
         return $indexed;
     }
 
@@ -82,6 +83,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         foreach ($users as $u) {
             $indexed[$u->getUsername()] = $u;
         }
+
         return $indexed;
     }
 
@@ -197,6 +199,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * @param array<string, CourseType> $courseTypes
+     *
      * @return Course[]
      */
     private function createCourses(ObjectManager $manager, array $courseTypes): array
@@ -235,7 +238,8 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * @param Course[] $courses
-     * @return array<string, CourseDate[]> keyed by course index
+     *
+     * @return array<int, CourseDate[]> keyed by course index
      */
     private function createCourseDates(ObjectManager $manager, array $courses): array
     {
@@ -273,7 +277,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param Course[] $courses
+     * @param Course[]                                              $courses
      */
     private function createSubscriptions(ObjectManager $manager, array $customers, array $courses): void
     {
@@ -356,21 +360,24 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $contract->setStartDate($startDate);
         $contract->setEndDate($startDate->modify('+1 year'));
         $contract->setType(ContractType::PERPETUAL);
+
         return $contract;
     }
 
     /**
      * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param array<int, CourseDate[]> $courseDates
+     * @param array<int, CourseDate[]>                              $courseDates
      */
     private function createCreditTransactions(ObjectManager $manager, array $customers, array $courseDates): void
     {
         // Grant weekly credits for active contracts for 3 weeks
         foreach ($this->activeContracts as $contract) {
             $customer = $contract->getCustomer();
-            if ($customer === null) continue;
+            if ($customer === null) {
+                continue;
+            }
 
-            for ($w = -1; $w <= 1; $w++) {
+            for ($w = -1; $w <= 1; ++$w) {
                 $weekDate = (new \DateTimeImmutable())->modify("{$w} week");
                 $weekRef = $weekDate->format('o-\\WW');
 
@@ -392,7 +399,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param array<int, CourseDate[]> $courseDates
+     * @param array<int, CourseDate[]>                              $courseDates
      */
     private function createBookings(ObjectManager $manager, array $customers, array $courseDates): void
     {
@@ -413,7 +420,9 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     private function book(ObjectManager $manager, Customer $customer, Dog $dog, ?CourseDate $courseDate): void
     {
-        if ($courseDate === null) return;
+        if ($courseDate === null) {
+            return;
+        }
 
         $tx = new CreditTransaction();
         $tx->setCustomer($customer);
@@ -437,7 +446,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     }
 
     /**
-     * @param Course[] $courses
+     * @param Course[]            $courses
      * @param array<string, User> $trainers
      */
     private function createNotifications(ObjectManager $manager, array $courses, array $trainers): void
@@ -445,7 +454,9 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $florian = $trainers['florian'] ?? null;
         $manuela = $trainers['manuela'] ?? null;
 
-        if ($florian === null) return;
+        if ($florian === null) {
+            return;
+        }
 
         $n1 = new Notification();
         $n1->setTitle('Trainingsplatz-Änderung');

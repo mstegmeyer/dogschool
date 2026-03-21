@@ -22,7 +22,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'clover', 'lcov'],
+      reporter: ['text', 'cobertura', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['composables/**', 'middleware/**'],
     },

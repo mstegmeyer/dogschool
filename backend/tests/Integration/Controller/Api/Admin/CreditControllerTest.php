@@ -43,9 +43,9 @@ final class CreditControllerTest extends WebTestCase
         $client = static::createClient();
         $helper = ApiTestHelper::create($client);
         ['token' => $adminToken] = $helper->createAdminAndLogin();
-        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-list-' . uniqid('', true) . '@example.com');
+        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-list-'.uniqid('', true).'@example.com');
 
-        $helper->adminRequest(Request::METHOD_GET, '/api/admin/credits?customerId=' . $customer->getId(), $adminToken);
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/credits?customerId='.$customer->getId(), $adminToken);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertArrayHasKey('balance', $data);
@@ -58,7 +58,7 @@ final class CreditControllerTest extends WebTestCase
         $client = static::createClient();
         $helper = ApiTestHelper::create($client);
         ['token' => $adminToken] = $helper->createAdminAndLogin();
-        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-adjust-' . uniqid('', true) . '@example.com');
+        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-adjust-'.uniqid('', true).'@example.com');
 
         $helper->adminRequest(Request::METHOD_POST, '/api/admin/credits/adjust', $adminToken, json_encode([
             'customerId' => $customer->getId(),
@@ -71,7 +71,7 @@ final class CreditControllerTest extends WebTestCase
         self::assertSame('MANUAL_ADJUSTMENT', $data['type']);
         self::assertSame('Bonus credits for loyalty', $data['description']);
 
-        $helper->adminRequest(Request::METHOD_GET, '/api/admin/credits?customerId=' . $customer->getId(), $adminToken);
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/credits?customerId='.$customer->getId(), $adminToken);
         self::assertResponseIsSuccessful();
         $listData = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame(5, $listData['balance']);
@@ -94,7 +94,7 @@ final class CreditControllerTest extends WebTestCase
         $client = static::createClient();
         $helper = ApiTestHelper::create($client);
         ['token' => $adminToken] = $helper->createAdminAndLogin();
-        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-miss-' . uniqid('', true) . '@example.com');
+        ['customer' => $customer] = $helper->createCustomerAndLogin('credit-miss-'.uniqid('', true).'@example.com');
 
         $helper->adminRequest(Request::METHOD_POST, '/api/admin/credits/adjust', $adminToken, json_encode([
             'customerId' => $customer->getId(),

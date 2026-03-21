@@ -71,7 +71,7 @@ class GrantWeeklyCreditsCommand extends Command
 
             $tx = $this->creditService->grantWeeklyCredits($contract, $weekRef);
             if ($tx !== null) {
-                $granted++;
+                ++$granted;
                 $io->text(sprintf(
                     '  +%d credits → %s (contract %s)',
                     $contract->getCoursesPerWeek(),
@@ -79,7 +79,7 @@ class GrantWeeklyCreditsCommand extends Command
                     $contract->getId(),
                 ));
             } else {
-                $skipped++;
+                ++$skipped;
             }
         }
 

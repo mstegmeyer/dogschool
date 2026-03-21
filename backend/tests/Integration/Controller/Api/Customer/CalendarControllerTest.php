@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller\Api\Customer;
 
-use App\Entity\Contract;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Dog;
-use App\Enum\ContractState;
 use App\Enum\CreditTransactionType;
 use App\Repository\CourseDateRepository;
 use App\Repository\CourseRepository;
@@ -91,7 +89,7 @@ final class CalendarControllerTest extends WebTestCase
         ['token' => $token] = $helper->createCustomerAndLogin();
 
         $from = (new \DateTimeImmutable('today'))->format('Y-m-d');
-        $helper->customerRequest(Request::METHOD_GET, '/api/customer/calendar?from=' . $from . '&days=7', $token);
+        $helper->customerRequest(Request::METHOD_GET, '/api/customer/calendar?from='.$from.'&days=7', $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame($from, $data['from']);
@@ -120,7 +118,7 @@ final class CalendarControllerTest extends WebTestCase
 
         $cd = $this->seedCourseDateForBooking((new \DateTimeImmutable('+2 days'))->format('Y-m-d'));
 
-        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/' . $cd->getId() . '/book', $token, json_encode([
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/'.$cd->getId().'/book', $token, json_encode([
             'dogId' => $dog->getId(),
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -145,7 +143,7 @@ final class CalendarControllerTest extends WebTestCase
 
         $cd = $this->seedCourseDateForBooking((new \DateTimeImmutable('+2 days'))->format('Y-m-d'));
 
-        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/' . $cd->getId() . '/book', $token, json_encode([
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/'.$cd->getId().'/book', $token, json_encode([
             'dogId' => $dog->getId(),
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -176,12 +174,12 @@ final class CalendarControllerTest extends WebTestCase
 
         $cd = $this->seedCourseDateForBooking((new \DateTimeImmutable('+2 days'))->format('Y-m-d'));
 
-        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/' . $cd->getId() . '/book', $token, json_encode([
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/calendar/course-dates/'.$cd->getId().'/book', $token, json_encode([
             'dogId' => $dog->getId(),
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
 
-        $helper->customerRequest(Request::METHOD_DELETE, '/api/customer/calendar/course-dates/' . $cd->getId() . '/book?dogId=' . $dog->getId(), $token);
+        $helper->customerRequest(Request::METHOD_DELETE, '/api/customer/calendar/course-dates/'.$cd->getId().'/book?dogId='.$dog->getId(), $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame(5, $data['creditBalance']);
@@ -195,7 +193,7 @@ final class CalendarControllerTest extends WebTestCase
 
         $cd = $this->seedCourseDateForBooking((new \DateTimeImmutable('+2 days'))->format('Y-m-d'));
 
-        $helper->customerRequest(Request::METHOD_DELETE, '/api/customer/calendar/course-dates/' . $cd->getId() . '/book', $token);
+        $helper->customerRequest(Request::METHOD_DELETE, '/api/customer/calendar/course-dates/'.$cd->getId().'/book', $token);
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
     }
 

@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class NotificationCreateDto
 {
     /**
-     * @param string[] $courseIds Empty array = global notification visible to all customers.
+     * @param string[] $courseIds empty array = global notification visible to all customers
      */
     public function __construct(
         /** @var string[] */

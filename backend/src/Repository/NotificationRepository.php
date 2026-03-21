@@ -41,10 +41,13 @@ class NotificationRepository extends ServiceEntityRepository
             $qb->where('c.id IS NULL');
         }
 
-        return $qb
+        /** @var list<Notification> $result */
+        $result = $qb
             ->orderBy('n.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $result;
     }
 
     /**
@@ -54,13 +57,16 @@ class NotificationRepository extends ServiceEntityRepository
      */
     public function findByCourse(string $courseId): array
     {
-        return $this->createQueryBuilder('n')
+        /** @var list<Notification> $result */
+        $result = $this->createQueryBuilder('n')
             ->innerJoin('n.courses', 'c')
             ->where('c.id = :id')
             ->setParameter('id', $courseId)
             ->orderBy('n.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $result;
     }
 
     /**
@@ -68,7 +74,8 @@ class NotificationRepository extends ServiceEntityRepository
      */
     public function findRecent(int $limit = 100): array
     {
-        return $this->createQueryBuilder('n')
+        /** @var list<Notification> $result */
+        $result = $this->createQueryBuilder('n')
             ->leftJoin('n.courses', 'c')
             ->addSelect('c')
             ->leftJoin('c.courseType', 'ct')
@@ -77,6 +84,8 @@ class NotificationRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        return $result;
     }
 
     public function save(Notification $entity, bool $flush = true): void

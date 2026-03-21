@@ -10,7 +10,6 @@ use App\Entity\CourseDate;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
-use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
 use App\Enum\RecurrenceKind;
 use App\Repository\BookingRepository;
@@ -48,7 +47,7 @@ final class CreditService
     public function applyContractCancellationCredits(Contract $contract): void
     {
         $customer = $contract->getCustomer();
-        if ($customer === null || $contract->getType() !== ContractType::PERPETUAL) {
+        if ($customer === null) {
             return;
         }
 

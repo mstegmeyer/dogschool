@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Service;
 
+use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
 use App\Entity\Customer;
 use App\Entity\Dog;
-use App\Entity\Booking;
 use App\Entity\Notification;
 use App\Entity\User;
 use App\Enum\ContractState;
@@ -125,8 +125,8 @@ final class ApiNormalizerTest extends TestCase
     public function normalizeContractWithNullDogAndCustomer(): void
     {
         $contract = new Contract();
-        $contract->setState(\App\Enum\ContractState::REQUESTED);
-        $contract->setType(\App\Enum\ContractType::PERPETUAL);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setType(ContractType::PERPETUAL);
         $contract->setPrice('0');
         $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
         $contract->setEndDate(new \DateTimeImmutable('2026-01-01'));

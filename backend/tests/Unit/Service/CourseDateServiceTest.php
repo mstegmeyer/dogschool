@@ -64,7 +64,7 @@ final class CourseDateServiceTest extends TestCase
         $this->em->expects(self::atLeastOnce())
             ->method('persist')
             ->willReturnCallback(function () use (&$persistCount): void {
-                $persistCount++;
+                ++$persistCount;
             });
 
         $created = $this->service->generateForCourse($course, $from, $until);
@@ -82,7 +82,8 @@ final class CourseDateServiceTest extends TestCase
         $callCount = 0;
         $this->courseDateRepo->method('existsForCourseAndDate')
             ->willReturnCallback(function () use (&$callCount): bool {
-                $callCount++;
+                ++$callCount;
+
                 return $callCount === 1; // First date exists, second doesn't
             });
 

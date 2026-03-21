@@ -6,7 +6,6 @@ namespace App\Tests\Integration\Controller\Api\Admin;
 
 use App\Entity\Course;
 use App\Entity\CourseType;
-use App\Entity\Notification;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
 use App\Repository\NotificationRepository;

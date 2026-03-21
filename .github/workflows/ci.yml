@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 permissions:
@@ -83,13 +83,13 @@ jobs:
       - name: Run PHPUnit with coverage
         run: |
           mkdir -p coverage
-          php bin/phpunit --coverage-clover coverage/clover.xml --coverage-text 2>&1 | tee coverage/summary.txt
+          php bin/phpunit --coverage-cobertura coverage/cobertura.xml --coverage-text 2>&1 | tee coverage/summary.txt
         working-directory: backend
       - name: PHP Coverage Summary
         if: always()
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: backend/coverage/clover.xml
+          filename: backend/coverage/cobertura.xml
           badge: true
           format: markdown
           output: both
@@ -125,7 +125,7 @@ jobs:
         if: always()
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: frontend/coverage/clover.xml
+          filename: frontend/coverage/cobertura-coverage.xml
           badge: true
           format: markdown
           output: both

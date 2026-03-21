@@ -134,7 +134,7 @@ final class CalendarController extends AbstractController
             $from = $dt->modify('monday this week')->setTime(0, 0);
             $to = $from->modify('sunday this week')->setTime(23, 59, 59);
         } elseif ($month !== null && $month !== '') {
-            $from = new \DateTimeImmutable($month . '-01', $tz);
+            $from = new \DateTimeImmutable($month.'-01', $tz);
             $to = $from->modify('last day of this month')->setTime(23, 59, 59);
         } else {
             $from = new \DateTimeImmutable('monday this week', $tz)->setTime(0, 0);

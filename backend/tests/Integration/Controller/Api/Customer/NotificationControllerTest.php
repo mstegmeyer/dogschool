@@ -37,7 +37,7 @@ final class NotificationControllerTest extends WebTestCase
         $userRepo = $container->get(\App\Repository\UserRepository::class);
 
         $author = new User();
-        $author->setUsername('notif-author-' . uniqid('', true));
+        $author->setUsername('notif-author-'.uniqid('', true));
         $author->setFullName('Author');
         $author->setPassword('x');
         $userRepo->save($author);
@@ -95,7 +95,7 @@ final class NotificationControllerTest extends WebTestCase
 
         $userRepo = $container->get(\App\Repository\UserRepository::class);
         $author = new User();
-        $author->setUsername('notif-course-' . uniqid('', true));
+        $author->setUsername('notif-course-'.uniqid('', true));
         $author->setFullName('Trainer');
         $author->setPassword('x');
         $userRepo->save($author);

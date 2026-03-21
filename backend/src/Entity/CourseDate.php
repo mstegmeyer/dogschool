@@ -145,7 +145,7 @@ class CourseDate
     {
         $dt = \DateTimeImmutable::createFromFormat(
             'Y-m-d H:i',
-            $this->date->format('Y-m-d') . ' ' . $this->startTime,
+            $this->date->format('Y-m-d').' '.$this->startTime,
             new \DateTimeZone(self::TIMEZONE),
         );
         if ($dt === false) {

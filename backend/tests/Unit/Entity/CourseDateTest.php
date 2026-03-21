@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Entity;
 
 use App\Entity\Booking;
-use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\Customer;
 use App\Entity\Dog;

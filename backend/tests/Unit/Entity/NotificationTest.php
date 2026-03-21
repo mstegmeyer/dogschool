@@ -7,7 +7,6 @@ namespace App\Tests\Unit\Entity;
 use App\Entity\Course;
 use App\Entity\CourseType;
 use App\Entity\Notification;
-use App\Entity\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

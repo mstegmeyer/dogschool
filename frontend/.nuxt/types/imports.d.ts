@@ -127,7 +127,6 @@ declare global {
   const useModel: typeof import('../../node_modules/vue').useModel
   const useNuxtApp: typeof import('../../node_modules/nuxt/dist/app/nuxt').useNuxtApp
   const useNuxtData: typeof import('../../node_modules/nuxt/dist/app/composables/asyncData').useNuxtData
-  const useNuxtDevTools: typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools').useNuxtDevTools
   const usePopper: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/usePopper').usePopper
   const usePreviewMode: typeof import('../../node_modules/nuxt/dist/app/composables/preview').usePreviewMode
   const useProvideButtonGroup: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useButtonGroup').useProvideButtonGroup
@@ -333,7 +332,6 @@ declare module 'vue' {
     readonly useModel: UnwrapRef<typeof import('../../node_modules/vue')['useModel']>
     readonly useNuxtApp: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/nuxt')['useNuxtApp']>
     readonly useNuxtData: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/asyncData')['useNuxtData']>
-    readonly useNuxtDevTools: UnwrapRef<typeof import('../../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools')['useNuxtDevTools']>
     readonly usePopper: UnwrapRef<typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/usePopper')['usePopper']>
     readonly usePreviewMode: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/preview')['usePreviewMode']>
     readonly useProvideButtonGroup: UnwrapRef<typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useButtonGroup')['useProvideButtonGroup']>

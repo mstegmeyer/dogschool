@@ -6,13 +6,13 @@ namespace App\Service;
 
 use App\Entity\Booking;
 use App\Entity\Contract;
-use App\Enum\ContractType;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\Notification;
+use App\Enum\ContractType;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 final class ApiNormalizer
@@ -67,8 +67,9 @@ final class ApiNormalizer
             'startDate' => $contract->getStartDate()?->format('Y-m-d'),
             'endDate' => $contract->getEndDate()?->format('Y-m-d'),
             'price' => $contract->getPrice(),
-            /** For PERPETUAL contracts, this is the monthly amount (same as price). */
-            'priceMonthly' => $type === ContractType::PERPETUAL ? $contract->getPrice() : null,
+            'priceMonthly' => match ($type) {
+                ContractType::PERPETUAL => $contract->getPrice(),
+            },
             'type' => $type->value,
             'coursesPerWeek' => $contract->getCoursesPerWeek(),
             'state' => $contract->getState()->value,

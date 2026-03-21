@@ -69,7 +69,7 @@ final class CourseDateService
                 $cd->setEndTime($course->getEndTime());
 
                 $this->em->persist($cd);
-                $created++;
+                ++$created;
             }
 
             $current = $current->modify('+1 week');

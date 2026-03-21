@@ -64,7 +64,7 @@ final class CalendarControllerTest extends WebTestCase
         $nextMonday = (new \DateTimeImmutable('monday this week'))->modify('+7 days');
         $this->seedCourseDate($nextMonday->format('Y-m-d'));
 
-        $helper->adminRequest(Request::METHOD_GET, '/api/admin/calendar?week=' . $nextMonday->format('Y-m-d'), $token);
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/calendar?week='.$nextMonday->format('Y-m-d'), $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertArrayHasKey('items', $data);
@@ -93,7 +93,7 @@ final class CalendarControllerTest extends WebTestCase
         $seeded = $this->seedCourseDate((new \DateTimeImmutable('+3 days'))->format('Y-m-d'));
         $cdId = $seeded['courseDate']->getId();
 
-        $helper->adminRequest(Request::METHOD_GET, '/api/admin/calendar/course-dates/' . $cdId, $token);
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/calendar/course-dates/'.$cdId, $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame($cdId, $data['id']);
@@ -119,7 +119,7 @@ final class CalendarControllerTest extends WebTestCase
         $cdId = $seeded['courseDate']->getId();
         $newDate = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
 
-        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/calendar/course-dates/' . $cdId . '/move', $token, json_encode([
+        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/calendar/course-dates/'.$cdId.'/move', $token, json_encode([
             'date' => $newDate,
             'startTime' => '14:00',
             'endTime' => '15:00',
@@ -139,12 +139,12 @@ final class CalendarControllerTest extends WebTestCase
         $seeded = $this->seedCourseDate((new \DateTimeImmutable('+4 days'))->format('Y-m-d'));
         $cdId = $seeded['courseDate']->getId();
 
-        $helper->adminRequest(Request::METHOD_POST, '/api/admin/calendar/course-dates/' . $cdId . '/cancel', $token);
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/calendar/course-dates/'.$cdId.'/cancel', $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertTrue($data['cancelled']);
 
-        $helper->adminRequest(Request::METHOD_POST, '/api/admin/calendar/course-dates/' . $cdId . '/uncancel', $token);
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/calendar/course-dates/'.$cdId.'/uncancel', $token);
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertFalse($data['cancelled']);

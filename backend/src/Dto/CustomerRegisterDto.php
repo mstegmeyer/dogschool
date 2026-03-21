@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Dto;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+final class CustomerRegisterDto
+{
+    public function __construct(
+        #[Assert\NotBlank]
+        #[Assert\Email]
+        #[Assert\Length(max: 180)]
+        public string $email = '',
+        #[Assert\NotBlank]
+        #[Assert\Length(min: 1)]
+        public string $password = '',
+        #[Assert\Length(max: 255)]
+        public ?string $name = null,
+        public ?AddressDto $address = null,
+        public ?BankAccountDto $bankAccount = null,
+    ) {
+    }
+}

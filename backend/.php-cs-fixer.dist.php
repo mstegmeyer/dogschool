@@ -1,0 +1,23 @@
+<?php
+
+$finder = (new PhpCsFixer\Finder())
+    ->in(__DIR__)
+    ->exclude('var')
+    ->exclude('vendor')
+    ->notPath([
+        'config/bundles.php',
+        'config/reference.php',
+    ])
+;
+
+return (new PhpCsFixer\Config())
+    ->setRules([
+        '@Symfony' => true,
+        'yoda_style' => [
+            'equal' => false,
+            'identical' => false,
+            'less_and_greater' => false,
+        ],
+    ])
+    ->setFinder($finder)
+;

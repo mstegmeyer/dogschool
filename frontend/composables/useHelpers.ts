@@ -35,7 +35,7 @@ export const useHelpers = () => {
       DECLINED: 'Abgelehnt',
       CANCELLED: 'Gekündigt',
     }
-    return map[state]
+    return map[state] ?? state
   }
 
   function contractStateColor(state: ContractState): string {
@@ -45,7 +45,7 @@ export const useHelpers = () => {
       DECLINED: 'red',
       CANCELLED: 'gray',
     }
-    return map[state]
+    return map[state] ?? 'gray'
   }
 
   function creditTypeLabel(type: CreditTransactionType): string {
@@ -55,7 +55,7 @@ export const useHelpers = () => {
       CANCELLATION: 'Stornierung',
       MANUAL_ADJUSTMENT: 'Korrektur',
     }
-    return map[type]
+    return map[type] ?? type
   }
 
   function levelLabel(level: CourseLevel | number): string {

@@ -232,6 +232,6 @@ if (import.meta.hot) {
   })
 }
 
-import cfg0 from "/Users/M.Stegmeyer/Sites/komm/frontend/app.config.ts"
+import cfg0 from "/app/app.config.ts"
 
 export default /*@__PURE__*/ defuFn(cfg0, inlineConfig)

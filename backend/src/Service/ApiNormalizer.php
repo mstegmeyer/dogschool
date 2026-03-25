@@ -94,6 +94,14 @@ final class ApiNormalizer
     {
         $courseType = $course->getCourseType();
 
+        $subscribers = [];
+        foreach ($course->getSubscribedCustomers() as $customer) {
+            $subscribers[] = [
+                'id' => $customer->getId(),
+                'name' => $customer->getName(),
+            ];
+        }
+
         return [
             'id' => $course->getId(),
             'dayOfWeek' => $course->getDayOfWeek(),
@@ -110,6 +118,8 @@ final class ApiNormalizer
             'level' => $course->getLevel(),
             'comment' => $course->getComment(),
             'archived' => $course->isArchived(),
+            'subscriberCount' => count($subscribers),
+            'subscribers' => $subscribers,
         ];
     }
 
@@ -189,6 +199,19 @@ final class ApiNormalizer
             ];
         }
         $data['bookings'] = $bookings;
+
+        $course = $cd->getCourse();
+        $subscribers = [];
+        if ($course !== null) {
+            foreach ($course->getSubscribedCustomers() as $customer) {
+                $subscribers[] = [
+                    'id' => $customer->getId(),
+                    'name' => $customer->getName(),
+                ];
+            }
+        }
+        $data['subscriberCount'] = count($subscribers);
+        $data['subscribers'] = $subscribers;
 
         return $data;
     }

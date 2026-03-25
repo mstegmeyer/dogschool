@@ -25,6 +25,15 @@
         <template #level-data="{ row }">
           {{ levelLabel(row.level) }}
         </template>
+        <template #subscribers-data="{ row }">
+          <UTooltip
+            v-if="row.subscriberCount > 0"
+            :text="row.subscribers.map((s: { name: string }) => s.name).join(', ')"
+          >
+            <span class="font-medium text-green-600 cursor-default">{{ row.subscriberCount }}</span>
+          </UTooltip>
+          <span v-else class="text-slate-400">0</span>
+        </template>
         <template #archived-data="{ row }">
           <UBadge :color="row.archived ? 'gray' : 'green'" variant="soft" size="xs">
             {{ row.archived ? 'Archiviert' : 'Aktiv' }}
@@ -123,6 +132,7 @@ const columns = [
   { key: 'dayOfWeek', label: 'Tag', sortable: true },
   { key: 'time', label: 'Uhrzeit' },
   { key: 'level', label: 'Stufe' },
+  { key: 'subscribers', label: 'Abonnenten' },
   { key: 'archived', label: 'Status' },
   { key: 'actions', label: '' },
 ]

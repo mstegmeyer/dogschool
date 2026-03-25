@@ -80,6 +80,8 @@ export interface Course {
   level: CourseLevel
   comment: string | null
   archived: boolean
+  subscriberCount: number
+  subscribers: { id: string; name: string }[]
 }
 
 export interface CourseDateBooking {
@@ -104,6 +106,10 @@ export interface CourseDate {
   createdAt: string
   booked?: boolean
   bookings?: CourseDateBooking[]
+  /** Number of customers subscribed to the underlying course series (admin only). */
+  subscriberCount?: number
+  /** Subscribed customers with id + name (admin only). */
+  subscribers?: { id: string; name: string }[]
   /** Customer is subscribed to the underlying course (recurring series). */
   subscribed?: boolean
   /** Start + 24h passed — no book/cancel (matches backend). */

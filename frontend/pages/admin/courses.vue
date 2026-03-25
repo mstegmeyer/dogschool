@@ -30,12 +30,12 @@
             v-if="row.subscriberCount > 0"
             :text="row.subscribers.map((s: { name: string }) => s.name).join(', ')"
           >
-            <span class="font-medium text-green-600 cursor-default">{{ row.subscriberCount }}</span>
+            <span class="font-medium text-komm-600 cursor-default">{{ row.subscriberCount }}</span>
           </UTooltip>
           <span v-else class="text-slate-400">0</span>
         </template>
         <template #archived-data="{ row }">
-          <UBadge :color="row.archived ? 'gray' : 'green'" variant="soft" size="xs">
+          <UBadge :color="row.archived ? 'gray' : 'primary'" variant="soft" size="xs">
             {{ row.archived ? 'Archiviert' : 'Aktiv' }}
           </UBadge>
         </template>

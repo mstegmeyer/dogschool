@@ -31,7 +31,7 @@
     <template #footer>
       <p class="text-center text-sm text-slate-500">
         Bereits registriert?
-        <NuxtLink to="/login" class="text-green-600 font-medium hover:underline">
+        <NuxtLink to="/login" class="text-komm-600 font-medium hover:underline">
           Anmelden
         </NuxtLink>
       </p>

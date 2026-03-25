@@ -1,22 +1,29 @@
 <template>
-  <div class="min-h-screen bg-slate-50 overflow-x-hidden">
+  <div class="min-h-screen bg-sand-50 overflow-x-hidden">
     <!-- Desktop sidebar -->
-    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex-col z-10">
-      <div class="px-6 py-5 border-b border-slate-100">
+    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-sand-100 border-r border-sand-200 flex-col z-10">
+      <div class="px-6 py-5 border-b border-sand-200">
         <NuxtLink to="/customer" class="block">
-          <span class="text-2xl font-extrabold text-green-700 tracking-tight">Komm!</span>
-          <span class="block text-xs text-slate-400 mt-0.5">Mein Bereich</span>
+          <AppLogo tone="on-light" />
+          <span class="block text-xs text-sand-500 mt-1.5">Mein Bereich</span>
         </NuxtLink>
       </div>
 
       <nav class="flex-1 px-3 py-4 overflow-y-auto">
-        <UVerticalNavigation :links="navLinks" />
+        <UVerticalNavigation
+          :links="navLinks"
+          :ui="{
+            active: 'text-komm-900 before:bg-sand-200',
+            inactive: 'text-komm-700 hover:text-komm-900 hover:before:bg-sand-200/60',
+            icon: { active: 'text-komm-700', inactive: 'text-sand-500 group-hover:text-komm-700' },
+          }"
+        />
       </nav>
 
-      <div class="p-3 border-t border-slate-200">
+      <div class="p-3 border-t border-sand-200">
         <div class="px-3 py-2 mb-2">
-          <p class="text-sm font-medium text-slate-700 truncate">{{ user?.name || 'Kunde' }}</p>
-          <p class="text-xs text-slate-400 truncate">{{ user?.email }}</p>
+          <p class="text-sm font-medium text-komm-900 truncate">{{ user?.name || 'Kunde' }}</p>
+          <p class="text-xs text-sand-500 truncate">{{ user?.email }}</p>
         </div>
         <UButton
           color="gray"
@@ -24,6 +31,7 @@
           block
           icon="i-heroicons-arrow-right-on-rectangle"
           label="Abmelden"
+          :ui="{ color: { gray: { ghost: 'text-komm-600 hover:text-komm-900 hover:bg-sand-200' } } }"
           @click="handleLogout"
         />
       </div>
@@ -31,22 +39,30 @@
 
     <!-- Mobile slideover -->
     <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'max-w-[16rem]' }">
-      <div class="flex flex-col h-full bg-white">
-        <div class="px-6 py-5 border-b border-slate-100">
+      <div class="flex flex-col h-full bg-sand-100">
+        <div class="px-6 py-5 border-b border-sand-200">
           <NuxtLink to="/customer" class="block" @click="mobileMenuOpen = false">
-            <span class="text-2xl font-extrabold text-green-700 tracking-tight">Komm!</span>
-            <span class="block text-xs text-slate-400 mt-0.5">Mein Bereich</span>
+            <AppLogo tone="on-light" />
+            <span class="block text-xs text-sand-500 mt-1.5">Mein Bereich</span>
           </NuxtLink>
         </div>
 
         <nav class="flex-1 px-3 py-4 overflow-y-auto">
-          <UVerticalNavigation :links="navLinks" @click="mobileMenuOpen = false" />
+          <UVerticalNavigation
+            :links="navLinks"
+            :ui="{
+              active: 'text-komm-900 before:bg-sand-200',
+              inactive: 'text-komm-700 hover:text-komm-900 hover:before:bg-sand-200/60',
+              icon: { active: 'text-komm-700', inactive: 'text-sand-500 group-hover:text-komm-700' },
+            }"
+            @click="mobileMenuOpen = false"
+          />
         </nav>
 
-        <div class="p-3 border-t border-slate-200">
+        <div class="p-3 border-t border-sand-200">
           <div class="px-3 py-2 mb-2">
-            <p class="text-sm font-medium text-slate-700 truncate">{{ user?.name || 'Kunde' }}</p>
-            <p class="text-xs text-slate-400 truncate">{{ user?.email }}</p>
+            <p class="text-sm font-medium text-komm-900 truncate">{{ user?.name || 'Kunde' }}</p>
+            <p class="text-xs text-sand-500 truncate">{{ user?.email }}</p>
           </div>
           <UButton
             color="gray"
@@ -54,6 +70,7 @@
             block
             icon="i-heroicons-arrow-right-on-rectangle"
             label="Abmelden"
+            :ui="{ color: { gray: { ghost: 'text-komm-600 hover:text-komm-900 hover:bg-sand-200' } } }"
             @click="handleLogout"
           />
         </div>
@@ -61,14 +78,14 @@
     </USlideover>
 
     <!-- Mobile top bar -->
-    <header class="lg:hidden fixed top-0 inset-x-0 h-14 bg-white border-b border-slate-200 flex items-center px-4 z-10">
+    <header class="lg:hidden fixed top-0 inset-x-0 h-14 bg-sand-100 border-b border-sand-200 flex items-center px-4 z-10">
       <UButton
         color="gray"
         variant="ghost"
         icon="i-heroicons-bars-3"
         @click="mobileMenuOpen = true"
       />
-      <span class="ml-3 text-lg font-extrabold text-green-700 tracking-tight">Komm!</span>
+      <AppLogo tone="on-light" size="sm" class="ml-3" />
     </header>
 
     <main class="lg:ml-64 min-h-screen pt-14 lg:pt-0">

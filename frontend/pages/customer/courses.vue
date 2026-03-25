@@ -86,9 +86,9 @@
                 :key="group.dayOfWeek"
                 class="border border-slate-200 rounded-lg overflow-hidden bg-white"
               >
-                <div class="px-3 py-2 bg-green-50 border-b border-green-100 flex items-center justify-between">
-                  <span class="text-sm font-semibold text-green-800">{{ dayName(group.dayOfWeek) }}</span>
-                  <UBadge color="green" variant="soft" size="xs">{{ group.courses.length }}</UBadge>
+                <div class="px-3 py-2 bg-komm-50 border-b border-komm-100 flex items-center justify-between">
+                  <span class="text-sm font-semibold text-komm-800">{{ dayName(group.dayOfWeek) }}</span>
+                  <UBadge color="primary" variant="soft" size="xs">{{ group.courses.length }}</UBadge>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-sm">

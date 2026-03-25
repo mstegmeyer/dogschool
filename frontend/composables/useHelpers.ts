@@ -41,7 +41,7 @@ export const useHelpers = () => {
   function contractStateColor(state: ContractState): string {
     const map: Record<ContractState, string> = {
       REQUESTED: 'amber',
-      ACTIVE: 'green',
+      ACTIVE: 'primary',
       DECLINED: 'red',
       CANCELLED: 'gray',
     }

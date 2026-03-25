@@ -28,7 +28,7 @@
       <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[180px]' : ''">
         <div class="text-center mb-2">
           <p class="text-xs font-semibold text-slate-500 uppercase">{{ day.label }}</p>
-          <p class="text-sm font-medium" :class="day.isToday ? 'text-green-600' : 'text-slate-700'">
+          <p class="text-sm font-medium" :class="day.isToday ? 'text-komm-600' : 'text-slate-700'">
             {{ day.dateShort }}
           </p>
         </div>
@@ -49,7 +49,7 @@
             </template>
             <template v-else-if="cd.booked">
               <div class="mt-2 space-y-1">
-                <UBadge color="green" variant="soft" size="xs">Gebucht</UBadge>
+                <UBadge color="primary" variant="soft" size="xs">Gebucht</UBadge>
                 <p class="text-xs font-medium text-slate-800">
                   <span class="text-slate-500 font-normal">für </span>{{ bookedDogLabel(cd) }}
                 </p>
@@ -183,7 +183,7 @@ const visibleDays = computed(() => viewMode.value === 'week' ? weekDays.value : 
 
 function cardClass(cd: CourseDate) {
   if (cd.cancelled) return 'bg-red-50 border-red-200 opacity-60'
-  if (cd.booked) return 'bg-green-50 border-green-200'
+  if (cd.booked) return 'bg-komm-50 border-komm-200'
   return 'bg-white border-slate-200'
 }
 

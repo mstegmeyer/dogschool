@@ -49,7 +49,7 @@
           <h3 class="font-semibold text-slate-800">Guthaben</h3>
         </template>
         <div class="text-center py-2">
-          <p class="text-4xl font-bold" :class="creditBalance >= 0 ? 'text-green-600' : 'text-red-500'">
+          <p class="text-4xl font-bold" :class="creditBalance >= 0 ? 'text-komm-600' : 'text-red-500'">
             {{ creditBalance }}
           </p>
           <p class="text-xs text-slate-400 mt-1">Credits</p>
@@ -75,13 +75,13 @@
       </template>
       <UTable :columns="creditColumns" :rows="creditHistory">
         <template #amount-data="{ row }">
-          <span :class="row.amount > 0 ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
+          <span :class="row.amount > 0 ? 'text-komm-600 font-semibold' : 'text-red-500 font-semibold'">
             {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
           </span>
         </template>
         <template #type-data="{ row }">
           <UBadge
-            :color="row.type === 'WEEKLY_GRANT' ? 'green' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
+            :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
             variant="soft"
             size="xs"
           >

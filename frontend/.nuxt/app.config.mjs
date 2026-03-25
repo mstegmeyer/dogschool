@@ -219,6 +219,8 @@ const inlineConfig = {
       "fuchsia",
       "pink",
       "rose",
+      "komm",
+      "sand",
       "primary"
     ],
     "strategy": "merge"

@@ -8,7 +8,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <UCard>
         <div class="text-center">
-          <p class="text-3xl font-bold" :class="creditBalance >= 0 ? 'text-green-600' : 'text-red-500'">
+          <p class="text-3xl font-bold" :class="creditBalance >= 0 ? 'text-komm-600' : 'text-red-500'">
             {{ creditBalance }}
           </p>
           <p class="text-xs text-slate-400 mt-1">Guthaben (Credits)</p>
@@ -49,7 +49,7 @@
               <span v-if="c.startDate"> · seit {{ formatDate(c.startDate) }}</span>
             </p>
           </div>
-          <UBadge color="green" variant="soft" size="xs">{{ contractStateLabel(c.state) }}</UBadge>
+          <UBadge color="primary" variant="soft" size="xs">{{ contractStateLabel(c.state) }}</UBadge>
         </li>
       </ul>
     </UCard>
@@ -81,7 +81,7 @@
               </div>
               <UBadge
                 v-else-if="cd.booked"
-                color="green"
+                color="primary"
                 variant="soft"
                 size="xs"
                 class="shrink-0 max-w-[11rem] whitespace-normal text-center leading-tight"
@@ -128,7 +128,7 @@
               <h4 class="text-sm font-semibold text-slate-700">{{ n.title }}</h4>
             </div>
             <p v-if="n.isGlobal" class="text-xs text-amber-700 mt-0.5">Alle Kurse</p>
-            <p v-else-if="n.courses.length > 0" class="text-xs text-green-700 mt-0.5">{{ formatNotificationCourses(n.courses) }}</p>
+            <p v-else-if="n.courses.length > 0" class="text-xs text-komm-700 mt-0.5">{{ formatNotificationCourses(n.courses) }}</p>
             <p class="text-xs text-slate-500 mt-0.5 line-clamp-2">{{ n.message }}</p>
             <p class="text-xs text-slate-400 mt-1">{{ formatDateTime(n.createdAt) }}</p>
           </div>

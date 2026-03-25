@@ -36,19 +36,19 @@
                 </div>
                 <div
                   v-else-if="n.courses.length > 0"
-                  class="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-green-50 border border-green-100 px-3 py-2"
+                  class="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-komm-50 border border-komm-100 px-3 py-2"
                 >
-                  <span class="text-xs font-semibold uppercase tracking-wide text-green-800 shrink-0">Kurs</span>
+                  <span class="text-xs font-semibold uppercase tracking-wide text-komm-800 shrink-0">Kurs</span>
                   <span
                     v-for="(c, idx) in visibleCourses(n)"
                     :key="c.id"
-                    class="text-sm font-medium text-green-900"
+                    class="text-sm font-medium text-komm-900"
                   >
                     {{ formatNotificationCourse(c) }}<span v-if="idx < visibleCourses(n).length - 1">,</span>
                   </span>
                   <span
                     v-if="n.courses.length > maxVisibleCourses"
-                    class="text-xs text-green-700 font-medium"
+                    class="text-xs text-komm-700 font-medium"
                   >
                     (+&nbsp;{{ n.courses.length - maxVisibleCourses }} weitere)
                   </span>

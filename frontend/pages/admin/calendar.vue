@@ -28,7 +28,7 @@
       <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[200px]' : ''">
         <div class="text-center mb-2">
           <p class="text-xs font-semibold text-slate-500 uppercase">{{ day.label }}</p>
-          <p class="text-sm font-medium" :class="day.isToday ? 'text-green-600' : 'text-slate-700'">
+          <p class="text-sm font-medium" :class="day.isToday ? 'text-komm-600' : 'text-slate-700'">
             {{ day.dateShort }}
           </p>
         </div>
@@ -39,7 +39,7 @@
             class="rounded-lg border p-2 text-xs cursor-pointer transition-colors"
             :class="cd.cancelled
               ? 'bg-red-50 border-red-200 opacity-60'
-              : 'bg-white border-slate-200 hover:border-green-300'"
+              : 'bg-white border-slate-200 hover:border-komm-300'"
             @click="openDetail(cd)"
           >
             <p class="font-semibold truncate" :class="cd.cancelled ? 'text-red-600 line-through' : 'text-slate-700'">
@@ -61,8 +61,8 @@
                 <span class="text-slate-500">0</span>
               </template>
               <div v-if="cd.subscriberCount" class="flex items-center gap-0.5 ml-auto">
-                <UIcon name="i-heroicons-heart" class="w-3 h-3 text-green-500" />
-                <span class="text-green-600 font-medium">{{ cd.subscriberCount }}</span>
+                <UIcon name="i-heroicons-heart" class="w-3 h-3 text-komm-500" />
+                <span class="text-komm-600 font-medium">{{ cd.subscriberCount }}</span>
               </div>
               <UBadge v-if="cd.cancelled" color="red" variant="soft" size="xs" class="ml-auto">Abgesagt</UBadge>
             </div>
@@ -158,7 +158,7 @@
             />
             <UButton
               v-else
-              color="green"
+              color="primary"
               variant="soft"
               label="Reaktivieren"
               @click="uncancelDate(selectedDate)"

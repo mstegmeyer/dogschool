@@ -93,7 +93,7 @@ describe('useHelpers', () => {
   describe('contractStateColor', () => {
     it('maps states to correct colors', () => {
       expect(contractStateColor('REQUESTED')).toBe('amber')
-      expect(contractStateColor('ACTIVE')).toBe('green')
+      expect(contractStateColor('ACTIVE')).toBe('primary')
       expect(contractStateColor('DECLINED')).toBe('red')
       expect(contractStateColor('CANCELLED')).toBe('gray')
     })

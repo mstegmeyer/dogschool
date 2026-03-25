@@ -46,7 +46,7 @@
         <template #actions-data="{ row }">
           <div class="flex flex-wrap justify-end gap-1 whitespace-nowrap min-w-[9rem]">
             <template v-if="row.state === 'REQUESTED'">
-              <UButton size="xs" color="green" variant="soft" label="Genehmigen" @click="approve(row)" />
+              <UButton size="xs" color="primary" variant="soft" label="Genehmigen" @click="approve(row)" />
               <UButton size="xs" color="red" variant="soft" label="Ablehnen" @click="decline(row)" />
             </template>
             <UButton

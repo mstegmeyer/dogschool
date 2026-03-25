@@ -102,8 +102,8 @@ const stats = computed<DashboardStat[]>(() => [
     label: 'Aktive Kurse',
     value: courses.value.filter(c => !c.archived).length,
     icon: 'i-heroicons-academic-cap',
-    bgClass: 'bg-green-50',
-    iconClass: 'text-green-500',
+    bgClass: 'bg-komm-100',
+    iconClass: 'text-komm-600',
   },
   {
     label: 'Heutige Termine',

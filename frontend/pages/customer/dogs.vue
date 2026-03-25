@@ -14,8 +14,8 @@
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <UCard v-for="dog in dogs" :key="dog.id">
         <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-            <UIcon name="i-heroicons-heart" class="w-5 h-5 text-green-600" />
+          <div class="w-10 h-10 rounded-full bg-sand-200 flex items-center justify-center shrink-0">
+            <UIcon name="i-heroicons-heart" class="w-5 h-5 text-komm-700" />
           </div>
           <div>
             <h3 class="font-semibold text-slate-800">{{ dog.name }}</h3>

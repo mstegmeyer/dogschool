@@ -31,7 +31,7 @@
     <template #footer>
       <p class="text-center text-sm text-slate-500">
         Noch kein Konto?
-        <NuxtLink to="/register" class="text-green-600 font-medium hover:underline">
+        <NuxtLink to="/register" class="text-komm-600 font-medium hover:underline">
           Registrieren
         </NuxtLink>
       </p>

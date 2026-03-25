@@ -4,7 +4,7 @@
 
     <UCard class="mb-6">
         <div class="text-center py-4">
-          <p class="text-5xl font-bold" :class="balance >= 0 ? 'text-green-600' : 'text-red-500'">
+          <p class="text-5xl font-bold" :class="balance >= 0 ? 'text-komm-600' : 'text-red-500'">
             {{ balance }}
           </p>
           <p class="text-sm text-slate-400 mt-2">Verfügbare Credits</p>
@@ -42,13 +42,13 @@
         </template>
         <UTable :columns="columns" :rows="transactions" :loading="loading">
           <template #amount-data="{ row }">
-            <span class="font-semibold" :class="row.amount > 0 ? 'text-green-600' : 'text-red-500'">
+            <span class="font-semibold" :class="row.amount > 0 ? 'text-komm-600' : 'text-red-500'">
               {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
             </span>
           </template>
           <template #type-data="{ row }">
             <UBadge
-              :color="row.type === 'WEEKLY_GRANT' ? 'green' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
+              :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
               variant="soft"
               size="xs"
             >

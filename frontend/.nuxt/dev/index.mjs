@@ -583,8 +583,8 @@ const defineAppConfig = (config) => config;
 
 const appConfig0 = defineAppConfig({
   ui: {
-    primary: "green",
-    gray: "slate"
+    primary: "komm",
+    gray: "cool"
   }
 });
 
@@ -805,6 +805,8 @@ const inlineAppConfig = {
       "fuchsia",
       "pink",
       "rose",
+      "komm",
+      "sand",
       "primary"
     ],
     "strategy": "merge"
@@ -2270,7 +2272,7 @@ const _FMnHxsRb1XnhSkgrcxwDEP1elfSPjrP7Wr27yXkb3Aw = (function(nitro) {
 
 const rootDir = "/app";
 
-const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Komm! Hundeschule & Hundehotel – Verwaltung"}],"link":[],"style":[],"script":[],"noscript":[],"title":"Komm! Hundeschule"};
+const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Komm! Hundeschule & Hundehotel – Verwaltung"}],"link":[{"rel":"icon","type":"image/png","href":"/favicon.png"},{"rel":"preconnect","href":"https://fonts.googleapis.com"},{"rel":"preconnect","href":"https://fonts.gstatic.com","crossorigin":""},{"rel":"stylesheet","href":"https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"}],"style":[],"script":[],"noscript":[],"title":"Komm! Hundeschule"};
 
 const appRootTag = "div";
 

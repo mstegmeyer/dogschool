@@ -26,6 +26,165 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 {
     private const PASSWORD = 'test1234';
 
+    // -----------------------------------------------------------------------
+    // Customer data pools
+    // -----------------------------------------------------------------------
+
+    private const CUSTOMER_NAMES = [
+        'Anna Schmidt', 'Max Müller', 'Sarah Weber', 'Thomas Fischer', 'Julia Becker',
+        'Michael Wagner', 'Laura Hofmann', 'Daniel Schäfer', 'Lisa Koch', 'Markus Richter',
+        'Katrin Klein', 'Stefan Wolf', 'Sandra Schröder', 'Christian Neumann', 'Nicole Schwarz',
+        'Andreas Zimmermann', 'Sabine Braun', 'Martin Hartmann', 'Monika Krüger', 'Frank Werner',
+        'Claudia Lange', 'Jan Schmitt', 'Petra Meier', 'Tobias Schmitz', 'Birgit Krause',
+        'Sven Peters', 'Heike Scholz', 'Patrick Herrmann', 'Anja Friedrich', 'Florian König',
+        'Nadine Walter', 'Oliver Schulz', 'Susanne Mayer', 'Matthias Huber', 'Melanie Jung',
+        'Jens Hahn', 'Kerstin Frank', 'Philipp Lehmann', 'Simone Berger', 'Thorsten Kaiser',
+        'Christina Vogel', 'Sebastian Weiß', 'Tanja Baumann', 'Marco Albrecht', 'Silke Brandt',
+        'Dennis Henkel', 'Stefanie Reuter', 'Alexander Lorenz', 'Franziska Engel', 'Hendrik Böhm',
+    ];
+
+    private const STREETS = [
+        'Brock 5', 'Münsterstr. 12', 'Dorfstr. 8', 'Bahnhofstr. 22', 'Gartenweg 3',
+        'Am Markt 7', 'Schulstr. 15', 'Lindenallee 9', 'Kirchweg 4', 'Hauptstr. 31',
+        'Feldstr. 18', 'Waldweg 2', 'Parkstr. 11', 'Rosenweg 6', 'Birkenstr. 14',
+        'Eichenstr. 27', 'Mühlenweg 10', 'Weseler Str. 45', 'Dülmener Str. 33', 'Holtstr. 19',
+        'Steverstr. 7', 'Am Kanal 1', 'Grevener Str. 88', 'Hammer Str. 42', 'Warendorfer Str. 16',
+    ];
+
+    /** @var list<array{string, string}> [postalCode, city] */
+    private const CITIES = [
+        ['48308', 'Senden'], ['48163', 'Münster'], ['48249', 'Dülmen'],
+        ['48231', 'Warendorf'], ['48291', 'Telgte'], ['48268', 'Greven'],
+        ['48282', 'Emsdetten'], ['48653', 'Coesfeld'], ['59348', 'Lüdinghausen'],
+        ['48301', 'Nottuln'], ['48329', 'Havixbeck'], ['59387', 'Ascheberg'],
+        ['48143', 'Münster'], ['48155', 'Münster'], ['48159', 'Münster'],
+    ];
+
+    private const IBANS = [
+        'DE89370400440532013000', 'DE27100777770209299700', 'DE44500105175407324931',
+        'DE35500105172699389831', 'DE69500105179536954242', 'DE71500105174185927316',
+        'DE18500105173516826117', 'DE86500105178294765428',
+    ];
+
+    private const BICS = [
+        'COBADEFFXXX', 'DEUTDEFFXXX', 'INGDDEFFXXX', 'GENODEFFXXX', 'BYLADEM1001', 'NOLADE21HAM',
+    ];
+
+    // -----------------------------------------------------------------------
+    // Dog data pool — [name, breed, gender, color]
+    // -----------------------------------------------------------------------
+
+    private const DOG_PROFILES = [
+        ['Bella', 'Golden Retriever', 'female', 'Golden'],
+        ['Rex', 'Deutscher Schäferhund', 'male', 'Schwarz-Braun'],
+        ['Luna', 'Labrador', 'female', 'Schokobraun'],
+        ['Buddy', 'Beagle', 'male', 'Tricolor'],
+        ['Nala', 'Border Collie', 'female', 'Schwarz-Weiß'],
+        ['Charlie', 'Australian Shepherd', 'male', 'Blue Merle'],
+        ['Daisy', 'Pudel', 'female', 'Weiß'],
+        ['Rocky', 'Boxer', 'male', 'Braun'],
+        ['Mia', 'Jack Russell Terrier', 'female', 'Weiß-Braun'],
+        ['Oscar', 'Dackel', 'male', 'Rot'],
+        ['Lilly', 'Cavalier King Charles Spaniel', 'female', 'Blenheim'],
+        ['Bruno', 'Rottweiler', 'male', 'Schwarz-Braun'],
+        ['Emma', 'Shih Tzu', 'female', 'Gold-Weiß'],
+        ['Balu', 'Berner Sennenhund', 'male', 'Dreifarbig'],
+        ['Coco', 'Cocker Spaniel', 'female', 'Schwarz'],
+        ['Sammy', 'Havaneser', 'male', 'Creme'],
+        ['Lotta', 'Malteser', 'female', 'Weiß'],
+        ['Finn', 'Irish Setter', 'male', 'Rot'],
+        ['Greta', 'Weimaraner', 'female', 'Silbergrau'],
+        ['Leo', 'Rhodesian Ridgeback', 'male', 'Weizenfarben'],
+        ['Amy', 'Yorkshire Terrier', 'female', 'Stahlblau-Tan'],
+        ['Maxl', 'Dalmatiner', 'male', 'Weiß-Schwarz'],
+        ['Zoe', 'Französische Bulldogge', 'female', 'Fawn'],
+        ['Sam', 'Husky', 'male', 'Grau-Weiß'],
+        ['Kira', 'Dobermann', 'female', 'Schwarz-Braun'],
+        ['Lucky', 'Mops', 'male', 'Beige'],
+        ['Bonnie', 'Collie', 'female', 'Zobel-Weiß'],
+        ['Teddy', 'Zwergspitz', 'male', 'Orange'],
+        ['Pia', 'Schipperke', 'female', 'Schwarz'],
+        ['Zeus', 'Deutsche Dogge', 'male', 'Blau'],
+        ['Frieda', 'Whippet', 'female', 'Gestromt'],
+        ['Benno', 'Flat-Coated Retriever', 'male', 'Schwarz'],
+        ['Mila', 'Miniatur Bullterrier', 'female', 'Weiß-Gestromt'],
+        ['Anton', 'Eurasier', 'male', 'Rot-Grau'],
+        ['Romy', 'Nova Scotia Duck Tolling Retriever', 'female', 'Rot-Weiß'],
+        ['Oskar', 'Kleiner Münsterländer', 'male', 'Braun-Weiß'],
+        ['Finja', 'Lagotto Romagnolo', 'female', 'Braun'],
+        ['Carlo', 'Vizsla', 'male', 'Goldrost'],
+        ['Nelly', 'English Springer Spaniel', 'female', 'Leber-Weiß'],
+        ['Moritz', 'Airedale Terrier', 'male', 'Loh-Schwarz'],
+        ['Wilma', 'Briard', 'female', 'Fawn'],
+        ['Hugo', 'Leonberger', 'male', 'Löwengelb'],
+        ['Elsa', 'Samojede', 'female', 'Weiß'],
+        ['Theo', 'Parson Russell Terrier', 'male', 'Weiß-Braun'],
+        ['Lina', 'Basenji', 'female', 'Rot-Weiß'],
+        ['Fritz', 'Schnauzer', 'male', 'Pfeffersalz'],
+        ['Hanna', 'Zwergpudel', 'female', 'Apricot'],
+        ['Ole', 'Großer Schweizer Sennenhund', 'male', 'Dreifarbig'],
+        ['Leni', 'Welsh Corgi Pembroke', 'female', 'Rot-Weiß'],
+        ['Pepe', 'Chihuahua', 'male', 'Creme'],
+    ];
+
+    // -----------------------------------------------------------------------
+    // Weekly course schedule — [typeCode, dayOfWeek, startTime, endTime, level]
+    //
+    // 36 courses across Mon–Sat using all 13 course types.
+    //   Mon: 5 | Tue: 6 | Wed: 5 | Thu: 6 | Fri: 6 | Sat: 8
+    // -----------------------------------------------------------------------
+
+    private const COURSE_DEFS = [
+        // --- Monday (5) ---
+        ['MH',   1, '10:00', '11:00', 1],  //  0
+        ['MT',   1, '14:00', '15:00', 0],  //  1
+        ['DIA',  1, '16:00', '17:00', 1],  //  2
+        ['AGI',  1, '18:00', '19:00', 1],  //  3
+        ['JUHU', 1, '19:00', '20:00', 0],  //  4
+        // --- Tuesday (6) ---
+        ['APP',  2, '10:00', '11:00', 1],  //  5
+        ['MH',   2, '11:00', '12:00', 2],  //  6
+        ['RO',   2, '16:00', '17:00', 1],  //  7
+        ['JUHU', 2, '17:00', '18:00', 0],  //  8
+        ['DF',   2, '18:00', '19:00', 0],  //  9
+        ['AGI',  2, '19:00', '20:00', 2],  // 10
+        // --- Wednesday (5) ---
+        ['MH',   3, '10:00', '11:00', 0],  // 11
+        ['MT',   3, '14:00', '15:00', 1],  // 12
+        ['CC',   3, '16:00', '17:00', 1],  // 13
+        ['TK',   3, '18:00', '19:00', 0],  // 14
+        ['AGI',  3, '19:00', '20:00', 3],  // 15
+        // --- Thursday (6) ---
+        ['APP',  4, '10:00', '11:00', 2],  // 16
+        ['MH',   4, '11:00', '12:00', 1],  // 17
+        ['DIA',  4, '16:00', '17:00', 2],  // 18
+        ['JUHU', 4, '17:00', '18:00', 0],  // 19
+        ['TK',   4, '18:00', '19:00', 1],  // 20
+        ['THS',  4, '19:00', '20:00', 1],  // 21
+        // --- Friday (6) ---
+        ['TK',   5, '09:00', '10:00', 2],  // 22
+        ['MH',   5, '10:00', '11:00', 2],  // 23
+        ['THS',  5, '12:00', '13:00', 2],  // 24
+        ['FSTS', 5, '14:00', '15:00', 2],  // 25
+        ['AGI',  5, '16:00', '17:00', 1],  // 26
+        ['MT',   5, '18:00', '19:00', 2],  // 27
+        // --- Saturday (8) ---
+        ['MT',   6, '08:00', '09:00', 0],  // 28
+        ['MH',   6, '09:00', '10:00', 4],  // 29
+        ['JUHU', 6, '10:00', '11:00', 0],  // 30
+        ['CC',   6, '10:00', '11:00', 2],  // 31
+        ['RO',   6, '11:00', '12:00', 2],  // 32
+        ['DS',   6, '12:00', '13:00', 1],  // 33
+        ['AGI',  6, '14:00', '15:00', 2],  // 34
+        ['DF',   6, '15:00', '16:00', 1],  // 35
+    ];
+
+    /** @var Contract[] */
+    private array $activeContracts = [];
+
+    /** @var array<int, int[]> customer index → subscribed course indices */
+    private array $subscriptionMap = [];
+
     public function __construct(
         private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
@@ -36,32 +195,21 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $courseTypes = $this->indexCourseTypes($manager);
         $trainers = $this->indexTrainers($manager);
 
-        // --- Customers with Dogs ---
         $customers = $this->createCustomers($manager);
-
-        // --- Courses ---
         $courses = $this->createCourses($manager, $courseTypes);
-
-        // --- Course Dates (current week ± 1 week) ---
         $courseDates = $this->createCourseDates($manager, $courses);
-
-        // --- Subscriptions ---
         $this->createSubscriptions($manager, $customers, $courses);
-
-        // --- Contracts ---
         $this->createContracts($manager, $customers);
-
-        // --- Credit Transactions ---
-        $this->createCreditTransactions($manager, $customers, $courseDates);
-
-        // --- Bookings ---
+        $this->createCreditTransactions($manager);
         $this->createBookings($manager, $customers, $courseDates);
-
-        // --- Notifications ---
         $this->createNotifications($manager, $courses, $trainers);
 
         $manager->flush();
     }
+
+    // -----------------------------------------------------------------------
+    // Indexing helpers
+    // -----------------------------------------------------------------------
 
     /** @return array<string, CourseType> */
     private function indexCourseTypes(ObjectManager $manager): array
@@ -87,115 +235,73 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         return $indexed;
     }
 
-    /**
-     * @return array<string, array{customer: Customer, dogs: Dog[]}>
-     */
+    // -----------------------------------------------------------------------
+    // Customers + Dogs (50 customers, ~68 dogs)
+    // -----------------------------------------------------------------------
+
+    /** @return array<int, array{customer: Customer, dogs: Dog[]}> */
     private function createCustomers(ObjectManager $manager): array
     {
-        $data = [
-            'anna' => [
-                'name' => 'Anna Schmidt',
-                'email' => 'anna@example.com',
-                'address' => ['Brock 5', '48308', 'Senden', 'DE'],
-                'bank' => ['DE89370400440532013000', 'COBADEFFXXX', 'Anna Schmidt'],
-                'dogs' => [['Bella', 'Golden Retriever', 'female', 'Golden']],
-            ],
-            'max' => [
-                'name' => 'Max Müller',
-                'email' => 'max@example.com',
-                'address' => ['Münsterstr. 12', '48163', 'Münster', 'DE'],
-                'bank' => ['DE27100777770209299700', 'DEUTDEFFXXX', 'Max Müller'],
-                'dogs' => [
-                    ['Rex', 'Deutscher Schäferhund', 'male', 'Schwarz-Braun'],
-                    ['Luna', 'Labrador', 'female', 'Schokobraun'],
-                ],
-            ],
-            'sarah' => [
-                'name' => 'Sarah Weber',
-                'email' => 'sarah@example.com',
-                'address' => ['Dorfstr. 8', '48308', 'Senden', 'DE'],
-                'bank' => null,
-                'dogs' => [['Buddy', 'Beagle', 'male', 'Tricolor']],
-            ],
-            'thomas' => [
-                'name' => 'Thomas Fischer',
-                'email' => 'thomas@example.com',
-                'address' => ['Bahnhofstr. 22', '48249', 'Dülmen', 'DE'],
-                'bank' => ['DE44500105175407324931', 'INGDDEFFXXX', 'Thomas Fischer'],
-                'dogs' => [['Nala', 'Border Collie', 'female', 'Schwarz-Weiß']],
-            ],
-            'julia' => [
-                'name' => 'Julia Becker',
-                'email' => 'julia@example.com',
-                'address' => ['Gartenweg 3', '48153', 'Münster', 'DE'],
-                'bank' => null,
-                'dogs' => [['Charlie', 'Australian Shepherd', 'male', 'Blue Merle']],
-            ],
-            'michael' => [
-                'name' => 'Michael Wagner',
-                'email' => 'michael@example.com',
-                'address' => ['Am Markt 7', '48308', 'Senden', 'DE'],
-                'bank' => ['DE89370400440532013000', 'COBADEFFXXX', 'Michael Wagner'],
-                'dogs' => [['Daisy', 'Pudel', 'female', 'Weiß']],
-            ],
-            'laura' => [
-                'name' => 'Laura Hofmann',
-                'email' => 'laura@example.com',
-                'address' => ['Schulstr. 15', '48161', 'Münster', 'DE'],
-                'bank' => null,
-                'dogs' => [['Rocky', 'Boxer', 'male', 'Braun']],
-            ],
-            'daniel' => [
-                'name' => 'Daniel Schäfer',
-                'email' => 'daniel@example.com',
-                'address' => ['Lindenallee 9', '48231', 'Warendorf', 'DE'],
-                'bank' => ['DE44500105175407324931', 'INGDDEFFXXX', 'Daniel Schäfer'],
-                'dogs' => [
-                    ['Mia', 'Jack Russell Terrier', 'female', 'Weiß-Braun'],
-                    ['Oscar', 'Dackel', 'male', 'Rot'],
-                ],
-            ],
-        ];
+        $profileCount = \count(self::DOG_PROFILES);
+        $streetCount = \count(self::STREETS);
+        $cityCount = \count(self::CITIES);
+        $ibanCount = \count(self::IBANS);
+        $bicCount = \count(self::BICS);
 
         $result = [];
-        foreach ($data as $key => $d) {
+        $dogIdx = 0;
+
+        foreach (self::CUSTOMER_NAMES as $i => $name) {
             $customer = new Customer();
-            $customer->setName($d['name']);
-            $customer->setEmail($d['email']);
+            $customer->setName($name);
+            $customer->setEmail(self::nameToEmail($name));
             $customer->setPassword($this->passwordHasher->hashPassword($customer, self::PASSWORD));
 
             $addr = $customer->getAddress();
-            $addr->setStreet($d['address'][0]);
-            $addr->setPostalCode($d['address'][1]);
-            $addr->setCity($d['address'][2]);
-            $addr->setCountry($d['address'][3]);
+            $addr->setStreet(self::STREETS[$i % $streetCount]);
+            [$postalCode, $city] = self::CITIES[$i % $cityCount];
+            $addr->setPostalCode($postalCode);
+            $addr->setCity($city);
+            $addr->setCountry('DE');
 
-            if ($d['bank'] !== null) {
+            if ($i % 5 < 3) {
                 $bank = $customer->getBankAccount();
-                $bank->setIban($d['bank'][0]);
-                $bank->setBic($d['bank'][1]);
-                $bank->setAccountHolder($d['bank'][2]);
+                $bank->setIban(self::IBANS[$i % $ibanCount]);
+                $bank->setBic(self::BICS[$i % $bicCount]);
+                $bank->setAccountHolder($name);
             }
 
             $manager->persist($customer);
 
+            $dogCount = match (true) {
+                $i < 35 => 1,
+                $i < 47 => 2,
+                default => 3,
+            };
+
             $dogs = [];
-            foreach ($d['dogs'] as [$name, $race, $gender, $color]) {
+            for ($d = 0; $d < $dogCount; ++$d) {
+                [$dogName, $breed, $gender, $color] = self::DOG_PROFILES[$dogIdx % $profileCount];
                 $dog = new Dog();
-                $dog->setName($name);
-                $dog->setRace($race);
+                $dog->setName($dogName);
+                $dog->setRace($breed);
                 $dog->setGender($gender);
                 $dog->setColor($color);
                 $customer->addDog($dog);
                 $manager->persist($dog);
                 $dogs[] = $dog;
+                ++$dogIdx;
             }
 
-            $result[$key] = ['customer' => $customer, 'dogs' => $dogs];
+            $result[$i] = ['customer' => $customer, 'dogs' => $dogs];
         }
 
         return $result;
     }
+
+    // -----------------------------------------------------------------------
+    // Courses (36 weekly slots)
+    // -----------------------------------------------------------------------
 
     /**
      * @param array<string, CourseType> $courseTypes
@@ -204,21 +310,8 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
      */
     private function createCourses(ObjectManager $manager, array $courseTypes): array
     {
-        $defs = [
-            ['MH', 1, '10:00', '11:00', 1],   // Mensch & Hund, Mon
-            ['MH', 3, '10:00', '11:00', 2],   // Mensch & Hund, Wed
-            ['JUHU', 2, '17:00', '18:00', 0], // Junghunde, Tue
-            ['JUHU', 4, '17:00', '18:00', 0], // Junghunde, Thu
-            ['AGI', 1, '18:00', '19:00', 1],  // Agility, Mon
-            ['AGI', 5, '16:00', '17:00', 2],  // Agility, Fri
-            ['TK', 3, '18:00', '19:00', 0],   // Trickkurs, Wed
-            ['CC', 6, '10:00', '11:00', 1],   // Canicross, Sat
-            ['RO', 6, '11:00', '12:00', 1],   // Rally Obedience, Sat
-            ['APP', 2, '10:00', '11:00', 1],  // Apportieren, Tue
-        ];
-
         $courses = [];
-        foreach ($defs as [$typeCode, $dow, $start, $end, $level]) {
+        foreach (self::COURSE_DEFS as [$typeCode, $dow, $start, $end, $level]) {
             if (!isset($courseTypes[$typeCode])) {
                 continue;
             }
@@ -235,6 +328,10 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
         return $courses;
     }
+
+    // -----------------------------------------------------------------------
+    // Course dates (current week ± 1 week, + 1 week ahead)
+    // -----------------------------------------------------------------------
 
     /**
      * @param Course[] $courses
@@ -275,82 +372,90 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         return $allDates;
     }
 
+    // -----------------------------------------------------------------------
+    // Subscriptions (1–4 courses per customer, deterministic spread)
+    // -----------------------------------------------------------------------
+
     /**
-     * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param Course[]                                              $courses
+     * @param array<int, array{customer: Customer, dogs: Dog[]}> $customers
+     * @param Course[]                                           $courses
      */
     private function createSubscriptions(ObjectManager $manager, array $customers, array $courses): void
     {
-        // Anna subscribes to MH Mon, AGI Mon
-        $customers['anna']['customer']->addSubscribedCourse($courses[0]);
-        $customers['anna']['customer']->addSubscribedCourse($courses[4]);
+        $courseCount = \count($courses);
+        if ($courseCount === 0) {
+            return;
+        }
 
-        // Max subscribes to MH Mon, MH Wed, AGI Fri
-        $customers['max']['customer']->addSubscribedCourse($courses[0]);
-        $customers['max']['customer']->addSubscribedCourse($courses[1]);
-        $customers['max']['customer']->addSubscribedCourse($courses[5]);
+        foreach ($customers as $i => $entry) {
+            $subCount = 1 + ($i % 4);
+            $this->subscriptionMap[$i] = [];
 
-        // Sarah subscribes to JUHU Tue
-        $customers['sarah']['customer']->addSubscribedCourse($courses[2]);
-
-        // Thomas subscribes to AGI Mon, CC Sat
-        $customers['thomas']['customer']->addSubscribedCourse($courses[4]);
-        $customers['thomas']['customer']->addSubscribedCourse($courses[7]);
-
-        // Julia subscribes to JUHU Thu, TK Wed
-        $customers['julia']['customer']->addSubscribedCourse($courses[3]);
-        $customers['julia']['customer']->addSubscribedCourse($courses[6]);
-
-        // Michael subscribes to MH Wed
-        $customers['michael']['customer']->addSubscribedCourse($courses[1]);
-
-        // Daniel subscribes to APP Tue, RO Sat
-        $customers['daniel']['customer']->addSubscribedCourse($courses[9]);
-        $customers['daniel']['customer']->addSubscribedCourse($courses[8]);
+            for ($s = 0; $s < $subCount; ++$s) {
+                $courseIdx = ($i * 7 + $s * 13) % $courseCount;
+                $entry['customer']->addSubscribedCourse($courses[$courseIdx]);
+                $this->subscriptionMap[$i][] = $courseIdx;
+            }
+        }
     }
 
+    // -----------------------------------------------------------------------
+    // Contracts (40 ACTIVE, 5 REQUESTED, 3 DECLINED, 2 CANCELLED)
+    // -----------------------------------------------------------------------
+
     /**
-     * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
+     * @param array<int, array{customer: Customer, dogs: Dog[]}> $customers
      */
     private function createContracts(ObjectManager $manager, array $customers): void
     {
         $today = new \DateTimeImmutable();
-        $monthAgo = $today->modify('-1 month');
-        $threeMonthsAgo = $today->modify('-3 months');
 
-        // Anna: ACTIVE, 2/week, 89€
-        $c1 = $this->makeContract($customers['anna']['customer'], $customers['anna']['dogs'][0], ContractState::ACTIVE, 2, '89.00', $threeMonthsAgo);
-        $manager->persist($c1);
+        foreach ($customers as $i => $entry) {
+            $state = match (true) {
+                $i < 40 => ContractState::ACTIVE,
+                $i < 45 => ContractState::REQUESTED,
+                $i < 48 => ContractState::DECLINED,
+                default => ContractState::CANCELLED,
+            };
 
-        // Max: ACTIVE, 3/week, 119€
-        $c2 = $this->makeContract($customers['max']['customer'], $customers['max']['dogs'][0], ContractState::ACTIVE, 3, '119.00', $threeMonthsAgo);
-        $manager->persist($c2);
+            $coursesPerWeek = 1 + ($i % 3);
+            $price = match ($coursesPerWeek) {
+                1 => '59.00',
+                2 => '89.00',
+                default => '119.00',
+            };
 
-        // Sarah: REQUESTED, 2/week, 89€
-        $c3 = $this->makeContract($customers['sarah']['customer'], $customers['sarah']['dogs'][0], ContractState::REQUESTED, 2, '89.00', $today);
-        $manager->persist($c3);
+            $startOffset = match (true) {
+                $i < 15 => '-6 months',
+                $i < 30 => '-3 months',
+                $i < 40 => '-1 month',
+                default => '-2 weeks',
+            };
 
-        // Thomas: ACTIVE, 1/week, 59€
-        $c4 = $this->makeContract($customers['thomas']['customer'], $customers['thomas']['dogs'][0], ContractState::ACTIVE, 1, '59.00', $monthAgo);
-        $manager->persist($c4);
+            $contract = $this->makeContract(
+                $entry['customer'],
+                $entry['dogs'][0],
+                $state,
+                $coursesPerWeek,
+                $price,
+                $today->modify($startOffset),
+            );
+            $manager->persist($contract);
 
-        // Julia: DECLINED
-        $c5 = $this->makeContract($customers['julia']['customer'], $customers['julia']['dogs'][0], ContractState::DECLINED, 2, '89.00', $monthAgo);
-        $manager->persist($c5);
-
-        // Laura: CANCELLED
-        $c6 = $this->makeContract($customers['laura']['customer'], $customers['laura']['dogs'][0], ContractState::CANCELLED, 2, '89.00', $threeMonthsAgo);
-        $manager->persist($c6);
-
-        // Store active contracts for credit granting
-        $this->activeContracts = [$c1, $c2, $c4];
+            if ($state === ContractState::ACTIVE) {
+                $this->activeContracts[] = $contract;
+            }
+        }
     }
 
-    /** @var Contract[] */
-    private array $activeContracts = [];
-
-    private function makeContract(Customer $customer, Dog $dog, ContractState $state, int $coursesPerWeek, string $price, \DateTimeImmutable $startDate): Contract
-    {
+    private function makeContract(
+        Customer $customer,
+        Dog $dog,
+        ContractState $state,
+        int $coursesPerWeek,
+        string $price,
+        \DateTimeImmutable $startDate,
+    ): Contract {
         $contract = new Contract();
         $contract->setCustomer($customer);
         $contract->setDog($dog);
@@ -364,13 +469,12 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         return $contract;
     }
 
-    /**
-     * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param array<int, CourseDate[]>                              $courseDates
-     */
-    private function createCreditTransactions(ObjectManager $manager, array $customers, array $courseDates): void
+    // -----------------------------------------------------------------------
+    // Credit transactions (weekly grants for active contracts, 3 weeks)
+    // -----------------------------------------------------------------------
+
+    private function createCreditTransactions(ObjectManager $manager): void
     {
-        // Grant weekly credits for active contracts for 3 weeks
         foreach ($this->activeContracts as $contract) {
             $customer = $contract->getCustomer();
             if ($customer === null) {
@@ -397,25 +501,33 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Bookings (active customers book ~65 % of their first subscription,
+    //           ~40 % of additional subscriptions, current week only)
+    // -----------------------------------------------------------------------
+
     /**
-     * @param array<string, array{customer: Customer, dogs: Dog[]}> $customers
-     * @param array<int, CourseDate[]>                              $courseDates
+     * @param array<int, array{customer: Customer, dogs: Dog[]}> $customers
+     * @param array<int, CourseDate[]>                           $courseDates
      */
     private function createBookings(ObjectManager $manager, array $customers, array $courseDates): void
     {
-        // Anna books MH Mon (course 0) current week, and AGI Mon (course 4) current week
-        $this->book($manager, $customers['anna']['customer'], $customers['anna']['dogs'][0], $courseDates[0][1] ?? null);
-        $this->book($manager, $customers['anna']['customer'], $customers['anna']['dogs'][0], $courseDates[4][1] ?? null);
+        foreach ($customers as $i => $entry) {
+            if ($i >= 40) {
+                break;
+            }
 
-        // Max books MH Mon current week with Rex
-        $this->book($manager, $customers['max']['customer'], $customers['max']['dogs'][0], $courseDates[0][1] ?? null);
-        // Max books MH Wed current week with Luna
-        $this->book($manager, $customers['max']['customer'], $customers['max']['dogs'][1], $courseDates[1][1] ?? null);
+            $courseIndices = $this->subscriptionMap[$i] ?? [];
+            $dog = $entry['dogs'][0];
 
-        // Thomas books AGI Mon current week
-        $this->book($manager, $customers['thomas']['customer'], $customers['thomas']['dogs'][0], $courseDates[4][1] ?? null);
-        // Thomas books CC Sat current week
-        $this->book($manager, $customers['thomas']['customer'], $customers['thomas']['dogs'][0], $courseDates[7][1] ?? null);
+            foreach ($courseIndices as $s => $courseIdx) {
+                $threshold = $s === 0 ? 65 : 40;
+                if (($i * 31 + $courseIdx * 17) % 100 >= $threshold) {
+                    continue;
+                }
+                $this->book($manager, $entry['customer'], $dog, $courseDates[$courseIdx][1] ?? null);
+            }
+        }
     }
 
     private function book(ObjectManager $manager, Customer $customer, Dog $dog, ?CourseDate $courseDate): void
@@ -445,6 +557,10 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $manager->persist($booking);
     }
 
+    // -----------------------------------------------------------------------
+    // Notifications (11 notifications, 3 pinned, using all trainers)
+    // -----------------------------------------------------------------------
+
     /**
      * @param Course[]            $courses
      * @param array<string, User> $trainers
@@ -453,48 +569,148 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     {
         $florian = $trainers['florian'] ?? null;
         $manuela = $trainers['manuela'] ?? null;
+        $caro = $trainers['caro'] ?? null;
+        $lea = $trainers['lea'] ?? null;
 
         if ($florian === null) {
             return;
         }
 
-        $n1 = new Notification();
-        $n1->setTitle('Trainingsplatz-Änderung');
-        $n1->setMessage("Liebe Kursteilnehmer,\n\nab nächster Woche trainieren wir auf dem neuen Platz hinter dem Hundehotel. Bitte parkt wie gewohnt auf dem Hauptparkplatz.\n\nViele Grüße,\nFlorian");
-        $n1->setAuthor($florian);
-        $n1->addCourse($courses[0]); // MH Mon
-        $manager->persist($n1);
+        // MH Mon: Trainingsplatz-Änderung
+        $n = new Notification();
+        $n->setTitle('Trainingsplatz-Änderung');
+        $n->setMessage("Liebe Kursteilnehmer,\n\nab nächster Woche trainieren wir auf dem neuen Platz hinter dem Hundehotel. Bitte parkt wie gewohnt auf dem Hauptparkplatz.\n\nViele Grüße,\nFlorian");
+        $n->setAuthor($florian);
+        if (isset($courses[0])) {
+            $n->addCourse($courses[0]);
+        }
+        $manager->persist($n);
 
-        $n2 = new Notification();
-        $n2->setTitle('Agility-Parcours erneuert');
-        $n2->setMessage("Hallo zusammen,\n\nwir haben neue Hindernisse für den Agility-Parcours bekommen! Tunnel, Wippe und Slalom sind alle brandneu. Freut euch auf das nächste Training!\n\nEuer Komm!-Team");
-        $n2->setAuthor($manuela ?? $florian);
-        $n2->addCourse($courses[4]); // AGI Mon
-        $n2->addCourse($courses[5]); // AGI Fri — same announcement for both Agility courses
-        $manager->persist($n2);
+        // All AGI: Parcours erneuert
+        $n = new Notification();
+        $n->setTitle('Agility-Parcours erneuert');
+        $n->setMessage("Hallo zusammen,\n\nwir haben neue Hindernisse für den Agility-Parcours bekommen! Tunnel, Wippe und Slalom sind alle brandneu. Freut euch auf das nächste Training!\n\nEuer Komm!-Team");
+        $n->setAuthor($manuela ?? $florian);
+        foreach ([3, 10, 15, 26, 34] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $manager->persist($n);
 
-        $n3 = new Notification();
-        $n3->setTitle('Sommerpause-Info');
-        $n3->setMessage("Liebe Hundefreunde,\n\nin der letzten Juli-Woche und den ersten zwei August-Wochen findet kein regulärer Kurs statt. Das Hundehotel bleibt geöffnet.\n\nSchöne Grüße,\nEuer Komm!-Team");
-        $n3->setAuthor($florian);
-        $n3->addCourse($courses[2]); // JUHU Tue
-        $n3->addCourse($courses[3]); // JUHU Thu
-        $n3->addCourse($courses[6]); // TK Wed
-        $manager->persist($n3);
+        // JUHU + TK: Sommerpause-Info
+        $n = new Notification();
+        $n->setTitle('Sommerpause-Info');
+        $n->setMessage("Liebe Hundefreunde,\n\nin der letzten Juli-Woche und den ersten zwei August-Wochen findet kein regulärer Kurs statt. Das Hundehotel bleibt geöffnet.\n\nSchöne Grüße,\nEuer Komm!-Team");
+        $n->setAuthor($florian);
+        foreach ([4, 8, 19, 30, 14, 20, 22] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $manager->persist($n);
 
-        $n4 = new Notification();
-        $n4->setTitle('Willkommen beim Trickkurs!');
-        $n4->setMessage("Hallo und herzlich willkommen im Trickkurs!\n\nBringt bitte Leckerlis und ein Lieblingsspielzeug eures Hundes mit. Wir starten mit einfachen Tricks wie Pfote geben und Drehen.\n\nBis Mittwoch!");
-        $n4->setAuthor($manuela ?? $florian);
-        $n4->addCourse($courses[6]); // TK Wed
-        $manager->persist($n4);
+        // TK Wed: Willkommen
+        $n = new Notification();
+        $n->setTitle('Willkommen beim Trickkurs!');
+        $n->setMessage("Hallo und herzlich willkommen im Trickkurs!\n\nBringt bitte Leckerlis und ein Lieblingsspielzeug eures Hundes mit. Wir starten mit einfachen Tricks wie Pfote geben und Drehen.\n\nBis Mittwoch!");
+        $n->setAuthor($manuela ?? $florian);
+        if (isset($courses[14])) {
+            $n->addCourse($courses[14]);
+        }
+        $manager->persist($n);
 
-        // Global notification (no courses — visible to everyone)
-        $n5 = new Notification();
-        $n5->setTitle('Frohe Ostern!');
-        $n5->setMessage("Liebe Hundefreunde,\n\nwir wünschen euch und euren Vierbeinern ein wunderschönes Osterfest! 🐣🐕\n\nBitte beachtet: Am Ostermontag finden keine Kurse statt.\n\nEuer Komm!-Team");
-        $n5->setAuthor($florian);
-        $manager->persist($n5);
+        // Global: Frohe Ostern!
+        $n = new Notification();
+        $n->setTitle('Frohe Ostern!');
+        $n->setMessage("Liebe Hundefreunde,\n\nwir wünschen euch und euren Vierbeinern ein wunderschönes Osterfest! 🐣🐕\n\nBitte beachtet: Am Ostermontag finden keine Kurse statt.\n\nEuer Komm!-Team");
+        $n->setAuthor($florian);
+        $manager->persist($n);
+
+        // Global pinned: Sommerferien
+        $n = new Notification();
+        $n->setTitle('Sommerferien: 28.07. – 15.08.');
+        $n->setMessage("Liebe Hundefreunde,\n\nvom 28. Juli bis 15. August findet kein Kursbetrieb statt. Wir genießen die Sommerpause und sind ab dem 18. August wieder für euch da!\n\nBitte plant entsprechend. Bei Fragen meldet euch gerne.\n\nEuer Komm!-Team");
+        $n->setAuthor($florian);
+        $n->setPinnedUntil(new \DateTimeImmutable('2026-08-15T23:59:59'));
+        $manager->persist($n);
+
+        // All MT: Neues Suchgebiet
+        $n = new Notification();
+        $n->setTitle('Mantrailing: Neues Suchgebiet');
+        $n->setMessage("Liebe Mantrailer,\n\nwir haben ein neues Übungsgebiet am Kanal erschlossen! Ab sofort starten wir abwechselnd dort und am gewohnten Platz. Bitte achtet auf die Ansage vor dem jeweiligen Termin.\n\nViele Grüße,\nCaro");
+        $n->setAuthor($caro ?? $florian);
+        foreach ([1, 12, 27, 28] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $manager->persist($n);
+
+        // CC + DS: Streckenänderung
+        $n = new Notification();
+        $n->setTitle('Canicross & Dogscooter: Neue Strecke');
+        $n->setMessage("Hallo Sportler,\n\ndie Laufstrecke im Wald wurde frisch markiert und leicht verändert. Außerdem haben wir zwei neue Scooter angeschafft, die ihr gerne testen könnt.\n\nViel Spaß beim Training!\nFlorian");
+        $n->setAuthor($florian);
+        foreach ([13, 31, 33] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $manager->persist($n);
+
+        // All AGI pinned: Turnier-Ankündigung
+        $n = new Notification();
+        $n->setTitle('Agility-Turnier am 12. April');
+        $n->setMessage("Liebe Agility-Teilnehmer,\n\nam 12. April findet unser vereinsinternes Agility-Turnier statt! Anmeldungen bitte bis zum 5. April bei Manuela. Es gibt Pokale in allen Leistungsklassen.\n\nStart: 10:00 Uhr\nOrt: Trainingsgelände\n\nWir freuen uns auf euch!");
+        $n->setAuthor($manuela ?? $florian);
+        foreach ([3, 10, 15, 26, 34] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $n->setPinnedUntil(new \DateTimeImmutable('+30 days'));
+        $manager->persist($n);
+
+        // APP: Neue Dummies
+        $n = new Notification();
+        $n->setTitle('Apportier-Kurs: Neue Dummies eingetroffen');
+        $n->setMessage("Hallo zusammen,\n\nwir haben endlich die neuen Canvas-Dummies in verschiedenen Gewichten bekommen. Bringt gerne auch eure eigenen Dummies mit, dann können wir vergleichen.\n\nBis bald,\nLea");
+        $n->setAuthor($lea ?? $florian);
+        foreach ([5, 16] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $manager->persist($n);
+
+        // All JUHU pinned: Schnuppertag
+        $n = new Notification();
+        $n->setTitle('Junghunde-Schnuppertag am 5. April');
+        $n->setMessage("Liebe Junghunde-Besitzer,\n\nam 5. April laden wir zum kostenlosen Schnuppertag ein! Bringt gerne Freunde mit Junghunden (bis 12 Monate) mit. Wir zeigen Grundübungen und beantworten eure Fragen.\n\nAnmeldung per E-Mail genügt.\n\nEuer Komm!-Team");
+        $n->setAuthor($florian);
+        foreach ([4, 8, 19, 30] as $ci) {
+            if (isset($courses[$ci])) {
+                $n->addCourse($courses[$ci]);
+            }
+        }
+        $n->setPinnedUntil(new \DateTimeImmutable('2026-04-05T23:59:59'));
+        $manager->persist($n);
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+
+    private static function nameToEmail(string $name): string
+    {
+        $lower = mb_strtolower($name, 'UTF-8');
+
+        return str_replace(
+            [' ', 'ä', 'ö', 'ü', 'ß'],
+            ['.', 'ae', 'oe', 'ue', 'ss'],
+            $lower,
+        ).'@example.com';
     }
 
     /** @return list<class-string<Fixture>> */

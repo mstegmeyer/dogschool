@@ -107,6 +107,32 @@ final class ApiNormalizerTest extends TestCase
         self::assertSame('Title', $data['title']);
         self::assertSame('Body', $data['message']);
         self::assertSame('Admin', $data['authorName']);
+        self::assertNull($data['pinnedUntil']);
+        self::assertFalse($data['isPinned']);
+    }
+
+    #[Test]
+    public function normalizeNotificationWithPinnedUntilInFuture(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Vacation');
+        $notification->setMessage('We are closed next week');
+        $notification->setPinnedUntil(new \DateTimeImmutable('+30 days'));
+        $data = $this->normalizer->normalizeNotification($notification);
+        self::assertNotNull($data['pinnedUntil']);
+        self::assertTrue($data['isPinned']);
+    }
+
+    #[Test]
+    public function normalizeNotificationWithExpiredPin(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Old');
+        $notification->setMessage('Expired pin');
+        $notification->setPinnedUntil(new \DateTimeImmutable('-1 day'));
+        $data = $this->normalizer->normalizeNotification($notification);
+        self::assertNotNull($data['pinnedUntil']);
+        self::assertFalse($data['isPinned']);
     }
 
     #[Test]

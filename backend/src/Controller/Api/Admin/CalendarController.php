@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Controller\Api\Admin;
 
 use App\Dto\CourseDateMoveDto;
+use App\Entity\Notification;
+use App\Entity\User;
 use App\Repository\CourseDateRepository;
+use App\Repository\NotificationRepository;
 use App\Service\ApiNormalizer;
+use App\Service\CreditService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,8 +26,10 @@ final class CalendarController extends AbstractController
 {
     public function __construct(
         private readonly CourseDateRepository $courseDateRepository,
+        private readonly NotificationRepository $notificationRepository,
         private readonly ApiNormalizer $normalizer,
         private readonly ValidatorInterface $validator,
+        private readonly CreditService $creditService,
     ) {
     }
 
@@ -82,7 +88,7 @@ final class CalendarController extends AbstractController
     }
 
     #[Route('/course-dates/{id}/cancel', name: 'cancel', methods: ['POST'])]
-    public function cancel(string $id): JsonResponse
+    public function cancel(string $id, User $user, Request $request): JsonResponse
     {
         $cd = $this->courseDateRepository->find($id);
         if ($cd === null) {
@@ -90,9 +96,35 @@ final class CalendarController extends AbstractController
         }
 
         $cd->setCancelled(true);
+        $refundedCount = $this->creditService->refundBookingsForCancelledCourseDate($cd);
         $this->courseDateRepository->save($cd);
 
-        return $this->json($this->normalizer->normalizeCourseDateForAdmin($cd));
+        $data = json_decode($request->getContent(), true);
+        $notifTitle = is_array($data) ? ($data['notificationTitle'] ?? null) : null;
+        $notifMessage = is_array($data) ? ($data['notificationMessage'] ?? null) : null;
+
+        $notificationCreated = false;
+        if (is_string($notifTitle) && $notifTitle !== '' && is_string($notifMessage) && $notifMessage !== '') {
+            $notification = new Notification();
+            $notification->setAuthor($user);
+            $notification->setTitle($notifTitle);
+            $notification->setMessage($notifMessage);
+            $notification->setPinnedUntil($cd->getDate()->setTime(23, 59, 59));
+
+            $course = $cd->getCourse();
+            if ($course !== null) {
+                $notification->addCourse($course);
+            }
+
+            $this->notificationRepository->save($notification);
+            $notificationCreated = true;
+        }
+
+        return $this->json([
+            ...$this->normalizer->normalizeCourseDateForAdmin($cd),
+            'refundedBookings' => $refundedCount,
+            'notificationCreated' => $notificationCreated,
+        ]);
     }
 
     #[Route('/course-dates/{id}/uncancel', name: 'uncancel', methods: ['POST'])]

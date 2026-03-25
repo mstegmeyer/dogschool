@@ -10,6 +10,7 @@ final class NotificationUpdateDto
 {
     /**
      * @param string[]|null $courseIds null = don't change, empty array = make global
+     * @param string|null   $pinnedUntil ISO 8601 string to set, empty string to clear, null = don't change
      */
     public function __construct(
         #[Assert\Length(max: 255)]
@@ -17,6 +18,7 @@ final class NotificationUpdateDto
         public ?string $message = null,
         /** @var string[]|null */
         public ?array $courseIds = null,
+        public ?string $pinnedUntil = null,
     ) {
     }
 }

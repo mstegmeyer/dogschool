@@ -22,6 +22,8 @@ class NotificationRepository extends ServiceEntityRepository
      * Notifications relevant to the given course IDs: those linked to at least one
      * of the courses, plus global notifications (no courses assigned).
      *
+     * Actively pinned notifications (pinnedUntil > now) are returned first.
+     *
      * @param array<int, string> $courseIds
      *
      * @return array<int, Notification>
@@ -43,7 +45,9 @@ class NotificationRepository extends ServiceEntityRepository
 
         /** @var list<Notification> $result */
         $result = $qb
-            ->orderBy('n.createdAt', 'DESC')
+            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
+            ->orderBy('pinSort', 'DESC')
+            ->addOrderBy('n.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
 
@@ -62,7 +66,9 @@ class NotificationRepository extends ServiceEntityRepository
             ->innerJoin('n.courses', 'c')
             ->where('c.id = :id')
             ->setParameter('id', $courseId)
-            ->orderBy('n.createdAt', 'DESC')
+            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
+            ->orderBy('pinSort', 'DESC')
+            ->addOrderBy('n.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
 
@@ -80,7 +86,9 @@ class NotificationRepository extends ServiceEntityRepository
             ->addSelect('c')
             ->leftJoin('c.courseType', 'ct')
             ->addSelect('ct')
-            ->orderBy('n.createdAt', 'DESC')
+            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
+            ->orderBy('pinSort', 'DESC')
+            ->addOrderBy('n.createdAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

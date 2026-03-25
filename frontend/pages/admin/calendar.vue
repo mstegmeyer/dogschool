@@ -86,6 +86,22 @@
             </ul>
           </div>
         </div>
+
+        <div v-if="!selectedDate.cancelled" class="border-t border-slate-100 pt-4 mt-4 space-y-3">
+          <div class="flex items-center gap-3">
+            <UToggle v-model="cancelNotify" />
+            <span class="text-sm text-slate-600">Mitteilung an Kursteilnehmer senden</span>
+          </div>
+          <template v-if="cancelNotify">
+            <UFormGroup label="Titel">
+              <UInput v-model="cancelNotifyTitle" placeholder="Betreff" />
+            </UFormGroup>
+            <UFormGroup label="Nachricht">
+              <UTextarea v-model="cancelNotifyMessage" placeholder="Grund für die Absage…" :rows="3" />
+            </UFormGroup>
+          </template>
+        </div>
+
         <template #footer>
           <div class="flex gap-2 justify-end">
             <UButton
@@ -93,6 +109,7 @@
               color="red"
               variant="soft"
               label="Absagen"
+              :loading="cancelling"
               @click="cancelDate(selectedDate)"
             />
             <UButton
@@ -122,6 +139,10 @@ const currentMonday = ref(getWeekMonday())
 const courseDates = ref<CourseDate[]>([])
 const showDetail = ref(false)
 const selectedDate = ref<CourseDate | null>(null)
+const cancelling = ref(false)
+const cancelNotify = ref(false)
+const cancelNotifyTitle = ref('')
+const cancelNotifyMessage = ref('')
 
 const weekStart = computed(() => currentMonday.value)
 const weekEnd = computed(() => {
@@ -168,14 +189,30 @@ function goToday() {
 
 function openDetail(cd: CourseDate) {
   selectedDate.value = cd
+  cancelNotify.value = false
+  cancelNotifyTitle.value = `Kursausfall: ${cd.courseType?.name || 'Kurs'} am ${formatDate(cd.date)}`
+  cancelNotifyMessage.value = ''
   showDetail.value = true
 }
 
 async function cancelDate(cd: CourseDate) {
-  await api.post(`/api/admin/calendar/course-dates/${cd.id}/cancel`)
-  toast.add({ title: 'Termin abgesagt', color: 'green' })
-  showDetail.value = false
-  await loadCalendar()
+  cancelling.value = true
+  try {
+    const body: Record<string, string> = {}
+    if (cancelNotify.value && cancelNotifyTitle.value && cancelNotifyMessage.value) {
+      body.notificationTitle = cancelNotifyTitle.value
+      body.notificationMessage = cancelNotifyMessage.value
+    }
+    await api.post(`/api/admin/calendar/course-dates/${cd.id}/cancel`, body)
+    const msg = cancelNotify.value && body.notificationTitle
+      ? 'Termin abgesagt & Mitteilung erstellt'
+      : 'Termin abgesagt'
+    toast.add({ title: msg, color: 'green' })
+    showDetail.value = false
+    await loadCalendar()
+  } finally {
+    cancelling.value = false
+  }
 }
 
 async function uncancelDate(cd: CourseDate) {

@@ -8,6 +8,7 @@ use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Entity\Course;
 use App\Entity\CourseDate;
+use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
@@ -78,6 +79,17 @@ final class ApiNormalizer
     }
 
     /** @return array<string, mixed> */
+    public function normalizeCourseType(CourseType $ct): array
+    {
+        return [
+            'id' => $ct->getId(),
+            'code' => $ct->getCode(),
+            'name' => $ct->getName(),
+            'recurrenceKind' => $ct->getRecurrenceKind()->value,
+        ];
+    }
+
+    /** @return array<string, mixed> */
     public function normalizeCourse(Course $course): array
     {
         $courseType = $course->getCourseType();
@@ -125,6 +137,8 @@ final class ApiNormalizer
             'isGlobal' => $notification->isGlobal(),
             'courses' => $courses,
             'courseIds' => array_column($courses, 'id'),
+            'pinnedUntil' => $notification->getPinnedUntil()?->format(\DateTimeInterface::ATOM),
+            'isPinned' => $notification->isPinned(),
             'createdAt' => $notification->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }

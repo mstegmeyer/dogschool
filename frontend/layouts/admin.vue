@@ -41,6 +41,7 @@ const navLinks: NavLink[][] = [[
   { label: 'Dashboard', icon: 'i-heroicons-home', to: '/admin' },
   { label: 'Kunden', icon: 'i-heroicons-users', to: '/admin/customers' },
   { label: 'Kurse', icon: 'i-heroicons-academic-cap', to: '/admin/courses' },
+  { label: 'Kursarten', icon: 'i-heroicons-tag', to: '/admin/course-types' },
   { label: 'Kalender', icon: 'i-heroicons-calendar-days', to: '/admin/calendar' },
   { label: 'Verträge', icon: 'i-heroicons-document-text', to: '/admin/contracts' },
   { label: 'Mitteilungen', icon: 'i-heroicons-bell', to: '/admin/notifications' },

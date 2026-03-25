@@ -63,6 +63,13 @@ export interface CourseTypeInfo {
   recurrenceKind: RecurrenceKind
 }
 
+export interface CourseType {
+  id: string
+  code: string
+  name: string
+  recurrenceKind: RecurrenceKind
+}
+
 export interface Course {
   id: string
   dayOfWeek: DayOfWeek
@@ -160,6 +167,8 @@ export interface Notification {
   isGlobal: boolean
   courses: NotificationCourseRef[]
   courseIds: string[]
+  pinnedUntil: string | null
+  isPinned: boolean
   createdAt: string
 }
 

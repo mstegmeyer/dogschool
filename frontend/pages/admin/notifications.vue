@@ -24,6 +24,16 @@
               {{ formatDateTime(row.createdAt) }}
             </span>
           </template>
+          <template #pinnedUntil-data="{ row }">
+            <span v-if="row.isPinned" class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-1.5 py-0.5 whitespace-nowrap">
+              <UIcon name="i-heroicons-map-pin" class="w-3.5 h-3.5" />
+              bis {{ formatDate(row.pinnedUntil) }}
+            </span>
+            <span v-else-if="row.pinnedUntil" class="text-xs text-slate-400 whitespace-nowrap" :title="`Abgelaufen: ${formatDate(row.pinnedUntil)}`">
+              abgelaufen
+            </span>
+            <span v-else class="text-xs text-slate-300">–</span>
+          </template>
           <template #title-data="{ row }">
             <span class="font-medium text-slate-800 line-clamp-2" :title="row.title">{{ row.title }}</span>
           </template>
@@ -90,6 +100,9 @@
           <UFormGroup label="Nachricht">
             <UTextarea v-model="form.message" placeholder="Nachricht an die Kursteilnehmer…" :rows="4" required />
           </UFormGroup>
+          <UFormGroup label="Angepinnt bis" hint="Optional – Mitteilung wird bis zu diesem Datum oben angezeigt">
+            <UInput v-model="form.pinnedUntil" type="date" />
+          </UFormGroup>
           <div class="flex justify-end gap-2">
             <UButton variant="ghost" label="Abbrechen" @click="showModal = false" />
             <UButton type="submit" :loading="saving" label="Speichern" />
@@ -107,7 +120,7 @@ definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
-const { formatDateTime, formatNotificationCourse, dayName } = useHelpers()
+const { formatDate, formatDateTime, formatNotificationCourse, dayName } = useHelpers()
 
 const notifications = ref<AppNotification[]>([])
 const courses = ref<Course[]>([])
@@ -116,10 +129,11 @@ const showModal = ref(false)
 const saving = ref(false)
 const editingNotification = ref<AppNotification | null>(null)
 
-const form = reactive({ courseIds: [] as string[], title: '', message: '', isGlobal: false })
+const form = reactive({ courseIds: [] as string[], title: '', message: '', isGlobal: false, pinnedUntil: '' })
 
 const columns = [
   { key: 'createdAt', label: 'Datum' },
+  { key: 'pinnedUntil', label: 'Angepinnt' },
   { key: 'title', label: 'Titel' },
   { key: 'courses', label: 'Kurse' },
   { key: 'message', label: 'Text' },
@@ -134,12 +148,18 @@ const courseOptions = computed(() =>
   })),
 )
 
+function pinnedUntilToDateInput(iso: string | null): string {
+  if (!iso) return ''
+  return iso.slice(0, 10)
+}
+
 function openCreateModal() {
   editingNotification.value = null
   form.courseIds = []
   form.title = ''
   form.message = ''
   form.isGlobal = false
+  form.pinnedUntil = ''
   showModal.value = true
 }
 
@@ -149,6 +169,7 @@ function openEditModal(n: AppNotification) {
   form.message = n.message
   form.isGlobal = n.isGlobal
   form.courseIds = n.isGlobal ? [] : [...n.courseIds]
+  form.pinnedUntil = pinnedUntilToDateInput(n.pinnedUntil)
   showModal.value = true
 }
 
@@ -156,11 +177,13 @@ async function saveNotification() {
   saving.value = true
   try {
     const courseIds = form.isGlobal ? [] : form.courseIds
+    const pinnedUntil = form.pinnedUntil ? `${form.pinnedUntil}T23:59:59` : ''
     if (editingNotification.value) {
       await api.put(`/api/admin/notifications/${editingNotification.value.id}`, {
         title: form.title,
         message: form.message,
         courseIds,
+        pinnedUntil,
       })
       toast.add({ title: 'Mitteilung aktualisiert', color: 'green' })
     } else {
@@ -168,6 +191,7 @@ async function saveNotification() {
         title: form.title,
         message: form.message,
         courseIds,
+        pinnedUntil: pinnedUntil || null,
       })
       toast.add({ title: 'Mitteilung erstellt', color: 'green' })
     }

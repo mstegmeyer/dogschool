@@ -214,6 +214,69 @@ final class CreditServiceTest extends TestCase
     }
 
     #[Test]
+    public function refundBookingsForCancelledCourseDateRefundsAllActiveBookings(): void
+    {
+        [$customer, $dog] = $this->makeCustomerWithDog();
+        $cd = $this->makeRecurringCourseDate();
+
+        $booking1 = new Booking();
+        $booking1->setCustomer($customer);
+        $booking1->setDog($dog);
+        $booking1->setCourseDate($cd);
+        $cd->getBookings()->add($booking1);
+
+        $dog2 = new Dog();
+        $dog2->setName('Bella');
+        $dog2->setCustomer($customer);
+        $booking2 = new Booking();
+        $booking2->setCustomer($customer);
+        $booking2->setDog($dog2);
+        $booking2->setCourseDate($cd);
+        $cd->getBookings()->add($booking2);
+
+        $alreadyCancelled = new Booking();
+        $alreadyCancelled->setCustomer($customer);
+        $alreadyCancelled->setDog($dog);
+        $alreadyCancelled->setCourseDate($cd);
+        $alreadyCancelled->setCancelledAt(new \DateTimeImmutable());
+        $cd->getBookings()->add($alreadyCancelled);
+
+        $persisted = [];
+        $this->em->expects(self::exactly(2))
+            ->method('persist')
+            ->willReturnCallback(function (object $entity) use (&$persisted): void {
+                $persisted[] = $entity;
+            });
+        $this->em->expects(self::once())->method('flush');
+
+        $count = $this->service->refundBookingsForCancelledCourseDate($cd);
+
+        self::assertSame(2, $count);
+        self::assertNull($booking1->getCancelledAt(), 'Booking should remain active for traceability');
+        self::assertNull($booking2->getCancelledAt(), 'Booking should remain active for traceability');
+
+        self::assertCount(2, $persisted);
+        foreach ($persisted as $tx) {
+            self::assertInstanceOf(CreditTransaction::class, $tx);
+            self::assertSame(1, $tx->getAmount());
+            self::assertSame(CreditTransactionType::CANCELLATION, $tx->getType());
+            self::assertStringContainsString('Cancelled by dog school', $tx->getDescription());
+        }
+    }
+
+    #[Test]
+    public function refundBookingsForCancelledCourseDateReturnsZeroWhenNoActiveBookings(): void
+    {
+        $cd = $this->makeRecurringCourseDate();
+
+        $this->em->expects(self::never())->method('persist');
+        $this->em->expects(self::never())->method('flush');
+
+        $count = $this->service->refundBookingsForCancelledCourseDate($cd);
+        self::assertSame(0, $count);
+    }
+
+    #[Test]
     public function cancelBookingRejectsDogNotBelongingToCustomer(): void
     {
         [$customer] = $this->makeCustomerWithDog();

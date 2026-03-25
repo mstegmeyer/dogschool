@@ -63,6 +63,9 @@ final class NotificationController extends AbstractController
         $notification->setAuthor($user);
         $notification->setTitle($dto->title);
         $notification->setMessage($dto->message);
+        if ($dto->pinnedUntil !== null && $dto->pinnedUntil !== '') {
+            $notification->setPinnedUntil(new \DateTimeImmutable($dto->pinnedUntil));
+        }
 
         foreach ($dto->courseIds as $courseId) {
             $course = $this->courseRepository->find($courseId);
@@ -96,6 +99,11 @@ final class NotificationController extends AbstractController
         }
         if ($dto->message !== null) {
             $notification->setMessage($dto->message);
+        }
+        if ($dto->pinnedUntil !== null) {
+            $notification->setPinnedUntil(
+                $dto->pinnedUntil !== '' ? new \DateTimeImmutable($dto->pinnedUntil) : null,
+            );
         }
         if ($dto->courseIds !== null) {
             foreach ($notification->getCourses()->toArray() as $oldCourse) {

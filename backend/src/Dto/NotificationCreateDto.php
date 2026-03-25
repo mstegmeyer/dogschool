@@ -10,6 +10,7 @@ final class NotificationCreateDto
 {
     /**
      * @param string[] $courseIds empty array = global notification visible to all customers
+     * @param string|null $pinnedUntil ISO 8601 datetime — pin notification until this deadline
      */
     public function __construct(
         /** @var string[] */
@@ -20,6 +21,7 @@ final class NotificationCreateDto
         public string $title = '',
         #[Assert\NotBlank]
         public string $message = '',
+        public ?string $pinnedUntil = null,
     ) {
     }
 }

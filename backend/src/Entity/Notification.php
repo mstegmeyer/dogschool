@@ -36,6 +36,9 @@ class Notification
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $pinnedUntil = null;
+
     /** @var Collection<int, Course> */
     #[ORM\ManyToMany(targetEntity: Course::class, inversedBy: 'notifications')]
     #[ORM\JoinTable(name: 'notification_course')]
@@ -92,6 +95,28 @@ class Notification
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getPinnedUntil(): ?\DateTimeImmutable
+    {
+        return $this->pinnedUntil;
+    }
+
+    public function setPinnedUntil(?\DateTimeImmutable $pinnedUntil): static
+    {
+        $this->pinnedUntil = $pinnedUntil;
+
+        return $this;
+    }
+
+    /** Notification is pinned when pinnedUntil is set and still in the future. */
+    public function isPinned(?\DateTimeImmutable $now = null): bool
+    {
+        if ($this->pinnedUntil === null) {
+            return false;
+        }
+
+        return $this->pinnedUntil > ($now ?? new \DateTimeImmutable());
     }
 
     /** @return Collection<int, Course> */

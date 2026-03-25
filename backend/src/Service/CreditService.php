@@ -216,6 +216,46 @@ final class CreditService
     }
 
     /**
+     * Refund credits for all active bookings on a cancelled course date.
+     *
+     * @return int the number of bookings refunded
+     */
+    public function refundBookingsForCancelledCourseDate(CourseDate $courseDate): int
+    {
+        $activeBookings = $courseDate->getActiveBookings();
+        $course = $courseDate->getCourse();
+        $courseType = $course?->getCourseType();
+        $courseName = $courseType !== null ? $courseType->getName() : 'course';
+
+        foreach ($activeBookings as $booking) {
+            $customer = $booking->getCustomer();
+            if ($customer === null) {
+                continue;
+            }
+
+            $tx = new CreditTransaction();
+            $tx->setCustomer($customer);
+            $tx->setAmount(1);
+            $tx->setType(CreditTransactionType::CANCELLATION);
+            $tx->setCourseDate($courseDate);
+            $tx->setDescription(sprintf(
+                'Cancelled by dog school: %s on %s (%s)',
+                $courseName,
+                $courseDate->getDate()->format('Y-m-d'),
+                $booking->getDog()?->getName() ?? 'unknown',
+            ));
+
+            $this->em->persist($tx);
+        }
+
+        if (count($activeBookings) > 0) {
+            $this->em->flush();
+        }
+
+        return count($activeBookings);
+    }
+
+    /**
      * Cancel a booking and refund the credit.
      *
      * @return Booking|string the updated booking on success, or an error message

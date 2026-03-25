@@ -123,7 +123,10 @@
         </div>
         <div v-else class="divide-y divide-slate-100">
           <div v-for="n in notifications.slice(0, 4)" :key="n.id" class="py-3">
-            <h4 class="text-sm font-semibold text-slate-700">{{ n.title }}</h4>
+            <div class="flex items-center gap-1.5">
+              <UIcon v-if="n.isPinned" name="i-heroicons-map-pin" class="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <h4 class="text-sm font-semibold text-slate-700">{{ n.title }}</h4>
+            </div>
             <p v-if="n.isGlobal" class="text-xs text-amber-700 mt-0.5">Alle Kurse</p>
             <p v-else-if="n.courses.length > 0" class="text-xs text-green-700 mt-0.5">{{ formatNotificationCourses(n.courses) }}</p>
             <p class="text-xs text-slate-500 mt-0.5 line-clamp-2">{{ n.message }}</p>

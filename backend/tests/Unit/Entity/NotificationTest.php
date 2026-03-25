@@ -66,6 +66,64 @@ final class NotificationTest extends TestCase
     }
 
     #[Test]
+    public function isPinnedReturnsFalseWhenNoPinnedUntil(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Test');
+        $notification->setMessage('Body');
+
+        self::assertFalse($notification->isPinned());
+        self::assertNull($notification->getPinnedUntil());
+    }
+
+    #[Test]
+    public function isPinnedReturnsTrueWhenDeadlineInFuture(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Vacation');
+        $notification->setMessage('We are closed');
+        $notification->setPinnedUntil(new \DateTimeImmutable('+7 days'));
+
+        self::assertTrue($notification->isPinned());
+    }
+
+    #[Test]
+    public function isPinnedReturnsFalseWhenDeadlinePassed(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Old pin');
+        $notification->setMessage('Body');
+        $notification->setPinnedUntil(new \DateTimeImmutable('-1 day'));
+
+        self::assertFalse($notification->isPinned());
+    }
+
+    #[Test]
+    public function isPinnedAcceptsCustomNow(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Test');
+        $notification->setMessage('Body');
+        $notification->setPinnedUntil(new \DateTimeImmutable('2026-06-01'));
+
+        self::assertTrue($notification->isPinned(new \DateTimeImmutable('2026-05-15')));
+        self::assertFalse($notification->isPinned(new \DateTimeImmutable('2026-07-01')));
+    }
+
+    #[Test]
+    public function setPinnedUntilCanClearValue(): void
+    {
+        $notification = new Notification();
+        $notification->setTitle('Test');
+        $notification->setMessage('Body');
+        $notification->setPinnedUntil(new \DateTimeImmutable('+7 days'));
+
+        self::assertTrue($notification->isPinned());
+        $notification->setPinnedUntil(null);
+        self::assertFalse($notification->isPinned());
+    }
+
+    #[Test]
     public function removeCourseRemovesSuccessfully(): void
     {
         $courseType = new CourseType();

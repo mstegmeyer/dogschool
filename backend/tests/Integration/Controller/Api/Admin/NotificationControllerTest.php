@@ -47,10 +47,12 @@ final class NotificationControllerTest extends WebTestCase
         $course->setLevel(1);
         $courseRepo->save($course);
 
+        $pinnedUntil = (new \DateTimeImmutable('+14 days'))->format('Y-m-d\\TH:i:s');
         $helper->adminRequest(Request::METHOD_POST, '/api/admin/notifications', $token, json_encode([
             'courseIds' => [$course->getId()],
             'title' => 'Test Notification',
             'message' => 'Body text',
+            'pinnedUntil' => $pinnedUntil,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
@@ -59,6 +61,8 @@ final class NotificationControllerTest extends WebTestCase
         self::assertSame('Body text', $data['message']);
         self::assertFalse($data['isGlobal']);
         self::assertCount(1, $data['courses']);
+        self::assertNotNull($data['pinnedUntil']);
+        self::assertTrue($data['isPinned']);
         $id = $data['id'];
 
         $helper->adminRequest(Request::METHOD_GET, '/api/admin/notifications/'.$id, $token);
@@ -69,11 +73,14 @@ final class NotificationControllerTest extends WebTestCase
         $helper->adminRequest(Request::METHOD_PATCH, '/api/admin/notifications/'.$id, $token, json_encode([
             'title' => 'Updated Title',
             'message' => 'Updated body',
+            'pinnedUntil' => '',
         ]));
         self::assertResponseIsSuccessful();
         $updated = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame('Updated Title', $updated['title']);
         self::assertSame('Updated body', $updated['message']);
+        self::assertNull($updated['pinnedUntil']);
+        self::assertFalse($updated['isPinned']);
 
         $helper->adminRequest(Request::METHOD_DELETE, '/api/admin/notifications/'.$id, $token);
         self::assertResponseIsSuccessful();

@@ -9,11 +9,24 @@
     </div>
 
     <div v-else class="space-y-3">
-      <UCard v-for="n in notifications" :key="n.id">
+      <UCard
+        v-for="n in notifications"
+        :key="n.id"
+        :ui="n.isPinned ? { ring: 'ring-2 ring-indigo-300', base: 'relative' } : {}"
+      >
           <div>
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
-                <h3 class="font-semibold text-slate-800">{{ n.title }}</h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-semibold text-slate-800">{{ n.title }}</h3>
+                  <span
+                    v-if="n.isPinned"
+                    class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full px-2 py-0.5 shrink-0"
+                  >
+                    <UIcon name="i-heroicons-map-pin" class="w-3 h-3" />
+                    Angepinnt
+                  </span>
+                </div>
                 <div
                   v-if="n.isGlobal"
                   class="mt-2 flex items-center gap-2 rounded-md bg-amber-50 border border-amber-100 px-3 py-2"

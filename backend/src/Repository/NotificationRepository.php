@@ -95,11 +95,14 @@ class NotificationRepository extends ServiceEntityRepository
      */
     public function findPageForAdminList(int $page, int $limit): array
     {
-        return $this->createRecentAdminListQueryBuilder()
+        /** @var list<Notification> $notifications */
+        $notifications = $this->createRecentAdminListQueryBuilder()
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        return $notifications;
     }
 
     public function countForAdminList(): int

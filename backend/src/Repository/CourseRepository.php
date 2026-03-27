@@ -66,15 +66,21 @@ class CourseRepository extends ServiceEntityRepository
                 ->orderBy('course.dayOfWeek', $sortDirection)
                 ->addOrderBy('course.startTime', $sortDirection);
 
-            return $qb->getQuery()->getResult();
+            /** @var list<Course> $courses */
+            $courses = $qb->getQuery()->getResult();
+
+            return $courses;
         }
 
-        return $qb
+        /** @var list<Course> $courses */
+        $courses = $qb
             ->orderBy('course.'.$sortBy, $sortDirection)
             ->addOrderBy('course.dayOfWeek', 'ASC')
             ->addOrderBy('course.startTime', 'ASC')
             ->getQuery()
             ->getResult();
+
+        return $courses;
     }
 
     public function countForAdminList(?bool $archived = null): int

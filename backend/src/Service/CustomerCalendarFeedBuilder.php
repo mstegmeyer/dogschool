@@ -94,7 +94,7 @@ final class CustomerCalendarFeedBuilder
     private function escapeText(string $value): string
     {
         return str_replace(
-            ["\\", ';', ',', "\r\n", "\r", "\n"],
+            ['\\', ';', ',', "\r\n", "\r", "\n"],
             ['\\\\', '\;', '\,', '\n', '\n', '\n'],
             $value,
         );

@@ -60,12 +60,15 @@ class ContractRepository extends ServiceEntityRepository
         string $sortBy = 'createdAt',
         string $sortDirection = 'DESC',
     ): array {
-        return $this->createAdminListQueryBuilder($state)
+        /** @var list<Contract> $contracts */
+        $contracts = $this->createAdminListQueryBuilder($state)
             ->orderBy('contract.'.$sortBy, $sortDirection)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        return $contracts;
     }
 
     public function countForAdminList(?ContractState $state = null): int

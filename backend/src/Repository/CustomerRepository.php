@@ -46,14 +46,16 @@ class CustomerRepository extends ServiceEntityRepository
         ?string $query = null,
         string $sortBy = 'createdAt',
         string $sortDirection = 'DESC',
-    ): array
-    {
-        return $this->createAdminListQueryBuilder($query)
+    ): array {
+        /** @var list<Customer> $customers */
+        $customers = $this->createAdminListQueryBuilder($query)
             ->orderBy('customer.'.$sortBy, $sortDirection)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        return $customers;
     }
 
     public function countForAdminList(?string $query = null): int

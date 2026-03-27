@@ -14,7 +14,7 @@ use Psr\Log\NullLogger;
 final class WebPushSenderTest extends TestCase
 {
     #[Test]
-    public function it_skips_when_vapid_configuration_is_missing(): void
+    public function itSkipsWhenVapidConfigurationIsMissing(): void
     {
         $device = (new PushDevice())
             ->setToken(json_encode([
@@ -35,7 +35,7 @@ final class WebPushSenderTest extends TestCase
     }
 
     #[Test]
-    public function it_marks_invalid_subscription_payloads_as_invalid_tokens(): void
+    public function itMarksInvalidSubscriptionPayloadsAsInvalidTokens(): void
     {
         putenv('WEB_PUSH_VAPID_SUBJECT=mailto:test@example.com');
         putenv('WEB_PUSH_VAPID_PUBLIC_KEY='.str_repeat('A', 87));

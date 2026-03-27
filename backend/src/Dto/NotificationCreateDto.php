@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class NotificationCreateDto
 {
     /**
-     * @param string[] $courseIds empty array = global notification visible to all customers
+     * @param string[]    $courseIds   empty array = global notification visible to all customers
      * @param string|null $pinnedUntil ISO 8601 datetime — pin notification until this deadline
      */
     public function __construct(

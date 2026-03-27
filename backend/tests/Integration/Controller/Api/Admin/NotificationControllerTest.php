@@ -95,7 +95,7 @@ final class NotificationControllerTest extends WebTestCase
         $helper = ApiTestHelper::create($client);
         ['token' => $token] = $helper->createAdminAndLogin();
 
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < 3; ++$i) {
             $helper->adminRequest(Request::METHOD_POST, '/api/admin/notifications', $token, json_encode([
                 'courseIds' => [],
                 'title' => 'Paged Notification '.$i,

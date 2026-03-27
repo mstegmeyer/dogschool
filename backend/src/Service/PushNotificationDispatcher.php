@@ -12,9 +12,13 @@ use Psr\Log\NullLogger;
 
 final class PushNotificationDispatcher
 {
+    /** @var iterable<PushSenderInterface> */
     private iterable $pushSenders;
     private LoggerInterface $logger;
 
+    /**
+     * @param iterable<PushSenderInterface> $pushSenders
+     */
     public function __construct(
         private readonly PushDeviceRepository $pushDeviceRepository,
         iterable $pushSenders = [],
@@ -59,7 +63,7 @@ final class PushNotificationDispatcher
     private function findSender(string $provider): ?PushSenderInterface
     {
         foreach ($this->pushSenders as $pushSender) {
-            if ($pushSender instanceof PushSenderInterface && $pushSender->supports($provider)) {
+            if ($pushSender->supports($provider)) {
                 return $pushSender;
             }
         }

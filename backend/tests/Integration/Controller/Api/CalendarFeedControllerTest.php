@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Controller\Api;
 
+use App\Entity\Booking;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
-use App\Entity\Booking;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Enum\CreditTransactionType;
+use App\Repository\BookingRepository;
 use App\Repository\CourseDateRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
 use App\Repository\CreditTransactionRepository;
 use App\Repository\DogRepository;
-use App\Repository\BookingRepository;
 use App\Tests\Helper\ApiTestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;

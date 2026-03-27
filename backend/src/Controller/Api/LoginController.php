@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
-use App\Entity\CourseDate;
 use App\Repository\BookingRepository;
 use App\Repository\CustomerRepository;
 use App\Service\CustomerCalendarFeedBuilder;

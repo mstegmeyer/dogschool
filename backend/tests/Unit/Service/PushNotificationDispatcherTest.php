@@ -7,8 +7,8 @@ namespace App\Tests\Unit\Service;
 use App\Entity\Notification;
 use App\Entity\PushDevice;
 use App\Repository\PushDeviceRepository;
-use App\Service\Push\PushSendResult;
 use App\Service\Push\PushSenderInterface;
+use App\Service\Push\PushSendResult;
 use App\Service\PushNotificationDispatcher;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -28,7 +28,7 @@ final class PushNotificationDispatcherTest extends TestCase
     }
 
     #[Test]
-    public function it_dispatches_notifications_to_supported_senders(): void
+    public function itDispatchesNotificationsToSupportedSenders(): void
     {
         $webDevice = (new PushDevice())
             ->setToken('{"endpoint":"https://example.com/push"}')
@@ -61,7 +61,7 @@ final class PushNotificationDispatcherTest extends TestCase
     }
 
     #[Test]
-    public function it_removes_invalid_tokens_after_send_attempt(): void
+    public function itRemovesInvalidTokensAfterSendAttempt(): void
     {
         $device = (new PushDevice())
             ->setToken('stale-token')

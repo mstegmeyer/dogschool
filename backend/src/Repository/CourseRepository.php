@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\Booking;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CreditTransaction;
@@ -156,9 +155,7 @@ class CourseRepository extends ServiceEntityRepository
             }
 
             foreach ($courseDate->getBookings()->toArray() as $booking) {
-                if ($booking instanceof Booking) {
-                    $em->remove($booking);
-                }
+                $em->remove($booking);
             }
 
             $em->remove($courseDate);

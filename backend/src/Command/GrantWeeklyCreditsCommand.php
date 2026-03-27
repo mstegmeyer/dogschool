@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\Contract;
-use App\Enum\ContractState;
-use App\Enum\ContractType;
 use App\Repository\ContractRepository;
 use App\Service\CreditService;
 use Symfony\Component\Console\Attribute\AsCommand;

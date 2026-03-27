@@ -96,8 +96,7 @@ final class ContractController extends AbstractController
     public function cancel(
         string $id,
         #[MapRequestPayload(acceptFormat: 'json')] ContractCancellationDto $dto,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $contract = $this->contractRepository->find($id);
         if ($contract === null) {
             return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);

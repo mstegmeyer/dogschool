@@ -80,6 +80,6 @@ final class CourseTypeControllerTest extends WebTestCase
             'code' => '',
             'name' => '',
         ]));
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 }

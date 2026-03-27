@@ -12,7 +12,6 @@ use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
-use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
 use App\Enum\RecurrenceKind;
 use App\Repository\BookingRepository;

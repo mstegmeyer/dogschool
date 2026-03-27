@@ -207,7 +207,7 @@ final class CourseControllerTest extends WebTestCase
 
         $courseRepo = $container->get(CourseRepository::class);
         foreach ([1, 2, 3] as $dayOfWeek) {
-            $course = new \App\Entity\Course();
+            $course = new Course();
             $course->setDayOfWeek($dayOfWeek);
             $course->setStartTime('10:00');
             $course->setEndTime('11:00');

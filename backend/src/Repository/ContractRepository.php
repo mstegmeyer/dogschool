@@ -47,7 +47,8 @@ class ContractRepository extends ServiceEntityRepository
      */
     public function findCreditEligiblePerpetualByCustomer(Customer $customer): array
     {
-        return $this->createQueryBuilder('contract')
+        /** @var list<Contract> $contracts */
+        $contracts = $this->createQueryBuilder('contract')
             ->andWhere('contract.customer = :customer')
             ->andWhere('contract.type = :type')
             ->andWhere('contract.state IN (:states)')
@@ -57,6 +58,8 @@ class ContractRepository extends ServiceEntityRepository
             ->orderBy('contract.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $contracts;
     }
 
     /**
@@ -64,7 +67,8 @@ class ContractRepository extends ServiceEntityRepository
      */
     public function findAllCreditEligiblePerpetual(): array
     {
-        return $this->createQueryBuilder('contract')
+        /** @var list<Contract> $contracts */
+        $contracts = $this->createQueryBuilder('contract')
             ->andWhere('contract.type = :type')
             ->andWhere('contract.state IN (:states)')
             ->setParameter('type', ContractType::PERPETUAL)
@@ -72,6 +76,8 @@ class ContractRepository extends ServiceEntityRepository
             ->orderBy('contract.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+
+        return $contracts;
     }
 
     /**

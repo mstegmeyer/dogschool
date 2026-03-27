@@ -90,7 +90,8 @@ class CreditTransactionRepository extends ServiceEntityRepository
      */
     public function findWeeklyGrantsAfterWeek(Contract $contract, string $weekRef): array
     {
-        return $this->createQueryBuilder('ct')
+        /** @var list<CreditTransaction> $transactions */
+        $transactions = $this->createQueryBuilder('ct')
             ->andWhere('ct.contract = :contract')
             ->andWhere('ct.type = :type')
             ->andWhere('ct.weekRef > :weekRef')
@@ -100,6 +101,8 @@ class CreditTransactionRepository extends ServiceEntityRepository
             ->orderBy('ct.weekRef', 'ASC')
             ->getQuery()
             ->getResult();
+
+        return $transactions;
     }
 
     public function save(CreditTransaction $entity, bool $flush = true): void

@@ -8,7 +8,7 @@
       <UTabs :items="tabs" @change="onTabChange">
         <template #item="{ item }">
           <form class="space-y-4 pt-4 min-w-0" @submit.prevent="handleLogin">
-            <UFormGroup v-if="item.key === 'customer'" label="E-Mail">
+            <UFormGroup v-if="item.key === 'customer'" label="E-Mail" :error="errorFor('email')">
               <UInput
                 v-model="email"
                 type="email"
@@ -18,10 +18,11 @@
                 autocorrect="off"
                 spellcheck="false"
                 required
+                @update:model-value="clearFieldError('email')"
               />
             </UFormGroup>
 
-            <UFormGroup v-if="item.key === 'admin'" label="Benutzername">
+            <UFormGroup v-if="item.key === 'admin'" label="Benutzername" :error="errorFor('username')">
               <UInput
                 v-model="username"
                 placeholder="florian"
@@ -30,14 +31,15 @@
                 autocorrect="off"
                 spellcheck="false"
                 required
+                @update:model-value="clearFieldError('username')"
               />
             </UFormGroup>
 
-            <UFormGroup label="Passwort">
-              <UInput v-model="password" type="password" placeholder="••••••••" required />
+            <UFormGroup label="Passwort" :error="errorFor('password')">
+              <UInput v-model="password" type="password" placeholder="••••••••" required @update:model-value="clearFieldError('password')" />
             </UFormGroup>
 
-            <UAlert v-if="error" color="red" variant="soft" :title="error" icon="i-heroicons-exclamation-triangle" />
+            <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
 
             <UButton type="submit" block :loading="loading" size="lg">
               Anmelden
@@ -74,12 +76,12 @@ const activeTab = ref('customer')
 const email = ref('')
 const username = ref('')
 const password = ref('')
-const error = ref('')
 const loading = ref(false)
+const { formError, clearFormErrors, clearFieldError, setFieldError, setFormError, errorFor } = useFormFeedback()
 
 function onTabChange(index: number) {
   activeTab.value = tabs[index].key
-  error.value = ''
+  clearFormErrors()
 }
 
 function resolveLoginError(cause: unknown): string {
@@ -102,8 +104,19 @@ function resolveLoginError(cause: unknown): string {
 }
 
 async function handleLogin() {
+  clearFormErrors()
+  if (activeTab.value === 'admin') {
+    if (!username.value.trim()) setFieldError('username', 'Bitte einen Benutzernamen angeben.')
+  } else {
+    if (!email.value.trim()) setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.')
+  }
+  if (!password.value) setFieldError('password', 'Bitte ein Passwort angeben.')
+  if (errorFor('email') || errorFor('username') || errorFor('password')) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   loading.value = true
-  error.value = ''
   try {
     if (activeTab.value === 'admin') {
       await loginAdmin(username.value, password.value)
@@ -113,7 +126,7 @@ async function handleLogin() {
       navigateTo('/customer')
     }
   } catch (cause) {
-    error.value = resolveLoginError(cause)
+    setFormError(resolveLoginError(cause))
   } finally {
     loading.value = false
   }

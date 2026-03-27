@@ -93,21 +93,23 @@
           </h3>
         </template>
         <form class="space-y-4" @submit.prevent="saveCourseType">
-          <UFormGroup label="Kürzel">
-            <UInput v-model="form.code" placeholder="z.B. AGI" maxlength="20" required />
+          <UFormGroup label="Kürzel" :error="errorFor('code')">
+            <UInput v-model="form.code" placeholder="z.B. AGI" maxlength="20" required @update:model-value="clearFieldError('code')" />
           </UFormGroup>
-          <UFormGroup label="Name">
-            <UInput v-model="form.name" placeholder="z.B. Agility" required />
+          <UFormGroup label="Name" :error="errorFor('name')">
+            <UInput v-model="form.name" placeholder="z.B. Agility" required @update:model-value="clearFieldError('name')" />
           </UFormGroup>
-          <UFormGroup label="Wiederholungsart">
+          <UFormGroup label="Wiederholungsart" :error="errorFor('recurrenceKind')">
             <USelectMenu
               v-model="form.recurrenceKind"
               :options="recurrenceOptions"
               value-attribute="value"
+              @update:model-value="clearFieldError('recurrenceKind')"
             />
           </UFormGroup>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showModal = false" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeModal" />
             <UButton type="submit" :loading="saving" label="Speichern" />
           </div>
         </form>
@@ -123,6 +125,7 @@ definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const courseTypes = ref<CourseType[]>([])
 const loading = ref(true)
@@ -163,6 +166,7 @@ function openCreateModal() {
   form.code = ''
   form.name = ''
   form.recurrenceKind = 'RECURRING'
+  clearFormErrors()
   showModal.value = true
 }
 
@@ -171,10 +175,25 @@ function openEditModal(ct: CourseType) {
   form.code = ct.code
   form.name = ct.name
   form.recurrenceKind = ct.recurrenceKind
+  clearFormErrors()
   showModal.value = true
 }
 
+function closeModal() {
+  showModal.value = false
+  clearFormErrors()
+}
+
 async function saveCourseType() {
+  clearFormErrors()
+  if (!form.code.trim()) setFieldError('code', 'Bitte ein Kürzel angeben.')
+  if (!form.name.trim()) setFieldError('name', 'Bitte einen Namen angeben.')
+  if (!form.recurrenceKind) setFieldError('recurrenceKind', 'Bitte eine Wiederholungsart wählen.')
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   saving.value = true
   try {
     const payload = { code: form.code, name: form.name, recurrenceKind: form.recurrenceKind }
@@ -185,19 +204,23 @@ async function saveCourseType() {
       await api.post('/api/admin/course-types', payload)
       toast.add({ title: 'Kursart erstellt', color: 'green' })
     }
-    showModal.value = false
+    closeModal()
     await loadCourseTypes()
-  } catch {
-    toast.add({ title: 'Fehler beim Speichern', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Die Kursart konnte nicht gespeichert werden.')
   } finally {
     saving.value = false
   }
 }
 
 async function deleteCourseType(ct: CourseType) {
-  await api.del(`/api/admin/course-types/${ct.id}`)
-  toast.add({ title: 'Kursart gelöscht', color: 'green' })
-  await loadCourseTypes()
+  try {
+    await api.del(`/api/admin/course-types/${ct.id}`)
+    toast.add({ title: 'Kursart gelöscht', color: 'green' })
+    await loadCourseTypes()
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Die Kursart konnte nicht gelöscht werden.', { preferFieldSummary: false }), color: 'red' })
+  }
 }
 
 async function loadCourseTypes(): Promise<void> {

@@ -13,47 +13,48 @@
     </UCard>
     <UCard v-else>
       <form class="space-y-4" @submit.prevent="saveProfile">
-        <UFormGroup label="Name">
-          <UInput v-model="form.name" />
+        <UFormGroup label="Name" :error="errorFor('name')">
+          <UInput v-model="form.name" @update:model-value="clearFieldError('name')" />
         </UFormGroup>
-        <UFormGroup label="E-Mail">
-          <UInput v-model="form.email" type="email" />
+        <UFormGroup label="E-Mail" :error="errorFor('email')">
+          <UInput v-model="form.email" type="email" @update:model-value="clearFieldError('email')" />
         </UFormGroup>
 
         <UDivider label="Adresse" />
 
         <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="Straße" class="col-span-2">
-            <UInput v-model="form.address.street" />
+          <UFormGroup label="Straße" class="col-span-2" :error="errorFor('address.street')">
+            <UInput v-model="form.address.street" @update:model-value="clearFieldError('address.street')" />
           </UFormGroup>
-          <UFormGroup label="PLZ">
-            <UInput v-model="form.address.postalCode" />
+          <UFormGroup label="PLZ" :error="errorFor('address.postalCode')">
+            <UInput v-model="form.address.postalCode" @update:model-value="clearFieldError('address.postalCode')" />
           </UFormGroup>
-          <UFormGroup label="Ort">
-            <UInput v-model="form.address.city" />
+          <UFormGroup label="Ort" :error="errorFor('address.city')">
+            <UInput v-model="form.address.city" @update:model-value="clearFieldError('address.city')" />
           </UFormGroup>
         </div>
 
         <UDivider label="Bankverbindung" />
 
         <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="IBAN" class="col-span-2">
-            <UInput v-model="form.bankAccount.iban" />
+          <UFormGroup label="IBAN" class="col-span-2" :error="errorFor('bankAccount.iban')">
+            <UInput v-model="form.bankAccount.iban" @update:model-value="clearFieldError('bankAccount.iban')" />
           </UFormGroup>
-          <UFormGroup label="BIC">
-            <UInput v-model="form.bankAccount.bic" />
+          <UFormGroup label="BIC" :error="errorFor('bankAccount.bic')">
+            <UInput v-model="form.bankAccount.bic" @update:model-value="clearFieldError('bankAccount.bic')" />
           </UFormGroup>
-          <UFormGroup label="Kontoinhaber">
-            <UInput v-model="form.bankAccount.accountHolder" />
+          <UFormGroup label="Kontoinhaber" :error="errorFor('bankAccount.accountHolder')">
+            <UInput v-model="form.bankAccount.accountHolder" @update:model-value="clearFieldError('bankAccount.accountHolder')" />
           </UFormGroup>
         </div>
 
         <UDivider label="Passwort ändern" />
 
-        <UFormGroup label="Neues Passwort (optional)">
-          <UInput v-model="form.password" type="password" placeholder="Leer lassen für keine Änderung" />
+        <UFormGroup label="Neues Passwort (optional)" :error="errorFor('password')">
+          <UInput v-model="form.password" type="password" placeholder="Leer lassen für keine Änderung" @update:model-value="clearFieldError('password')" />
         </UFormGroup>
 
+        <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
         <UButton type="submit" :loading="saving" label="Speichern" />
       </form>
     </UCard>
@@ -132,6 +133,7 @@ const {
   enablePush,
   disablePush,
 } = usePushNotifications()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const saving = ref(false)
 const notificationSaving = ref(false)
@@ -236,6 +238,14 @@ const canEnableNotifications = computed(() => ['available', 'install-required', 
 const canDisableNotifications = computed(() => pushStatus.value === 'enabled')
 
 async function saveProfile(): Promise<void> {
+  clearFormErrors()
+  if (!form.name.trim()) setFieldError('name', 'Bitte einen Namen angeben.')
+  if (!form.email.trim()) setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.')
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   saving.value = true
   try {
     const payload: ProfileUpdatePayload = {
@@ -248,8 +258,8 @@ async function saveProfile(): Promise<void> {
     await api.put('/api/customer/me', payload)
     await fetchProfile()
     toast.add({ title: 'Profil gespeichert', color: 'green' })
-  } catch {
-    toast.add({ title: 'Fehler beim Speichern', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Das Profil konnte nicht gespeichert werden.')
   } finally {
     saving.value = false
   }

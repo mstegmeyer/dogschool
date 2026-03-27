@@ -28,7 +28,10 @@
                 {{ contractStateLabel(c.state) }}
               </UBadge>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3 text-sm">
+            <div
+              class="grid grid-cols-2 gap-4 mt-3 text-sm"
+              :class="c.endDate ? 'sm:grid-cols-4' : 'sm:grid-cols-3'"
+            >
               <div>
                 <p class="text-xs text-slate-400">Kurse / Woche</p>
                 <p class="font-medium text-slate-700">{{ c.coursesPerWeek }}x</p>
@@ -41,9 +44,9 @@
                 <p class="text-xs text-slate-400">Beginn</p>
                 <p class="font-medium text-slate-700">{{ c.startDate ? formatDate(c.startDate) : '–' }}</p>
               </div>
-              <div>
-                <p class="text-xs text-slate-400">Erstellt</p>
-                <p class="font-medium text-slate-700">{{ formatDate(c.createdAt) }}</p>
+              <div v-if="c.endDate">
+                <p class="text-xs text-slate-400">Ende</p>
+                <p class="font-medium text-slate-700">{{ formatDate(c.endDate) }}</p>
               </div>
             </div>
           </div>
@@ -58,26 +61,29 @@
           <h3 class="font-semibold text-slate-800">Vertrag anfragen</h3>
         </template>
         <form class="space-y-4" @submit.prevent="requestContract">
-          <UFormGroup label="Hund">
+          <UFormGroup label="Hund" :error="errorFor('dogId')">
             <USelectMenu
               v-model="requestForm.dogId"
               :options="dogOptions"
               value-attribute="value"
               placeholder="Hund auswählen"
+              @update:model-value="clearFieldError('dogId')"
             />
           </UFormGroup>
-          <UFormGroup label="Kurse pro Woche">
-            <UInput v-model.number="requestForm.coursesPerWeek" type="number" min="1" max="7" />
+          <UFormGroup label="Kurse pro Woche" :error="errorFor('coursesPerWeek')">
+            <UInput v-model.number="requestForm.coursesPerWeek" type="number" min="1" max="7" @update:model-value="clearFieldError('coursesPerWeek')" />
           </UFormGroup>
-          <UFormGroup label="Beginn" help="Nur der erste Tag eines Monats ist möglich.">
+          <UFormGroup label="Beginn" help="Nur der erste Tag eines Monats ist möglich." :error="errorFor('startDate')">
             <UInput
               v-model="requestForm.startDate"
               type="date"
               @change="normalizeRequestStartDate"
+              @update:model-value="clearFieldError('startDate')"
             />
           </UFormGroup>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showRequest = false" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeRequestModal" />
             <UButton type="submit" :loading="saving" label="Anfragen" />
           </div>
         </form>
@@ -94,6 +100,7 @@ definePageMeta({ layout: 'customer' })
 const api = useApi()
 const toast = useToast()
 const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice, toMonthStartIso, isFirstOfMonth, firstDayOfNextMonthIso } = useHelpers()
+const { formError, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const contracts = ref<Contract[]>([])
 const dogs = ref<Dog[]>([])
@@ -110,9 +117,25 @@ function normalizeRequestStartDate() {
   }
 }
 
+function closeRequestModal() {
+  showRequest.value = false
+  clearFormErrors()
+}
+
 async function requestContract() {
-  if (!requestForm.startDate || !isFirstOfMonth(requestForm.startDate)) {
-    toast.add({ title: 'Bitte einen Monatsersten als Startdatum wählen', color: 'red' })
+  clearFormErrors()
+
+  if (!requestForm.dogId) setFieldError('dogId', 'Bitte einen Hund auswählen.')
+  if (!requestForm.coursesPerWeek || requestForm.coursesPerWeek < 1 || requestForm.coursesPerWeek > 7) {
+    setFieldError('coursesPerWeek', 'Bitte 1 bis 7 Kurse pro Woche angeben.')
+  }
+  if (!requestForm.startDate) {
+    setFieldError('startDate', 'Bitte ein Startdatum wählen.')
+  } else if (!isFirstOfMonth(requestForm.startDate)) {
+    setFieldError('startDate', 'Bitte einen Monatsersten als Startdatum wählen.')
+  }
+  if (errorFor('dogId') || errorFor('coursesPerWeek') || errorFor('startDate')) {
+    setFormError('Bitte prüfe die markierten Felder.')
     return
   }
 
@@ -124,11 +147,11 @@ async function requestContract() {
       startDate: requestForm.startDate || null,
     })
     toast.add({ title: 'Vertrag angefragt', color: 'green' })
-    showRequest.value = false
+    closeRequestModal()
     requestForm.startDate = firstDayOfNextMonthIso()
     await loadContracts()
-  } catch {
-    toast.add({ title: 'Fehler bei der Anfrage', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Die Anfrage konnte nicht gespeichert werden.')
   } finally {
     saving.value = false
   }

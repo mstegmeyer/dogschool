@@ -225,7 +225,10 @@ const upcomingDates = computed(() =>
 
 async function quickBook(cd: CourseDate) {
   const dogId = dogIdForBooking(cd)
-  if (!dogId) return
+  if (!dogId) {
+    toast.add({ title: 'Bitte zuerst einen Hund auswählen.', color: 'red' })
+    return
+  }
   bookingInProgress.value = cd.id
   try {
     const res = await api.post<BookingResponse>(`/api/customer/calendar/course-dates/${cd.id}/book`, { dogId })
@@ -233,8 +236,8 @@ async function quickBook(cd: CourseDate) {
     creditBalance.value = res.creditBalance
     delete dogIdByCourseDate[cd.id]
     await reloadCalendar()
-  } catch {
-    toast.add({ title: 'Buchung fehlgeschlagen', color: 'red' })
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Die Buchung konnte nicht gespeichert werden.', { preferFieldSummary: false }), color: 'red' })
   } finally {
     bookingInProgress.value = null
   }

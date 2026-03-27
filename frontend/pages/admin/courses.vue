@@ -124,23 +124,23 @@
           <h3 class="font-semibold text-slate-800">{{ editingCourse ? 'Kurs bearbeiten' : 'Neuer Kurs' }}</h3>
         </template>
         <form class="space-y-4" @submit.prevent="saveCourse">
-          <UFormGroup label="Kurstyp (Code)">
-            <UInput v-model="form.typeCode" placeholder="z.B. MH, JUHU, AGI" required />
+          <UFormGroup label="Kurstyp (Code)" :error="errorFor('typeCode')">
+            <UInput v-model="form.typeCode" placeholder="z.B. MH, JUHU, AGI" required @update:model-value="clearFieldError('typeCode')" />
           </UFormGroup>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormGroup label="Wochentag">
-              <USelectMenu v-model="form.dayOfWeek" :options="dayOptions" value-attribute="value" />
+            <UFormGroup label="Wochentag" :error="errorFor('dayOfWeek')">
+              <USelectMenu v-model="form.dayOfWeek" :options="dayOptions" value-attribute="value" @update:model-value="clearFieldError('dayOfWeek')" />
             </UFormGroup>
-            <UFormGroup label="Stufe (0-4)">
-              <UInput v-model.number="form.level" type="number" min="0" max="4" />
+            <UFormGroup label="Stufe (0-4)" :error="errorFor('level')">
+              <UInput v-model.number="form.level" type="number" min="0" max="4" @update:model-value="clearFieldError('level')" />
             </UFormGroup>
           </div>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormGroup label="Startzeit">
-              <UInput v-model="form.startTime" type="time" required />
+            <UFormGroup label="Startzeit" :error="errorFor('startTime')">
+              <UInput v-model="form.startTime" type="time" required @update:model-value="clearFieldError('startTime')" />
             </UFormGroup>
-            <UFormGroup label="Endzeit">
-              <UInput v-model="form.endTime" type="time" required />
+            <UFormGroup label="Endzeit" :error="errorFor('endTime')">
+              <UInput v-model="form.endTime" type="time" required @update:model-value="clearFieldError('endTime')" />
             </UFormGroup>
           </div>
           <div
@@ -149,11 +149,12 @@
           >
             {{ scheduleHintText }}
           </div>
-          <UFormGroup label="Kommentar">
-            <UTextarea v-model="form.comment" placeholder="Optionaler Kommentar" />
+          <UFormGroup label="Kommentar" :error="errorFor('comment')">
+            <UTextarea v-model="form.comment" placeholder="Optionaler Kommentar" @update:model-value="clearFieldError('comment')" />
           </UFormGroup>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showModal = false" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeCourseModal" />
             <UButton type="submit" :loading="saving" label="Speichern" />
           </div>
         </form>
@@ -171,7 +172,7 @@
             Der Kurs <span class="font-medium text-slate-800">{{ archiveCourseLabel }}</span> wird archiviert. Alle Kurstermine ab dem gewählten Datum werden entfernt, und bestehende Buchungen auf diesen Terminen bekommen ihre Credits automatisch zurück.
           </p>
 
-          <UFormGroup label="Termine entfernen ab">
+          <UFormGroup label="Termine entfernen ab" :error="archiveError">
             <UInput
               v-model="archiveForm.removeFromDate"
               type="date"
@@ -208,6 +209,7 @@ definePageMeta({ layout: 'admin' })
 const api = useApi()
 const toast = useToast()
 const { dayName, formatDate, levelLabel, todayIso } = useHelpers()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const courses = ref<Course[]>([])
 const loading = ref(true)
@@ -278,6 +280,7 @@ const form = reactive({
 const archiveForm = reactive({
   removeFromDate: todayIso(),
 })
+const archiveError = ref('')
 
 const columns = [
   { key: 'type', label: 'Kurstyp' },
@@ -328,6 +331,7 @@ function openCreateModal() {
   form.endTime = '11:00'
   form.level = 0
   form.comment = ''
+  clearFormErrors()
   showModal.value = true
 }
 
@@ -339,12 +343,19 @@ function openEditModal(course: Course) {
   form.endTime = course.endTime
   form.level = course.level
   form.comment = course.comment || ''
+  clearFormErrors()
   showModal.value = true
+}
+
+function closeCourseModal() {
+  showModal.value = false
+  clearFormErrors()
 }
 
 function openArchiveModal(course: Course) {
   archiveCourse.value = course
   archiveForm.removeFromDate = archiveMinDate.value
+  archiveError.value = ''
   showArchiveModal.value = true
 }
 
@@ -354,6 +365,7 @@ function closeArchiveModal() {
   showArchiveModal.value = false
   archiveCourse.value = null
   archiveForm.removeFromDate = archiveMinDate.value
+  archiveError.value = ''
 }
 
 function resolveArchiveError(cause: unknown): string {
@@ -363,6 +375,17 @@ function resolveArchiveError(cause: unknown): string {
 }
 
 async function saveCourse() {
+  clearFormErrors()
+  if (!form.typeCode.trim()) setFieldError('typeCode', 'Bitte einen Kurstyp angeben.')
+  if (!form.dayOfWeek) setFieldError('dayOfWeek', 'Bitte einen Wochentag wählen.')
+  if (form.level < 0 || form.level > 4) setFieldError('level', 'Bitte eine Stufe zwischen 0 und 4 angeben.')
+  if (!form.startTime) setFieldError('startTime', 'Bitte eine Startzeit angeben.')
+  if (!form.endTime) setFieldError('endTime', 'Bitte eine Endzeit angeben.')
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   saving.value = true
   try {
     if (editingCourse.value) {
@@ -372,10 +395,10 @@ async function saveCourse() {
       await api.post('/api/admin/courses', form)
       toast.add({ title: 'Kurs erstellt', color: 'green' })
     }
-    showModal.value = false
+    closeCourseModal()
     await loadCourses()
-  } catch {
-    toast.add({ title: 'Fehler beim Speichern', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Der Kurs konnte nicht gespeichert werden.')
   } finally {
     saving.value = false
   }
@@ -391,13 +414,18 @@ async function toggleArchive(course: Course) {
     await api.post(`/api/admin/courses/${course.id}/unarchive`)
     toast.add({ title: 'Kurs reaktiviert', color: 'green' })
     await loadCourses()
-  } catch {
-    toast.add({ title: 'Fehler beim Reaktivieren', color: 'red' })
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Der Kurs konnte nicht reaktiviert werden.', { preferFieldSummary: false }), color: 'red' })
   }
 }
 
 async function confirmArchive() {
-  if (!archiveCourse.value || !archiveForm.removeFromDate) return
+  if (!archiveCourse.value) return
+  archiveError.value = ''
+  if (!archiveForm.removeFromDate) {
+    archiveError.value = 'Bitte ein Datum auswählen.'
+    return
+  }
 
   archiving.value = true
 
@@ -419,9 +447,10 @@ async function confirmArchive() {
     showArchiveModal.value = false
     archiveCourse.value = null
     archiveForm.removeFromDate = archiveMinDate.value
+    archiveError.value = ''
     await loadCourses()
   } catch (error) {
-    toast.add({ title: resolveArchiveError(error), color: 'red' })
+    archiveError.value = resolveArchiveError(error)
   } finally {
     archiving.value = false
   }

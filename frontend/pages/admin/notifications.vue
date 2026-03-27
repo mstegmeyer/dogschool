@@ -144,7 +144,7 @@
           </h3>
         </template>
         <form class="space-y-4" @submit.prevent="saveNotification">
-          <UFormGroup label="Reichweite">
+          <UFormGroup label="Reichweite" :error="errorFor('courseIds')">
             <div class="flex items-center gap-3 mb-2">
               <UToggle v-model="form.isGlobal" />
               <span class="text-sm text-slate-600">
@@ -158,19 +158,21 @@
               value-attribute="value"
               placeholder="Kurse auswählen…"
               multiple
+              @update:model-value="clearFieldError('courseIds')"
             />
           </UFormGroup>
-          <UFormGroup label="Titel">
-            <UInput v-model="form.title" placeholder="Betreff" required />
+          <UFormGroup label="Titel" :error="errorFor('title')">
+            <UInput v-model="form.title" placeholder="Betreff" required @update:model-value="clearFieldError('title')" />
           </UFormGroup>
-          <UFormGroup label="Nachricht">
-            <UTextarea v-model="form.message" placeholder="Nachricht an die Kursteilnehmer…" :rows="4" required />
+          <UFormGroup label="Nachricht" :error="errorFor('message')">
+            <UTextarea v-model="form.message" placeholder="Nachricht an die Kursteilnehmer…" :rows="4" required @update:model-value="clearFieldError('message')" />
           </UFormGroup>
-          <UFormGroup label="Angepinnt bis" hint="Optional – Mitteilung wird bis zu diesem Datum oben angezeigt">
-            <UInput v-model="form.pinnedUntil" type="date" />
+          <UFormGroup label="Angepinnt bis" hint="Optional – Mitteilung wird bis zu diesem Datum oben angezeigt" :error="errorFor('pinnedUntil')">
+            <UInput v-model="form.pinnedUntil" type="date" @update:model-value="clearFieldError('pinnedUntil')" />
           </UFormGroup>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showModal = false" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeModal" />
             <UButton type="submit" :loading="saving" label="Speichern" />
           </div>
         </form>
@@ -187,6 +189,7 @@ definePageMeta({ layout: 'admin' })
 const api = useApi()
 const toast = useToast()
 const { formatDate, formatDateTime, formatNotificationCourse, dayName } = useHelpers()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const notifications = ref<AppNotification[]>([])
 const courses = ref<Course[]>([])
@@ -240,6 +243,7 @@ function openCreateModal() {
   form.message = ''
   form.isGlobal = false
   form.pinnedUntil = ''
+  clearFormErrors()
   showModal.value = true
 }
 
@@ -250,10 +254,25 @@ function openEditModal(n: AppNotification) {
   form.isGlobal = n.isGlobal
   form.courseIds = n.isGlobal ? [] : [...n.courseIds]
   form.pinnedUntil = pinnedUntilToDateInput(n.pinnedUntil)
+  clearFormErrors()
   showModal.value = true
 }
 
+function closeModal() {
+  showModal.value = false
+  clearFormErrors()
+}
+
 async function saveNotification() {
+  clearFormErrors()
+  if (!form.isGlobal && form.courseIds.length === 0) setFieldError('courseIds', 'Bitte mindestens einen Kurs auswählen.')
+  if (!form.title.trim()) setFieldError('title', 'Bitte einen Titel angeben.')
+  if (!form.message.trim()) setFieldError('message', 'Bitte eine Nachricht eingeben.')
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   saving.value = true
   try {
     const courseIds = form.isGlobal ? [] : form.courseIds
@@ -275,19 +294,23 @@ async function saveNotification() {
       })
       toast.add({ title: 'Mitteilung erstellt', color: 'green' })
     }
-    showModal.value = false
+    closeModal()
     await loadNotifications()
-  } catch {
-    toast.add({ title: 'Fehler beim Speichern', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Die Mitteilung konnte nicht gespeichert werden.')
   } finally {
     saving.value = false
   }
 }
 
 async function deleteNotification(n: AppNotification) {
-  await api.del(`/api/admin/notifications/${n.id}`)
-  toast.add({ title: 'Mitteilung gelöscht', color: 'green' })
-  await loadNotifications()
+  try {
+    await api.del(`/api/admin/notifications/${n.id}`)
+    toast.add({ title: 'Mitteilung gelöscht', color: 'green' })
+    await loadNotifications()
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Die Mitteilung konnte nicht gelöscht werden.', { preferFieldSummary: false }), color: 'red' })
+  }
 }
 
 async function loadNotifications(): Promise<void> {

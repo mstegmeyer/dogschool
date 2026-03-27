@@ -103,13 +103,14 @@
           </div>
           <UDivider class="my-3" />
           <form class="space-y-3" @submit.prevent="adjustCredits">
-            <UFormGroup label="Korrektur">
-              <UInput v-model.number="adjustAmount" type="number" placeholder="z.B. 5 oder -2" />
+            <UFormGroup label="Korrektur" :error="errorFor('amount')">
+              <UInput v-model.number="adjustAmount" type="number" placeholder="z.B. 5 oder -2" @update:model-value="clearFieldError('amount')" />
             </UFormGroup>
-            <UFormGroup label="Beschreibung">
-              <UInput v-model="adjustDescription" placeholder="Grund der Korrektur" />
+            <UFormGroup label="Beschreibung" :error="errorFor('description')">
+              <UInput v-model="adjustDescription" placeholder="Grund der Korrektur" @update:model-value="clearFieldError('description')" />
             </UFormGroup>
-            <UButton type="submit" size="sm" block :disabled="!adjustAmount || !adjustDescription">
+            <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
+            <UButton type="submit" size="sm" block>
               Guthaben anpassen
             </UButton>
           </form>
@@ -187,6 +188,7 @@ const route = useRoute()
 const api = useApi()
 const toast = useToast()
 const { formatDate, formatDateTime, creditTypeLabel } = useHelpers()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const customer = ref<Customer | null>(null)
 const creditBalance = ref(0)
@@ -216,16 +218,27 @@ async function loadCredits(): Promise<void> {
 }
 
 async function adjustCredits(): Promise<void> {
-  if (!adjustAmount.value || !adjustDescription.value) return
-  await api.post('/api/admin/credits/adjust', {
-    customerId: route.params.id,
-    amount: adjustAmount.value,
-    description: adjustDescription.value,
-  })
-  adjustAmount.value = null
-  adjustDescription.value = ''
-  toast.add({ title: 'Guthaben angepasst', color: 'green' })
-  await loadCredits()
+  clearFormErrors()
+  if (adjustAmount.value === null || adjustAmount.value === 0) setFieldError('amount', 'Bitte eine Korrektur ungleich 0 angeben.')
+  if (!adjustDescription.value.trim()) setFieldError('description', 'Bitte eine Beschreibung angeben.')
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
+  try {
+    await api.post('/api/admin/credits/adjust', {
+      customerId: route.params.id,
+      amount: adjustAmount.value,
+      description: adjustDescription.value,
+    })
+    adjustAmount.value = null
+    adjustDescription.value = ''
+    toast.add({ title: 'Guthaben angepasst', color: 'green' })
+    await loadCredits()
+  } catch (cause) {
+    applyApiError(cause, 'Die Korrektur konnte nicht gespeichert werden.')
+  }
 }
 
 onMounted(async () => {

@@ -148,19 +148,21 @@
             <strong>{{ contractToCancel?.dogName }}</strong>
             ({{ contractToCancel?.customerName }}) noch Credits gutgeschrieben werden sollen.
           </p>
-          <UFormGroup label="Vertragsende" help="Nur der letzte Tag eines Monats ist möglich.">
+          <UFormGroup label="Vertragsende" help="Nur der letzte Tag eines Monats ist möglich." :error="errorFor('endDate')">
             <UInput
               v-model="cancelForm.endDate"
               type="date"
               :min="contractToCancel?.startDate ?? undefined"
               @change="normalizeCancelEndDate"
+              @update:model-value="clearFieldError('endDate')"
             />
           </UFormGroup>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
         </div>
         <template #footer>
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showCancelModal = false" />
-            <UButton color="red" label="Kündigen" :loading="cancelling" :disabled="!cancelForm.endDate" @click="confirmCancel" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeCancelModal" />
+            <UButton color="red" label="Kündigen" :loading="cancelling" @click="confirmCancel" />
           </div>
         </template>
       </UCard>
@@ -176,6 +178,7 @@ definePageMeta({ layout: 'admin' })
 const api = useApi()
 const toast = useToast()
 const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice, toMonthEndIso, isLastOfMonth } = useHelpers()
+const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const contracts = ref<Contract[]>([])
 const loading = ref(true)
@@ -225,7 +228,15 @@ const resultSummary = computed(() => {
 function openCancelConfirm(contract: Contract) {
   contractToCancel.value = contract
   cancelForm.endDate = contract.endDate ?? ''
+  clearFormErrors()
   showCancelModal.value = true
+}
+
+function closeCancelModal() {
+  showCancelModal.value = false
+  contractToCancel.value = null
+  cancelForm.endDate = ''
+  clearFormErrors()
 }
 
 function normalizeCancelEndDate() {
@@ -235,9 +246,15 @@ function normalizeCancelEndDate() {
 }
 
 async function confirmCancel() {
-  if (!contractToCancel.value || !cancelForm.endDate) return
-  if (!isLastOfMonth(cancelForm.endDate)) {
-    toast.add({ title: 'Bitte den letzten Tag eines Monats wählen', color: 'red' })
+  if (!contractToCancel.value) return
+  clearFormErrors()
+  if (!cancelForm.endDate) {
+    setFieldError('endDate', 'Bitte ein Enddatum wählen.')
+  } else if (!isLastOfMonth(cancelForm.endDate)) {
+    setFieldError('endDate', 'Bitte den letzten Tag eines Monats wählen.')
+  }
+  if (Object.keys(fieldErrors.value).length > 0) {
+    setFormError('Bitte prüfe die markierten Felder.')
     return
   }
   cancelling.value = true
@@ -246,27 +263,33 @@ async function confirmCancel() {
       endDate: cancelForm.endDate,
     })
     toast.add({ title: 'Vertrag gekündigt', color: 'red' })
-    showCancelModal.value = false
-    contractToCancel.value = null
-    cancelForm.endDate = ''
+    closeCancelModal()
     await loadContracts()
-  } catch {
-    toast.add({ title: 'Fehler beim Kündigen', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Der Vertrag konnte nicht gekündigt werden.')
   } finally {
     cancelling.value = false
   }
 }
 
 async function approve(contract: Contract) {
-  await api.post(`/api/admin/contracts/${contract.id}/approve`)
-  toast.add({ title: 'Vertrag genehmigt', color: 'green' })
-  await loadContracts()
+  try {
+    await api.post(`/api/admin/contracts/${contract.id}/approve`)
+    toast.add({ title: 'Vertrag genehmigt', color: 'green' })
+    await loadContracts()
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht genehmigt werden.', { preferFieldSummary: false }), color: 'red' })
+  }
 }
 
 async function decline(contract: Contract) {
-  await api.post(`/api/admin/contracts/${contract.id}/decline`)
-  toast.add({ title: 'Vertrag abgelehnt', color: 'amber' })
-  await loadContracts()
+  try {
+    await api.post(`/api/admin/contracts/${contract.id}/decline`)
+    toast.add({ title: 'Vertrag abgelehnt', color: 'amber' })
+    await loadContracts()
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht abgelehnt werden.', { preferFieldSummary: false }), color: 'red' })
+  }
 }
 
 async function loadContracts(): Promise<void> {

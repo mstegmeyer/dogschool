@@ -53,27 +53,29 @@
           <h3 class="font-semibold text-slate-800">Hund hinzufügen</h3>
         </template>
         <form class="space-y-4" @submit.prevent="addDog">
-          <UFormGroup label="Name">
-            <UInput v-model="newDog.name" placeholder="z.B. Bella" required />
+          <UFormGroup label="Name" :error="errorFor('name')">
+            <UInput v-model="newDog.name" placeholder="z.B. Bella" required @update:model-value="clearFieldError('name')" />
           </UFormGroup>
-          <UFormGroup label="Rasse">
+          <UFormGroup label="Rasse" :error="errorFor('race')">
             <UInput v-model="newDog.race" placeholder="z.B. Golden Retriever" />
           </UFormGroup>
           <div class="grid grid-cols-2 gap-4">
-            <UFormGroup label="Geschlecht">
+            <UFormGroup label="Geschlecht" :error="errorFor('gender')">
               <USelectMenu
                 v-model="newDog.gender"
                 :options="[{ label: 'Rüde', value: 'male' }, { label: 'Hündin', value: 'female' }]"
                 value-attribute="value"
                 placeholder="Auswählen"
+                @update:model-value="clearFieldError('gender')"
               />
             </UFormGroup>
-            <UFormGroup label="Farbe">
+            <UFormGroup label="Farbe" :error="errorFor('color')">
               <UInput v-model="newDog.color" placeholder="z.B. Golden" />
             </UFormGroup>
           </div>
+          <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
           <div class="flex justify-end gap-2">
-            <UButton variant="ghost" label="Abbrechen" @click="showAdd = false" />
+            <UButton variant="ghost" label="Abbrechen" @click="closeAddModal" />
             <UButton type="submit" :loading="saving" label="Hinzufügen" />
           </div>
         </form>
@@ -89,6 +91,7 @@ definePageMeta({ layout: 'customer' })
 
 const api = useApi()
 const toast = useToast()
+const { formError, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const dogs = ref<Dog[]>([])
 const loading = ref(true)
@@ -97,7 +100,26 @@ const saving = ref(false)
 
 const newDog = reactive({ name: '', race: '', gender: '', color: '' })
 
+function resetDogForm() {
+  newDog.name = ''
+  newDog.race = ''
+  newDog.gender = ''
+  newDog.color = ''
+}
+
+function closeAddModal() {
+  showAdd.value = false
+  clearFormErrors()
+}
+
 async function addDog() {
+  clearFormErrors()
+  if (!newDog.name.trim()) {
+    setFieldError('name', 'Bitte einen Namen angeben.')
+    setFormError('Bitte prüfe die markierten Felder.')
+    return
+  }
+
   saving.value = true
   try {
     await api.post('/api/customer/dogs', {
@@ -107,14 +129,11 @@ async function addDog() {
       color: newDog.color || null,
     })
     toast.add({ title: `${newDog.name} wurde hinzugefügt`, color: 'green' })
-    showAdd.value = false
-    newDog.name = ''
-    newDog.race = ''
-    newDog.gender = ''
-    newDog.color = ''
+    closeAddModal()
+    resetDogForm()
     await loadDogs()
-  } catch {
-    toast.add({ title: 'Fehler beim Hinzufügen', color: 'red' })
+  } catch (cause) {
+    applyApiError(cause, 'Der Hund konnte nicht hinzugefügt werden.')
   } finally {
     saving.value = false
   }

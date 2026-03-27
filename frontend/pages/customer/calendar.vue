@@ -309,14 +309,17 @@ function syncMondayFromDay() {
 
 async function bookDate(cd: CourseDate) {
   const dogId = dogIdForBooking(cd)
-  if (!dogId) return
+  if (!dogId) {
+    toast.add({ title: 'Bitte zuerst einen Hund auswählen.', color: 'red' })
+    return
+  }
   try {
     await api.post(`/api/customer/calendar/course-dates/${cd.id}/book`, { dogId })
     toast.add({ title: 'Termin gebucht', color: 'green' })
     delete dogIdByCourseDate[cd.id]
     await loadCalendar()
-  } catch {
-    toast.add({ title: 'Buchung fehlgeschlagen – eventuell nicht genug Credits', color: 'red' })
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Die Buchung konnte nicht gespeichert werden.', { preferFieldSummary: false }), color: 'red' })
   }
 }
 
@@ -328,8 +331,8 @@ async function cancelBooking(cd: CourseDate) {
     await api.del(`/api/customer/calendar/course-dates/${cd.id}/book?dogId=${dogId}`)
     toast.add({ title: 'Buchung storniert', color: 'amber' })
     await loadCalendar()
-  } catch {
-    toast.add({ title: 'Stornierung fehlgeschlagen', color: 'red' })
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Die Stornierung konnte nicht gespeichert werden.', { preferFieldSummary: false }), color: 'red' })
   }
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full min-w-0 overflow-hidden">
+  <div class="mx-auto w-full max-w-md min-w-0 overflow-hidden">
     <UCard class="auth-card">
       <template #header>
         <h2 class="text-lg font-semibold text-slate-800">Anmelden</h2>

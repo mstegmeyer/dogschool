@@ -13,6 +13,23 @@ dist-ssr
 *.local
 coverage
 
+# Nuxt (generated — never commit; run `nuxt prepare` or `nuxt dev`)
+.nuxt
+.output
+.nitro
+.cache
+
+# Vite / dependency pre-bundling cache
+node_modules/.cache
+
+# Local env (secrets / machine-specific)
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

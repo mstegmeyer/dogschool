@@ -17,6 +17,17 @@ export default defineNuxtConfig({
     },
   },
 
+  // Stub for client pre-transform: Vite resolves import("#app-manifest") even when SSR is stripped (nuxt/nuxt#33606).
+  vite: {
+    $client: {
+      resolve: {
+        alias: {
+          '#app-manifest': 'unenv/mock/empty',
+        },
+      },
+    },
+  },
+
   app: {
     head: {
       title: 'Komm! Hundeschule',

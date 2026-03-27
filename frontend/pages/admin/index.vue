@@ -5,10 +5,10 @@
     <AppSkeletonStatGrid
       v-if="loading"
       class="mb-8"
-      :count="4"
-      grid-classes="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4"
+      :count="3"
+      grid-classes="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3"
     />
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <UCard v-for="stat in stats" :key="stat.label">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg" :class="stat.bgClass">
@@ -26,7 +26,10 @@
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-slate-800">Offene Vertragsanfragen</h3>
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold text-slate-800">Offene Vertragsanfragen</h3>
+              <UBadge color="amber" variant="soft">{{ pendingContractRequests.length }}</UBadge>
+            </div>
             <UButton variant="ghost" size="xs" to="/admin/contracts">Alle anzeigen</UButton>
           </div>
         </template>
@@ -58,8 +61,11 @@
       <UCard>
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-slate-800">Neueste Kunden</h3>
-            <UButton variant="ghost" size="xs" to="/admin/customers">Alle anzeigen</UButton>
+            <div class="flex items-center gap-2">
+              <h3 class="font-semibold text-slate-800">Heutige Termine</h3>
+              <UBadge color="primary" variant="soft">{{ todaySchedule.length }}</UBadge>
+            </div>
+            <UButton variant="ghost" size="xs" to="/admin/calendar">Zum Kalender</UButton>
           </div>
         </template>
         <AppSkeletonCollection
@@ -68,18 +74,37 @@
           :mobile-cards="4"
           :meta-columns="0"
           :content-lines="2"
-          :show-actions="true"
         />
-        <div v-else-if="recentCustomers.length === 0" class="text-sm text-slate-400 py-4 text-center">
-          Noch keine Kunden
+        <div v-else-if="todaySchedule.length === 0" class="text-sm text-slate-400 py-4 text-center">
+          Keine Termine heute
         </div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="c in recentCustomers" :key="c.id" class="py-3 flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-700">{{ c.name }}</p>
-              <p class="text-xs text-slate-400">{{ c.email }}</p>
+          <div v-for="courseDate in todaySchedule" :key="courseDate.id" class="py-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p
+                class="text-sm font-medium truncate"
+                :class="courseDate.cancelled ? 'text-red-600 line-through' : 'text-slate-700'"
+              >
+                {{ courseDate.courseType?.name || 'Kurs' }}
+              </p>
+              <p class="text-xs text-slate-400">{{ courseDate.startTime }} – {{ courseDate.endTime }}</p>
             </div>
-            <UButton variant="ghost" size="xs" :to="`/admin/customers/${c.id}`">Details</UButton>
+            <div class="flex items-center gap-3 shrink-0">
+              <UTooltip
+                v-if="courseDate.bookingCount"
+                :text="courseDate.bookings?.map(b => `${b.dogName} (${b.customerName})`).join(', ') || ''"
+              >
+                <div class="flex items-center gap-1 text-slate-500">
+                  <UIcon name="i-heroicons-user-group" class="w-4 h-4 text-slate-400" />
+                  <span class="text-sm font-medium">{{ courseDate.bookingCount }}</span>
+                </div>
+              </UTooltip>
+              <div v-else class="flex items-center gap-1 text-slate-500">
+                <UIcon name="i-heroicons-user-group" class="w-4 h-4 text-slate-400" />
+                <span class="text-sm font-medium">0</span>
+              </div>
+              <UBadge v-if="courseDate.cancelled" color="red" variant="soft" size="xs">Abgesagt</UBadge>
+            </div>
           </div>
         </div>
       </UCard>
@@ -88,70 +113,78 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, Course, CourseDate, Customer, Contract } from '~/types'
+import type { ApiListResponse, Course, CourseDate, Contract } from '~/types'
 
 definePageMeta({ layout: 'admin' })
 
 const api = useApi()
-const { formatContractMonthlyPrice, todayIso } = useHelpers()
+const { formatContractMonthlyPrice, todayIso, getWeekMonday } = useHelpers()
 
 interface DashboardStat {
   label: string
-  value: number
+  value: number | string
   icon: string
   bgClass: string
   iconClass: string
 }
 
-const customers = ref<Customer[]>([])
 const contracts = ref<Contract[]>([])
 const courses = ref<Course[]>([])
 const calendarItems = ref<CourseDate[]>([])
 const loading = ref(true)
 
-const recentCustomers = computed(() => customers.value.slice(0, 5))
-const pendingContracts = computed(() => contracts.value.filter(c => c.state === 'REQUESTED').slice(0, 5))
+const activeContracts = computed(() => contracts.value.filter(contract => contract.state === 'ACTIVE'))
+const pendingContractRequests = computed(() => contracts.value.filter(contract => contract.state === 'REQUESTED'))
+const pendingContracts = computed(() => pendingContractRequests.value.slice(0, 5))
+const todaySchedule = computed(() => calendarItems.value
+  .filter(courseDate => courseDate.date === todayIso())
+  .sort((a, b) => a.startTime.localeCompare(b.startTime)))
+const monthlyContractValue = computed(() => activeContracts.value.reduce((sum, contract) => {
+  const rawValue = contract.priceMonthly ?? contract.price
+  const parsedValue = Number.parseFloat(rawValue ?? '0')
+  return sum + (Number.isFinite(parsedValue) ? parsedValue : 0)
+}, 0))
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
 
 const stats = computed<DashboardStat[]>(() => [
   {
-    label: 'Kunden',
-    value: customers.value.length,
-    icon: 'i-heroicons-users',
-    bgClass: 'bg-blue-50',
-    iconClass: 'text-blue-500',
-  },
-  {
-    label: 'Aktive Kurse',
-    value: courses.value.filter(c => !c.archived).length,
+    label: 'Aktive Kurse / Woche',
+    value: courses.value.filter(course => !course.archived).length,
     icon: 'i-heroicons-academic-cap',
     bgClass: 'bg-komm-100',
     iconClass: 'text-komm-600',
   },
   {
-    label: 'Heutige Termine',
-    value: calendarItems.value.filter(d => d.date === todayIso()).length,
-    icon: 'i-heroicons-calendar-days',
-    bgClass: 'bg-purple-50',
-    iconClass: 'text-purple-500',
+    label: 'Aktive Verträge',
+    value: activeContracts.value.length,
+    icon: 'i-heroicons-document-check',
+    bgClass: 'bg-blue-50',
+    iconClass: 'text-blue-500',
   },
   {
-    label: 'Offene Anfragen',
-    value: pendingContracts.value.length,
-    icon: 'i-heroicons-document-text',
-    bgClass: 'bg-amber-50',
-    iconClass: 'text-amber-500',
+    label: 'Monatlicher Vertragswert',
+    value: formatCurrency(monthlyContractValue.value),
+    icon: 'i-heroicons-banknotes',
+    bgClass: 'bg-emerald-50',
+    iconClass: 'text-emerald-500',
   },
 ])
 
 onMounted(async () => {
   try {
-    const [custRes, contRes, courseRes, calRes] = await Promise.all([
-      api.get<ApiListResponse<Customer>>('/api/admin/customers'),
+    const [contRes, courseRes, calRes] = await Promise.all([
       api.get<ApiListResponse<Contract>>('/api/admin/contracts'),
       api.get<ApiListResponse<Course>>('/api/admin/courses'),
-      api.get<ApiListResponse<CourseDate>>('/api/admin/calendar'),
+      api.get<ApiListResponse<CourseDate>>(`/api/admin/calendar?week=${getWeekMonday(todayIso())}`),
     ])
-    customers.value = custRes.items
     contracts.value = contRes.items
     courses.value = courseRes.items
     calendarItems.value = calRes.items

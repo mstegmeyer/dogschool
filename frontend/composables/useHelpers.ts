@@ -2,6 +2,23 @@ import type { ContractState, ContractType, CourseLevel, CreditTransactionType, N
 
 const DAY_NAMES: readonly string[] = ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
 const DAY_NAMES_SHORT: readonly string[] = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+function parseDateValue(value: string): Date {
+  if (DATE_ONLY_PATTERN.test(value)) {
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+
+  return new Date(value)
+}
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export const useHelpers = () => {
   function dayName(dayOfWeek: number): string {
@@ -13,7 +30,11 @@ export const useHelpers = () => {
   }
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return parseDateValue(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  }
+
+  function formatDateShort(iso: string): string {
+    return parseDateValue(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
   }
 
   function formatDateTime(iso: string): string {
@@ -26,6 +47,17 @@ export const useHelpers = () => {
   /** Today as YYYY-MM-DD (Europe/Berlin). Used for API `from` parameter. */
   function todayIso(): string {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
+  }
+
+  function addDaysToIso(iso: string, days: number): string {
+    const date = parseDateValue(iso)
+    date.setDate(date.getDate() + days)
+    return toIsoDate(date)
+  }
+
+  function getIsoDayOfWeek(iso: string): number {
+    const day = parseDateValue(iso).getDay()
+    return day === 0 ? 7 : day
   }
 
   function contractStateLabel(state: ContractState): string {
@@ -63,12 +95,13 @@ export const useHelpers = () => {
     return `Stufe ${level}`
   }
 
-  function getWeekMonday(date: Date = new Date()): string {
-    const d = new Date(date)
-    const day = d.getDay()
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-    d.setDate(diff)
-    return d.toISOString().split('T')[0]
+  function getWeekMonday(date: Date | string = todayIso()): string {
+    const d = typeof date === 'string'
+      ? parseDateValue(date)
+      : new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const day = d.getDay() === 0 ? 7 : d.getDay()
+    d.setDate(d.getDate() - (day - 1))
+    return toIsoDate(d)
   }
 
   function formatContractMonthlyPrice(price: string, type: ContractType): string {
@@ -98,8 +131,8 @@ export const useHelpers = () => {
 
   return {
     dayName, dayNameShort,
-    formatDate, formatDateTime,
-    todayIso,
+    formatDate, formatDateShort, formatDateTime,
+    todayIso, addDaysToIso, getIsoDayOfWeek,
     contractStateLabel, contractStateColor,
     creditTypeLabel, levelLabel,
     getWeekMonday,

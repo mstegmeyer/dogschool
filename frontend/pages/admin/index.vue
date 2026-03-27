@@ -93,7 +93,7 @@ import type { ApiListResponse, Course, CourseDate, Customer, Contract } from '~/
 definePageMeta({ layout: 'admin' })
 
 const api = useApi()
-const { formatContractMonthlyPrice } = useHelpers()
+const { formatContractMonthlyPrice, todayIso } = useHelpers()
 
 interface DashboardStat {
   label: string
@@ -129,7 +129,7 @@ const stats = computed<DashboardStat[]>(() => [
   },
   {
     label: 'Heutige Termine',
-    value: calendarItems.value.filter(d => d.date === new Date().toISOString().split('T')[0]).length,
+    value: calendarItems.value.filter(d => d.date === todayIso()).length,
     icon: 'i-heroicons-calendar-days',
     bgClass: 'bg-purple-50',
     iconClass: 'text-purple-500',

@@ -6,8 +6,11 @@ describe('useHelpers', () => {
     dayName,
     dayNameShort,
     formatDate,
+    formatDateShort,
     formatDateTime,
     todayIso,
+    addDaysToIso,
+    getIsoDayOfWeek,
     contractStateLabel,
     contractStateColor,
     creditTypeLabel,
@@ -52,6 +55,16 @@ describe('useHelpers', () => {
       const result = formatDate('2026-03-21T10:00:00Z')
       expect(result).toMatch(/21\.03\.2026/)
     })
+
+    it('formats date-only values without timezone drift', () => {
+      expect(formatDate('2026-03-30')).toBe('30.03.2026')
+    })
+  })
+
+  describe('formatDateShort', () => {
+    it('formats date-only values to dd.MM', () => {
+      expect(formatDateShort('2026-03-30')).toBe('30.03.')
+    })
   })
 
   describe('formatDateTime', () => {
@@ -65,6 +78,20 @@ describe('useHelpers', () => {
     it('returns a YYYY-MM-DD string', () => {
       const result = todayIso()
       expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    })
+  })
+
+  describe('addDaysToIso', () => {
+    it('moves date-only values across a week boundary correctly', () => {
+      expect(addDaysToIso('2026-03-29', 1)).toBe('2026-03-30')
+      expect(addDaysToIso('2026-03-30', -7)).toBe('2026-03-23')
+    })
+  })
+
+  describe('getIsoDayOfWeek', () => {
+    it('returns ISO weekday numbers for date-only values', () => {
+      expect(getIsoDayOfWeek('2026-03-23')).toBe(1)
+      expect(getIsoDayOfWeek('2026-03-29')).toBe(7)
     })
   })
 
@@ -138,21 +165,26 @@ describe('useHelpers', () => {
 
   describe('getWeekMonday', () => {
     it('returns previous Monday for a Wednesday', () => {
-      const wed = new Date('2026-03-25') // Wednesday
+      const wed = new Date(2026, 2, 25) // Wednesday
       const monday = getWeekMonday(wed)
       expect(monday).toBe('2026-03-23')
     })
 
     it('returns same date for a Monday', () => {
-      const mon = new Date('2026-03-23') // Monday
+      const mon = new Date(2026, 2, 23) // Monday
       const monday = getWeekMonday(mon)
       expect(monday).toBe('2026-03-23')
     })
 
     it('returns previous Monday for a Sunday', () => {
-      const sun = new Date('2026-03-29') // Sunday
+      const sun = new Date(2026, 2, 29) // Sunday
       const monday = getWeekMonday(sun)
       expect(monday).toBe('2026-03-23')
+    })
+
+    it('returns the correct Monday for date-only values', () => {
+      expect(getWeekMonday('2026-03-30')).toBe('2026-03-30')
+      expect(getWeekMonday('2026-03-29')).toBe('2026-03-23')
     })
   })
 

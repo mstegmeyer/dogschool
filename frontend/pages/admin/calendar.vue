@@ -184,7 +184,7 @@ definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
-const { formatDate, dayNameShort, getWeekMonday } = useHelpers()
+const { addDaysToIso, dayNameShort, formatDate, formatDateShort, getIsoDayOfWeek, getWeekMonday, todayIso } = useHelpers()
 
 const isMobile = ref(false)
 onMounted(() => {
@@ -193,8 +193,8 @@ onMounted(() => {
 const viewMode = ref<'day' | 'week'>('week')
 watchEffect(() => { viewMode.value = isMobile.value ? 'day' : 'week' })
 
-const currentMonday = ref(getWeekMonday())
-const currentDay = ref(new Date().toISOString().split('T')[0])
+const currentDay = ref(todayIso())
+const currentMonday = ref(getWeekMonday(currentDay.value))
 const courseDates = ref<CourseDate[]>([])
 const showDetail = ref(false)
 const selectedDate = ref<CourseDate | null>(null)
@@ -205,23 +205,17 @@ const cancelNotifyMessage = ref('')
 const loading = ref(true)
 
 const weekStart = computed(() => currentMonday.value)
-const weekEnd = computed(() => {
-  const d = new Date(currentMonday.value)
-  d.setDate(d.getDate() + 6)
-  return d.toISOString().split('T')[0]
-})
+const weekEnd = computed(() => addDaysToIso(currentMonday.value, 6))
 
 const weekDays = computed(() => {
   const days = []
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayIso()
   for (let i = 0; i < 7; i++) {
-    const d = new Date(currentMonday.value)
-    d.setDate(d.getDate() + i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = addDaysToIso(currentMonday.value, i)
     days.push({
       date: dateStr,
       label: dayNameShort(i + 1),
-      dateShort: d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+      dateShort: formatDateShort(dateStr),
       isToday: dateStr === today,
       courseDates: courseDates.value
         .filter(cd => cd.date === dateStr)
@@ -232,13 +226,12 @@ const weekDays = computed(() => {
 })
 
 const singleDay = computed(() => {
-  const today = new Date().toISOString().split('T')[0]
-  const d = new Date(currentDay.value)
-  const dow = d.getDay() === 0 ? 7 : d.getDay()
+  const today = todayIso()
+  const dow = getIsoDayOfWeek(currentDay.value)
   return {
     date: currentDay.value,
     label: dayNameShort(dow),
-    dateShort: d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+    dateShort: formatDateShort(currentDay.value),
     isToday: currentDay.value === today,
     courseDates: courseDates.value
       .filter(cd => cd.date === currentDay.value)
@@ -250,40 +243,29 @@ const visibleDays = computed(() => viewMode.value === 'week' ? weekDays.value : 
 
 function prev() {
   if (viewMode.value === 'week') {
-    const d = new Date(currentMonday.value)
-    d.setDate(d.getDate() - 7)
-    currentMonday.value = d.toISOString().split('T')[0]
+    currentMonday.value = addDaysToIso(currentMonday.value, -7)
   } else {
-    const d = new Date(currentDay.value)
-    d.setDate(d.getDate() - 1)
-    currentDay.value = d.toISOString().split('T')[0]
+    currentDay.value = addDaysToIso(currentDay.value, -1)
     syncMondayFromDay()
   }
 }
 
 function next() {
   if (viewMode.value === 'week') {
-    const d = new Date(currentMonday.value)
-    d.setDate(d.getDate() + 7)
-    currentMonday.value = d.toISOString().split('T')[0]
+    currentMonday.value = addDaysToIso(currentMonday.value, 7)
   } else {
-    const d = new Date(currentDay.value)
-    d.setDate(d.getDate() + 1)
-    currentDay.value = d.toISOString().split('T')[0]
+    currentDay.value = addDaysToIso(currentDay.value, 1)
     syncMondayFromDay()
   }
 }
 
 function goToday() {
-  currentMonday.value = getWeekMonday()
-  currentDay.value = new Date().toISOString().split('T')[0]
+  currentDay.value = todayIso()
+  currentMonday.value = getWeekMonday(currentDay.value)
 }
 
 function syncMondayFromDay() {
-  const d = new Date(currentDay.value)
-  const dow = d.getDay() === 0 ? 7 : d.getDay()
-  d.setDate(d.getDate() - (dow - 1))
-  const newMonday = d.toISOString().split('T')[0]
+  const newMonday = getWeekMonday(currentDay.value)
   if (newMonday !== currentMonday.value) {
     currentMonday.value = newMonday
   }

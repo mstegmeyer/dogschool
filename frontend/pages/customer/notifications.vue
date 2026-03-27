@@ -22,72 +22,21 @@
         :key="n.id"
         :ui="cardUi(n)"
       >
-          <div>
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
-                  <h3 class="font-semibold text-slate-800">{{ n.title }}</h3>
-                  <span
-                    v-if="n.isPinned"
-                    class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full px-2 py-0.5 shrink-0"
-                  >
-                    <UIcon name="i-heroicons-map-pin" class="w-3 h-3" />
-                    Angepinnt
-                  </span>
-                </div>
-                <div
-                  v-if="n.isGlobal"
-                  class="mt-2 flex items-center gap-2 rounded-md bg-amber-50 border border-amber-100 px-3 py-2"
-                >
-                  <UIcon name="i-heroicons-globe-alt" class="w-4 h-4 text-amber-600 shrink-0" />
-                  <span class="text-sm font-medium text-amber-800">Alle Kurse</span>
-                </div>
-                <div
-                  v-else-if="n.courses.length > 0"
-                  class="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-komm-50 border border-komm-100 px-3 py-2"
-                >
-                  <span class="text-xs font-semibold uppercase tracking-wide text-komm-800 shrink-0">Kurs</span>
-                  <span
-                    v-for="(c, idx) in visibleCourses(n)"
-                    :key="c.id"
-                    class="text-sm font-medium text-komm-900"
-                  >
-                    {{ formatNotificationCourse(c) }}<span v-if="idx < visibleCourses(n).length - 1">,</span>
-                  </span>
-                  <span
-                    v-if="n.courses.length > maxVisibleCourses"
-                    class="text-xs text-komm-700 font-medium"
-                  >
-                    (+&nbsp;{{ n.courses.length - maxVisibleCourses }} weitere)
-                  </span>
-                </div>
-              </div>
-              <span class="text-xs text-slate-400 shrink-0 tabular-nums">{{ formatDateTime(n.createdAt) }}</span>
-            </div>
-            <p class="text-sm text-slate-600 mt-3 whitespace-pre-line">{{ n.message }}</p>
-            <p class="text-xs text-slate-400 mt-2">von {{ n.authorName || 'Team' }}</p>
-          </div>
+        <AppNotificationDetail :notification="n" />
       </UCard>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, Notification as AppNotification, NotificationCourseRef } from '~/types'
+import type { ApiListResponse, Notification as AppNotification } from '~/types'
 
 definePageMeta({ layout: 'customer' })
 
 const api = useApi()
-const { formatDateTime, formatNotificationCourse } = useHelpers()
 
 const notifications = ref<AppNotification[]>([])
 const loading = ref(true)
-
-const maxVisibleCourses = 3
-
-function visibleCourses(n: AppNotification): NotificationCourseRef[] {
-  return n.courses.slice(0, maxVisibleCourses)
-}
 
 function cardUi(n: AppNotification): { ring?: string, base: string } {
   return n.isPinned

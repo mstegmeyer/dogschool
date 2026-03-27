@@ -2,7 +2,16 @@
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-slate-800 mb-6">Mein Profil</h1>
 
-    <UCard>
+    <UCard v-if="loading">
+      <div class="space-y-4">
+        <div v-for="index in 5" :key="index" class="space-y-2">
+          <USkeleton class="h-4 w-24 rounded-md" />
+          <USkeleton class="h-10 w-full rounded-md" />
+        </div>
+        <USkeleton class="h-10 w-28 rounded-md" />
+      </div>
+    </UCard>
+    <UCard v-else>
       <form class="space-y-4" @submit.prevent="saveProfile">
         <UFormGroup label="Name">
           <UInput v-model="form.name" />
@@ -49,7 +58,22 @@
       </form>
     </UCard>
 
-    <UCard>
+    <UCard v-if="loading">
+      <div class="space-y-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-2">
+            <USkeleton class="h-6 w-40 rounded-md" />
+            <USkeleton class="h-4 w-64 rounded-md" />
+          </div>
+          <USkeleton class="h-6 w-20 rounded-full" />
+        </div>
+        <USkeleton class="h-24 w-full rounded-lg" />
+        <div class="flex gap-3">
+          <USkeleton class="h-10 w-52 rounded-md" />
+        </div>
+      </div>
+    </UCard>
+    <UCard v-else>
       <div class="space-y-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -111,6 +135,7 @@ const {
 
 const saving = ref(false)
 const notificationSaving = ref(false)
+const loading = ref(true)
 
 const form = reactive({
   name: '',
@@ -262,20 +287,24 @@ async function disableNotifications(): Promise<void> {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    fetchProfile(),
-    refreshStatus(),
-  ])
+  try {
+    await Promise.all([
+      fetchProfile(),
+      refreshStatus(),
+    ])
 
-  if (user.value) {
-    form.name = user.value.name || ''
-    form.email = user.value.email || ''
-    form.address.street = user.value.address?.street || ''
-    form.address.postalCode = user.value.address?.postalCode || ''
-    form.address.city = user.value.address?.city || ''
-    form.bankAccount.iban = user.value.bankAccount?.iban || ''
-    form.bankAccount.bic = user.value.bankAccount?.bic || ''
-    form.bankAccount.accountHolder = user.value.bankAccount?.accountHolder || ''
+    if (user.value) {
+      form.name = user.value.name || ''
+      form.email = user.value.email || ''
+      form.address.street = user.value.address?.street || ''
+      form.address.postalCode = user.value.address?.postalCode || ''
+      form.address.city = user.value.address?.city || ''
+      form.bankAccount.iban = user.value.bankAccount?.iban || ''
+      form.bankAccount.bic = user.value.bankAccount?.bic || ''
+      form.bankAccount.accountHolder = user.value.bankAccount?.accountHolder || ''
+    }
+  } finally {
+    loading.value = false
   }
 })
 </script>

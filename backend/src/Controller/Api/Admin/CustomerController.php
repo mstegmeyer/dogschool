@@ -10,6 +10,7 @@ use App\Repository\CustomerRepository;
 use App\Service\ApiNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
@@ -28,8 +29,44 @@ final class CustomerController extends AbstractController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
+        $query = trim((string) $request->query->get('q', ''));
+        $hasPaginatedRequest = $request->query->has('page')
+            || $request->query->has('limit')
+            || $query !== '';
+
+        if ($hasPaginatedRequest) {
+            $page = max(1, $request->query->getInt('page', 1));
+            $limit = min(100, max(1, $request->query->getInt('limit', 20)));
+            $sortBy = match ($request->query->get('sort')) {
+                'name' => 'name',
+                'email' => 'email',
+                default => 'createdAt',
+            };
+            $sortDirection = strtolower((string) $request->query->get('direction', 'desc')) === 'asc'
+                ? 'ASC'
+                : 'DESC';
+            $total = $this->customerRepository->countForAdminList($query !== '' ? $query : null);
+            $customers = $this->customerRepository->findPageForAdminList(
+                $page,
+                $limit,
+                $query !== '' ? $query : null,
+                $sortBy,
+                $sortDirection,
+            );
+
+            return $this->json([
+                'items' => array_map(fn (Customer $c) => $this->normalizer->normalizeCustomer($c), $customers),
+                'pagination' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                    'pages' => max(1, (int) ceil($total / $limit)),
+                ],
+            ]);
+        }
+
         $customers = $this->customerRepository->findAllOrderByCreatedAt();
 
         return $this->json(['items' => array_map(fn (Customer $c) => $this->normalizer->normalizeCustomer($c), $customers)]);

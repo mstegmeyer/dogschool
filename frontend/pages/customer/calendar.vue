@@ -95,7 +95,14 @@
       </UCard>
     </UModal>
 
-    <div :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
+    <AppSkeletonCalendar
+      v-if="loading"
+      :days="viewMode === 'week' ? 7 : 1"
+      :cards-per-day="viewMode === 'week' ? 2 : 4"
+      :columns-class="viewMode === 'week' ? 'grid grid-cols-1 gap-3 lg:grid-cols-7' : 'grid grid-cols-1 gap-3'"
+      :day-class="viewMode === 'week' ? 'min-h-[180px]' : ''"
+    />
+    <div v-else :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
       <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[180px]' : ''">
         <div class="text-center mb-2">
           <p class="text-xs font-semibold text-slate-500 uppercase">{{ day.label }}</p>
@@ -191,6 +198,7 @@ const courseDates = ref<CourseDate[]>([])
 const dogs = ref<Dog[]>([])
 const calendarSubscriptionPath = ref('')
 const showCalendarSubscription = ref(false)
+const loading = ref(true)
 
 /** Pro Kurstermin gewählter Hund (nur relevant bei mehreren Hunden). */
 const dogIdByCourseDate = reactive<Record<string, string>>({})
@@ -344,8 +352,13 @@ async function cancelBooking(cd: CourseDate) {
 }
 
 async function loadCalendar(): Promise<void> {
-  const res = await api.get<ApiListResponse<CourseDate>>(`/api/customer/calendar?week=${currentMonday.value}`)
-  courseDates.value = res.items
+  loading.value = true
+  try {
+    const res = await api.get<ApiListResponse<CourseDate>>(`/api/customer/calendar?week=${currentMonday.value}`)
+    courseDates.value = res.items
+  } finally {
+    loading.value = false
+  }
 }
 
 async function loadCalendarSubscription(): Promise<void> {

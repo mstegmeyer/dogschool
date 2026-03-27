@@ -5,7 +5,15 @@
       <UButton icon="i-heroicons-plus" label="Vertrag anfragen" @click="showRequest = true" />
     </div>
 
-    <div v-if="contracts.length === 0 && !loading" class="text-center py-12">
+    <AppSkeletonCollection
+      v-if="loading"
+      :show-desktop-table="false"
+      :mobile-cards="3"
+      :meta-columns="4"
+      :content-lines="0"
+      :show-badge="true"
+    />
+    <div v-else-if="contracts.length === 0" class="text-center py-12">
       <UIcon name="i-heroicons-document-text" class="w-12 h-12 text-slate-300 mx-auto mb-3" />
       <p class="text-slate-500">Du hast noch keine Verträge.</p>
     </div>

@@ -24,7 +24,14 @@
       </div>
     </div>
 
-    <div :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
+    <AppSkeletonCalendar
+      v-if="loading"
+      :days="viewMode === 'week' ? 7 : 1"
+      :cards-per-day="viewMode === 'week' ? 2 : 4"
+      :columns-class="viewMode === 'week' ? 'grid grid-cols-1 gap-3 lg:grid-cols-7' : 'grid grid-cols-1 gap-3'"
+      :day-class="viewMode === 'week' ? 'min-h-[200px]' : ''"
+    />
+    <div v-else :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
       <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[200px]' : ''">
         <div class="text-center mb-2">
           <p class="text-xs font-semibold text-slate-500 uppercase">{{ day.label }}</p>
@@ -195,6 +202,7 @@ const cancelling = ref(false)
 const cancelNotify = ref(false)
 const cancelNotifyTitle = ref('')
 const cancelNotifyMessage = ref('')
+const loading = ref(true)
 
 const weekStart = computed(() => currentMonday.value)
 const weekEnd = computed(() => {
@@ -317,8 +325,13 @@ async function uncancelDate(cd: CourseDate) {
 }
 
 async function loadCalendar(): Promise<void> {
-  const res = await api.get<ApiListResponse<CourseDate>>(`/api/admin/calendar?week=${currentMonday.value}`)
-  courseDates.value = res.items
+  loading.value = true
+  try {
+    const res = await api.get<ApiListResponse<CourseDate>>(`/api/admin/calendar?week=${currentMonday.value}`)
+    courseDates.value = res.items
+  } finally {
+    loading.value = false
+  }
 }
 
 watch(currentMonday, () => loadCalendar())

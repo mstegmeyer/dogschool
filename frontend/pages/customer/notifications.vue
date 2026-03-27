@@ -2,17 +2,25 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-800 mb-6">Mitteilungen</h1>
 
-    <div v-if="notifications.length === 0 && !loading" class="text-center py-12">
+    <AppSkeletonCollection
+      v-if="loading"
+      :show-desktop-table="false"
+      :mobile-cards="4"
+      :meta-columns="0"
+      :content-lines="4"
+      :show-badge="true"
+    />
+    <div v-else-if="notifications.length === 0" class="text-center py-12">
       <UIcon name="i-heroicons-bell" class="w-12 h-12 text-slate-300 mx-auto mb-3" />
       <p class="text-slate-500">Keine Mitteilungen vorhanden.</p>
       <p class="text-xs text-slate-400 mt-1">Abonniere Kurse, um Mitteilungen zu erhalten.</p>
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="min-w-0 space-y-3">
       <UCard
         v-for="n in notifications"
         :key="n.id"
-        :ui="n.isPinned ? { ring: 'ring-2 ring-indigo-300', base: 'relative' } : {}"
+        :ui="cardUi(n)"
       >
           <div>
             <div class="flex items-start justify-between gap-3">
@@ -79,6 +87,17 @@ const maxVisibleCourses = 3
 
 function visibleCourses(n: AppNotification): NotificationCourseRef[] {
   return n.courses.slice(0, maxVisibleCourses)
+}
+
+function cardUi(n: AppNotification): { ring?: string, base: string } {
+  return n.isPinned
+    ? {
+        ring: 'ring-2 ring-inset ring-indigo-300',
+        base: 'relative w-full max-w-full min-w-0 overflow-hidden',
+      }
+    : {
+        base: 'w-full max-w-full min-w-0 overflow-hidden',
+      }
 }
 
 onMounted(async () => {

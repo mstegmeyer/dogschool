@@ -6,7 +6,17 @@
     </div>
 
     <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }">
-      <div v-if="notifications.length === 0 && !loading" class="text-center py-8 text-slate-400 text-sm">
+      <div v-if="loading" class="p-4">
+        <AppSkeletonCollection
+          :mobile-cards="4"
+          :desktop-rows="6"
+          :desktop-columns="7"
+          :meta-columns="0"
+          :content-lines="3"
+          :show-actions="true"
+        />
+      </div>
+      <div v-else-if="notifications.length === 0" class="text-center py-8 text-slate-400 text-sm">
         Noch keine Mitteilungen erstellt
       </div>
       <template v-else>
@@ -112,6 +122,17 @@
           </template>
           </UTable>
         </div>
+        <div class="border-t border-slate-100 px-4 py-4 sm:flex sm:items-center sm:justify-between sm:px-6">
+          <p class="text-sm text-slate-500">{{ resultSummary }}</p>
+          <UPagination
+            v-if="showPagination"
+            v-model="currentPage"
+            :page-count="pageSize"
+            :total="totalNotifications"
+            :show-first="true"
+            :show-last="true"
+          />
+        </div>
       </template>
     </UCard>
 
@@ -173,6 +194,10 @@ const loading = ref(true)
 const showModal = ref(false)
 const saving = ref(false)
 const editingNotification = ref<AppNotification | null>(null)
+const currentPage = ref(1)
+const totalNotifications = ref(0)
+const totalPages = ref(1)
+const pageSize = 20
 
 const form = reactive({ courseIds: [] as string[], title: '', message: '', isGlobal: false, pinnedUntil: '' })
 
@@ -192,6 +217,16 @@ const courseOptions = computed(() =>
     value: c.id,
   })),
 )
+
+const showPagination = computed(() => totalNotifications.value > pageSize)
+const pageStart = computed(() => (totalNotifications.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1))
+const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalNotifications.value))
+const resultSummary = computed(() => {
+  if (totalNotifications.value === 0) return '0 Mitteilungen'
+  if (totalPages.value <= 1) return `${totalNotifications.value} Mitteilungen`
+
+  return `${pageStart.value}–${pageEnd.value} von ${totalNotifications.value} Mitteilungen`
+})
 
 function pinnedUntilToDateInput(iso: string | null): string {
   if (!iso) return ''
@@ -257,10 +292,20 @@ async function deleteNotification(n: AppNotification) {
 
 async function loadNotifications(): Promise<void> {
   loading.value = true
-  const res = await api.get<ApiListResponse<AppNotification>>('/api/admin/notifications')
+  const params = new URLSearchParams({
+    page: `${currentPage.value}`,
+    limit: `${pageSize}`,
+  })
+  const res = await api.get<ApiListResponse<AppNotification>>(`/api/admin/notifications?${params.toString()}`)
   notifications.value = res.items
+  totalNotifications.value = res.pagination?.total ?? res.items.length
+  totalPages.value = res.pagination?.pages ?? 1
   loading.value = false
 }
+
+watch(currentPage, () => {
+  void loadNotifications()
+})
 
 onMounted(async () => {
   const [, courseRes] = await Promise.all([

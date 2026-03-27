@@ -73,6 +73,51 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame(ContractState::ACTIVE, $reloaded->getState());
     }
 
+    public function testListContractsSupportsPaginationAndStateFilter(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-page-'.uniqid('', true).'@example.com');
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=1&state=ACTIVE', $token);
+        self::assertResponseIsSuccessful();
+        $before = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $activeTotalBefore = (int) ($before['pagination']['total'] ?? 0);
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Paged Dog');
+        $dogRepo->save($dog);
+
+        foreach ([ContractState::ACTIVE, ContractState::ACTIVE, ContractState::REQUESTED] as $index => $state) {
+            $contract = new Contract();
+            $contract->setCustomer($customer);
+            $contract->setDog($dog);
+            $contract->setState($state);
+            $contract->setStartDate(new \DateTimeImmutable('2025-01-0'.($index + 1)));
+            $contract->setEndDate(new \DateTimeImmutable('2026-01-01'));
+            $contract->setPrice('49.00');
+            $contract->setCoursesPerWeek(1);
+            $contractRepo->save($contract);
+        }
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=1&state=ACTIVE', $token);
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertCount(1, $data['items']);
+        self::assertSame('ACTIVE', $data['items'][0]['state']);
+        self::assertSame($activeTotalBefore + 2, $data['pagination']['total']);
+        self::assertSame((int) ceil(($activeTotalBefore + 2) / 1), $data['pagination']['pages']);
+    }
+
     public function testDeclineContract(): void
     {
         $client = static::createClient();

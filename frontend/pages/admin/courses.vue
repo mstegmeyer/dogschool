@@ -9,7 +9,14 @@
     </div>
 
     <UCard>
-      <div v-if="loading" class="text-sm text-slate-400">Kurse werden geladen…</div>
+      <AppSkeletonCollection
+        v-if="loading"
+        :mobile-cards="4"
+        :desktop-rows="6"
+        :desktop-columns="7"
+        :meta-columns="2"
+        :show-actions="true"
+      />
       <div v-else-if="courses.length === 0" class="text-sm text-slate-400">Keine Kurse gefunden.</div>
       <template v-else>
         <div class="space-y-3 md:hidden">
@@ -54,7 +61,12 @@
           </div>
         </div>
         <div class="hidden md:block">
-          <UTable :columns="columns" :rows="courses">
+          <UTable
+            v-model:sort="sort"
+            :columns="columns"
+            :rows="courses"
+            sort-mode="manual"
+          >
             <template #type-data="{ row }">
               <div>
                 <span class="font-medium">{{ row.type?.name || '–' }}</span>
@@ -90,6 +102,17 @@
               </UDropdown>
             </template>
           </UTable>
+        </div>
+        <div class="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-slate-500">{{ resultSummary }}</p>
+          <UPagination
+            v-if="showPagination"
+            v-model="currentPage"
+            :page-count="pageSize"
+            :total="totalCourses"
+            :show-first="true"
+            :show-last="true"
+          />
         </div>
       </template>
     </UCard>
@@ -147,6 +170,14 @@ const loading = ref(true)
 const showModal = ref(false)
 const saving = ref(false)
 const editingCourse = ref<Course | null>(null)
+const currentPage = ref(1)
+const totalCourses = ref(0)
+const totalPages = ref(1)
+const sort = ref<{ column: string | null; direction: 'asc' | 'desc' }>({
+  column: 'dayOfWeek',
+  direction: 'asc',
+})
+const pageSize = 20
 
 const archiveFilter = ref('active')
 const filterOptions = [
@@ -180,9 +211,19 @@ const columns = [
   { key: 'time', label: 'Uhrzeit' },
   { key: 'level', label: 'Stufe' },
   { key: 'subscribers', label: 'Abonnenten' },
-  { key: 'archived', label: 'Status' },
+  { key: 'archived', label: 'Status', sortable: true },
   { key: 'actions', label: '' },
 ]
+
+const showPagination = computed(() => totalCourses.value > pageSize)
+const pageStart = computed(() => (totalCourses.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1))
+const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalCourses.value))
+const resultSummary = computed(() => {
+  if (totalCourses.value === 0) return '0 Kurse'
+  if (totalPages.value <= 1) return `${totalCourses.value} Kurse`
+
+  return `${pageStart.value}–${pageEnd.value} von ${totalCourses.value} Kursen`
+})
 
 function getRowActions(row: Course) {
   return [[
@@ -249,12 +290,47 @@ async function toggleArchive(course: Course) {
 
 async function loadCourses(): Promise<void> {
   loading.value = true
-  const query = archiveFilter.value === 'all' ? '' : `?archived=${archiveFilter.value === 'archived'}`
-  const res = await api.get<ApiListResponse<Course>>(`/api/admin/courses${query}`)
+  const params = new URLSearchParams({
+    page: `${currentPage.value}`,
+    limit: `${pageSize}`,
+  })
+  if (archiveFilter.value !== 'all') {
+    params.set('archived', `${archiveFilter.value === 'archived'}`)
+  }
+  if (sort.value.column) {
+    params.set('sort', sort.value.column)
+    params.set('direction', sort.value.direction)
+  }
+  const res = await api.get<ApiListResponse<Course>>(`/api/admin/courses?${params.toString()}`)
   courses.value = res.items
+  totalCourses.value = res.pagination?.total ?? res.items.length
+  totalPages.value = res.pagination?.pages ?? 1
   loading.value = false
 }
 
-watch(archiveFilter, () => loadCourses())
-onMounted(() => loadCourses())
+watch(currentPage, () => {
+  void loadCourses()
+})
+
+watch(archiveFilter, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+
+  void loadCourses()
+})
+
+watch(sort, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+
+  void loadCourses()
+}, { deep: true })
+
+onMounted(() => {
+  void loadCourses()
+})
 </script>

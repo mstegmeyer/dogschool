@@ -2,7 +2,34 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-800 mb-4">Kurse</h1>
 
-    <UTabs :items="tabs">
+    <div v-if="loading" class="space-y-4">
+      <div class="flex gap-2">
+        <USkeleton class="h-9 w-36 rounded-md" />
+        <USkeleton class="h-9 w-28 rounded-md" />
+      </div>
+      <div
+        v-for="index in 3"
+        :key="index"
+        class="overflow-hidden rounded-lg border border-slate-200 bg-white"
+      >
+        <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2">
+          <USkeleton class="h-4 w-24 rounded-md" />
+          <USkeleton class="h-4 w-14 rounded-md" />
+        </div>
+        <div class="space-y-3 p-3">
+          <div v-for="row in 3" :key="row" class="rounded-lg border border-slate-100 p-3">
+            <USkeleton class="h-4 w-32 rounded-md" />
+            <USkeleton class="mt-2 h-3 w-24 rounded-md" />
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <USkeleton class="h-3 w-full rounded-md" />
+              <USkeleton class="h-3 w-full rounded-md" />
+            </div>
+            <USkeleton class="mt-4 h-9 w-full rounded-md" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <UTabs v-else :items="tabs">
       <template #item="{ item }">
         <div class="pt-3">
           <!-- Available: grouped by weekday, compact tables -->
@@ -234,6 +261,7 @@ const { dayName, levelLabel } = useHelpers()
 
 const availableCourses = ref<Course[]>([])
 const subscribedCourses = ref<Course[]>([])
+const loading = ref(true)
 
 const tabs = [
   { key: 'available', label: 'Verfügbare Kurse' },
@@ -281,12 +309,17 @@ async function unsubscribe(course: Course) {
 }
 
 async function loadCourses(): Promise<void> {
-  const [allRes, subRes] = await Promise.all([
-    api.get<ApiListResponse<Course>>('/api/customer/courses'),
-    api.get<ApiListResponse<Course>>('/api/customer/courses/subscribed'),
-  ])
-  availableCourses.value = allRes.items
-  subscribedCourses.value = subRes.items
+  loading.value = true
+  try {
+    const [allRes, subRes] = await Promise.all([
+      api.get<ApiListResponse<Course>>('/api/customer/courses'),
+      api.get<ApiListResponse<Course>>('/api/customer/courses/subscribed'),
+    ])
+    availableCourses.value = allRes.items
+    subscribedCourses.value = subRes.items
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => loadCourses())

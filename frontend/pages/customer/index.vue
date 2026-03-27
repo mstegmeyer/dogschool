@@ -1,11 +1,20 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-slate-800 mb-2">
+    <USkeleton v-if="loading" class="mb-2 h-8 w-56 rounded-md" />
+    <h1 v-else class="text-2xl font-bold text-slate-800 mb-2">
       Hallo, {{ user?.name || 'Willkommen' }}!
     </h1>
-    <p class="text-slate-500 mb-6">Schön, dass du da bist.</p>
+    <USkeleton v-if="loading" class="mb-6 h-4 w-40 rounded-md" />
+    <p v-else class="text-slate-500 mb-6">Schön, dass du da bist.</p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <AppSkeletonStatGrid
+      v-if="loading"
+      class="mb-8"
+      :count="3"
+      centered
+      grid-classes="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3"
+    />
+    <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <UCard>
         <div class="text-center">
           <p class="text-3xl font-bold" :class="creditBalance >= 0 ? 'text-komm-600' : 'text-red-500'">
@@ -35,7 +44,14 @@
           <UButton variant="ghost" size="xs" to="/customer/contracts">Alle</UButton>
         </div>
       </template>
-      <div v-if="activeContracts.length === 0" class="text-sm text-slate-400 py-4 text-center">
+      <AppSkeletonCollection
+        v-if="loading"
+        :show-desktop-table="false"
+        :mobile-cards="3"
+        :meta-columns="2"
+        :content-lines="0"
+      />
+      <div v-else-if="activeContracts.length === 0" class="text-sm text-slate-400 py-4 text-center">
         Keine aktiven Verträge
       </div>
       <ul v-else class="divide-y divide-slate-100">
@@ -62,7 +78,15 @@
             <UButton variant="ghost" size="xs" to="/customer/calendar">Kalender</UButton>
           </div>
         </template>
-        <div v-if="upcomingDates.length === 0" class="text-sm text-slate-400 py-4 text-center">
+        <AppSkeletonCollection
+          v-if="loading"
+          :show-desktop-table="false"
+          :mobile-cards="4"
+          :meta-columns="0"
+          :content-lines="2"
+          :show-badge="true"
+        />
+        <div v-else-if="upcomingDates.length === 0" class="text-sm text-slate-400 py-4 text-center">
           Keine anstehenden Termine
         </div>
         <div v-else class="divide-y divide-slate-100">
@@ -118,7 +142,15 @@
             <UButton variant="ghost" size="xs" to="/customer/notifications">Alle</UButton>
           </div>
         </template>
-        <div v-if="notifications.length === 0" class="text-sm text-slate-400 py-4 text-center">
+        <AppSkeletonCollection
+          v-if="loading"
+          :show-desktop-table="false"
+          :mobile-cards="4"
+          :meta-columns="0"
+          :content-lines="3"
+          :show-badge="false"
+        />
+        <div v-else-if="notifications.length === 0" class="text-sm text-slate-400 py-4 text-center">
           Keine neuen Mitteilungen
         </div>
         <div v-else class="divide-y divide-slate-100">
@@ -164,6 +196,7 @@ const calendarItems = ref<CourseDate[]>([])
 const contracts = ref<Contract[]>([])
 const notifications = ref<AppNotification[]>([])
 const bookingInProgress = ref<string | null>(null)
+const loading = ref(true)
 
 const dogIdByCourseDate = reactive<Record<string, string>>({})
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })))
@@ -219,23 +252,27 @@ async function safeGet<T>(url: string, fallback: T): Promise<T> {
 }
 
 onMounted(async () => {
-  await fetchProfile()
+  try {
+    await fetchProfile()
 
-  const today = todayIso()
-  const [creditRes, dogRes, courseRes, calRes, contractRes, notifRes] = await Promise.all([
-    safeGet<{ balance: number }>('/api/customer/credits', { balance: 0 }),
-    safeGet<ApiListResponse<Dog>>('/api/customer/dogs', { items: [] }),
-    safeGet<ApiListResponse<Course>>('/api/customer/courses/subscribed', { items: [] }),
-    safeGet<ApiListResponse<CourseDate>>(`/api/customer/calendar?from=${today}&days=14`, { items: [] }),
-    safeGet<ApiListResponse<Contract>>('/api/customer/contracts', { items: [] }),
-    safeGet<ApiListResponse<AppNotification>>('/api/customer/notifications', { items: [] }),
-  ])
+    const today = todayIso()
+    const [creditRes, dogRes, courseRes, calRes, contractRes, notifRes] = await Promise.all([
+      safeGet<{ balance: number }>('/api/customer/credits', { balance: 0 }),
+      safeGet<ApiListResponse<Dog>>('/api/customer/dogs', { items: [] }),
+      safeGet<ApiListResponse<Course>>('/api/customer/courses/subscribed', { items: [] }),
+      safeGet<ApiListResponse<CourseDate>>(`/api/customer/calendar?from=${today}&days=14`, { items: [] }),
+      safeGet<ApiListResponse<Contract>>('/api/customer/contracts', { items: [] }),
+      safeGet<ApiListResponse<AppNotification>>('/api/customer/notifications', { items: [] }),
+    ])
 
-  creditBalance.value = creditRes.balance
-  dogs.value = dogRes.items
-  subscribedCourses.value = courseRes.items
-  calendarItems.value = calRes.items
-  contracts.value = contractRes.items
-  notifications.value = notifRes.items
+    creditBalance.value = creditRes.balance
+    dogs.value = dogRes.items
+    subscribedCourses.value = courseRes.items
+    calendarItems.value = calRes.items
+    contracts.value = contractRes.items
+    notifications.value = notifRes.items
+  } finally {
+    loading.value = false
+  }
 })
 </script>

@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Course;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -46,11 +47,62 @@ class CourseRepository extends ServiceEntityRepository
         return $this->findByArchived(false);
     }
 
+    /**
+     * @return array<int, Course>
+     */
+    public function findPageForAdminList(
+        int $page,
+        int $limit,
+        ?bool $archived = null,
+        string $sortBy = 'dayOfWeek',
+        string $sortDirection = 'ASC',
+    ): array {
+        $qb = $this->createAdminListQueryBuilder($archived)
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        if ($sortBy === 'dayOfWeek') {
+            $qb
+                ->orderBy('course.dayOfWeek', $sortDirection)
+                ->addOrderBy('course.startTime', $sortDirection);
+
+            return $qb->getQuery()->getResult();
+        }
+
+        return $qb
+            ->orderBy('course.'.$sortBy, $sortDirection)
+            ->addOrderBy('course.dayOfWeek', 'ASC')
+            ->addOrderBy('course.startTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countForAdminList(?bool $archived = null): int
+    {
+        return (int) $this->createAdminListQueryBuilder($archived)
+            ->select('COUNT(course.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function save(Course $entity, bool $flush = true): void
     {
         $this->getEntityManager()->persist($entity);
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    private function createAdminListQueryBuilder(?bool $archived = null): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('course');
+
+        if ($archived !== null) {
+            $qb
+                ->andWhere('course.archived = :archived')
+                ->setParameter('archived', $archived);
+        }
+
+        return $qb;
     }
 }

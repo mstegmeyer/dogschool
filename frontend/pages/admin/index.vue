@@ -2,7 +2,13 @@
   <div>
     <h1 class="text-2xl font-bold text-slate-800 mb-6">Dashboard</h1>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <AppSkeletonStatGrid
+      v-if="loading"
+      class="mb-8"
+      :count="4"
+      grid-classes="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4"
+    />
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <UCard v-for="stat in stats" :key="stat.label">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-lg" :class="stat.bgClass">
@@ -24,7 +30,14 @@
             <UButton variant="ghost" size="xs" to="/admin/contracts">Alle anzeigen</UButton>
           </div>
         </template>
-        <div v-if="pendingContracts.length === 0" class="text-sm text-slate-400 py-4 text-center">
+        <AppSkeletonCollection
+          v-if="loading"
+          :show-desktop-table="false"
+          :mobile-cards="4"
+          :meta-columns="0"
+          :content-lines="2"
+        />
+        <div v-else-if="pendingContracts.length === 0" class="text-sm text-slate-400 py-4 text-center">
           Keine offenen Anfragen
         </div>
         <div v-else class="divide-y divide-slate-100">
@@ -49,7 +62,15 @@
             <UButton variant="ghost" size="xs" to="/admin/customers">Alle anzeigen</UButton>
           </div>
         </template>
-        <div v-if="recentCustomers.length === 0" class="text-sm text-slate-400 py-4 text-center">
+        <AppSkeletonCollection
+          v-if="loading"
+          :show-desktop-table="false"
+          :mobile-cards="4"
+          :meta-columns="0"
+          :content-lines="2"
+          :show-actions="true"
+        />
+        <div v-else-if="recentCustomers.length === 0" class="text-sm text-slate-400 py-4 text-center">
           Noch keine Kunden
         </div>
         <div v-else class="divide-y divide-slate-100">
@@ -86,6 +107,7 @@ const customers = ref<Customer[]>([])
 const contracts = ref<Contract[]>([])
 const courses = ref<Course[]>([])
 const calendarItems = ref<CourseDate[]>([])
+const loading = ref(true)
 
 const recentCustomers = computed(() => customers.value.slice(0, 5))
 const pendingContracts = computed(() => contracts.value.filter(c => c.state === 'REQUESTED').slice(0, 5))
@@ -122,15 +144,19 @@ const stats = computed<DashboardStat[]>(() => [
 ])
 
 onMounted(async () => {
-  const [custRes, contRes, courseRes, calRes] = await Promise.all([
-    api.get<ApiListResponse<Customer>>('/api/admin/customers'),
-    api.get<ApiListResponse<Contract>>('/api/admin/contracts'),
-    api.get<ApiListResponse<Course>>('/api/admin/courses'),
-    api.get<ApiListResponse<CourseDate>>('/api/admin/calendar'),
-  ])
-  customers.value = custRes.items
-  contracts.value = contRes.items
-  courses.value = courseRes.items
-  calendarItems.value = calRes.items
+  try {
+    const [custRes, contRes, courseRes, calRes] = await Promise.all([
+      api.get<ApiListResponse<Customer>>('/api/admin/customers'),
+      api.get<ApiListResponse<Contract>>('/api/admin/contracts'),
+      api.get<ApiListResponse<Course>>('/api/admin/courses'),
+      api.get<ApiListResponse<CourseDate>>('/api/admin/calendar'),
+    ])
+    customers.value = custRes.items
+    contracts.value = contRes.items
+    courses.value = courseRes.items
+    calendarItems.value = calRes.items
+  } finally {
+    loading.value = false
+  }
 })
 </script>

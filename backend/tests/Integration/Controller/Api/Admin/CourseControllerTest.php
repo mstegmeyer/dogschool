@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
 use App\Repository\UserRepository;
+use App\Tests\Helper\ApiTestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -127,10 +128,45 @@ final class CourseControllerTest extends WebTestCase
     public function testGetCourseReturns404ForUnknownId(): void
     {
         $client = static::createClient();
-        $helper = \App\Tests\Helper\ApiTestHelper::create($client);
+        $helper = ApiTestHelper::create($client);
         ['token' => $token] = $helper->createAdminAndLogin();
 
         $helper->adminRequest(Request::METHOD_GET, '/api/admin/courses/00000000-0000-0000-0000-000000000000', $token);
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    public function testListCoursesSupportsPagination(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        $container = static::getContainer();
+        $courseTypeRepo = $container->get(CourseTypeRepository::class);
+        $courseType = $courseTypeRepo->findByCode('PAGE');
+        if ($courseType === null) {
+            $courseType = new CourseType();
+            $courseType->setCode('PAGE');
+            $courseType->setName('Pagination');
+            $courseTypeRepo->save($courseType);
+        }
+
+        $courseRepo = $container->get(CourseRepository::class);
+        foreach ([1, 2, 3] as $dayOfWeek) {
+            $course = new \App\Entity\Course();
+            $course->setDayOfWeek($dayOfWeek);
+            $course->setStartTime('10:00');
+            $course->setEndTime('11:00');
+            $course->setCourseType($courseType);
+            $course->setLevel(1);
+            $courseRepo->save($course);
+        }
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/courses?page=1&limit=2&archived=0', $token);
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertCount(2, $data['items']);
+        self::assertSame(2, $data['pagination']['limit']);
+        self::assertGreaterThanOrEqual(3, $data['pagination']['total']);
     }
 }

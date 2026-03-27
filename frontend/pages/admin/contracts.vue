@@ -6,12 +6,19 @@
     </div>
 
     <UCard>
-      <div v-if="loading" class="text-sm text-slate-400">Verträge werden geladen…</div>
-      <div v-else-if="filteredContracts.length === 0" class="text-sm text-slate-400">Keine Verträge für diesen Filter gefunden.</div>
+      <AppSkeletonCollection
+        v-if="loading"
+        :mobile-cards="4"
+        :desktop-rows="6"
+        :desktop-columns="7"
+        :meta-columns="4"
+        :show-actions="true"
+      />
+      <div v-else-if="contracts.length === 0" class="text-sm text-slate-400">Keine Verträge für diesen Filter gefunden.</div>
       <template v-else>
         <div class="space-y-3 md:hidden">
           <div
-            v-for="contract in filteredContracts"
+            v-for="contract in contracts"
             :key="contract.id"
             class="rounded-lg border border-slate-200 bg-white p-4"
           >
@@ -62,9 +69,11 @@
         </div>
         <div class="hidden overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 md:block">
           <UTable
+            v-model:sort="sort"
             :columns="columns"
-            :rows="filteredContracts"
+            :rows="contracts"
             class="min-w-[720px]"
+            sort-mode="manual"
           >
         <template #participant-data="{ row }">
           <div class="min-w-[8rem] max-w-[14rem] py-0.5">
@@ -114,6 +123,17 @@
           </template>
           </UTable>
         </div>
+        <div class="mx-4 mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:mx-0 sm:flex-row sm:items-center sm:justify-between">
+          <p>{{ resultSummary }}</p>
+          <UPagination
+            v-if="showPagination"
+            v-model="currentPage"
+            :page-count="pageSize"
+            :total="totalContracts"
+            :show-first="true"
+            :show-last="true"
+          />
+        </div>
       </template>
     </UCard>
 
@@ -150,10 +170,18 @@ const { formatDate, contractStateLabel, contractStateColor, formatContractMonthl
 const contracts = ref<Contract[]>([])
 const loading = ref(true)
 const stateFilter = ref('ACTIVE')
+const currentPage = ref(1)
+const totalContracts = ref(0)
+const totalPages = ref(1)
+const sort = ref<{ column: string | null; direction: 'asc' | 'desc' }>({
+  column: 'createdAt',
+  direction: 'desc',
+})
 
 const showCancelModal = ref(false)
 const contractToCancel = ref<Contract | null>(null)
 const cancelling = ref(false)
+const pageSize = 20
 
 const stateOptions = [
   { label: 'Aktiv', value: 'ACTIVE' },
@@ -173,9 +201,14 @@ const columns = [
   { key: 'actions', label: 'Aktion' },
 ]
 
-const filteredContracts = computed(() => {
-  if (stateFilter.value === 'all') return contracts.value
-  return contracts.value.filter(c => c.state === stateFilter.value)
+const showPagination = computed(() => totalContracts.value > pageSize)
+const pageStart = computed(() => (totalContracts.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1))
+const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalContracts.value))
+const resultSummary = computed(() => {
+  if (totalContracts.value === 0) return '0 Verträge'
+  if (totalPages.value <= 1) return `${totalContracts.value} Verträge`
+
+  return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`
 })
 
 function openCancelConfirm(contract: Contract) {
@@ -211,10 +244,45 @@ async function decline(contract: Contract) {
 
 async function loadContracts(): Promise<void> {
   loading.value = true
-  const res = await api.get<ApiListResponse<Contract>>('/api/admin/contracts')
+  const params = new URLSearchParams({
+    page: `${currentPage.value}`,
+    limit: `${pageSize}`,
+    state: stateFilter.value,
+  })
+  if (sort.value.column) {
+    params.set('sort', sort.value.column)
+    params.set('direction', sort.value.direction)
+  }
+  const res = await api.get<ApiListResponse<Contract>>(`/api/admin/contracts?${params.toString()}`)
   contracts.value = res.items
+  totalContracts.value = res.pagination?.total ?? res.items.length
+  totalPages.value = res.pagination?.pages ?? 1
   loading.value = false
 }
 
-onMounted(() => loadContracts())
+watch(currentPage, () => {
+  void loadContracts()
+})
+
+watch(stateFilter, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+
+  void loadContracts()
+})
+
+watch(sort, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+
+  void loadContracts()
+}, { deep: true })
+
+onMounted(() => {
+  void loadContracts()
+})
 </script>

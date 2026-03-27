@@ -6,12 +6,19 @@
     </div>
 
     <UCard>
-      <div v-if="loading" class="text-sm text-slate-400">Kunden werden geladen…</div>
-      <div v-else-if="filteredCustomers.length === 0" class="text-sm text-slate-400">Keine passenden Kunden gefunden.</div>
+      <AppSkeletonCollection
+        v-if="loading"
+        :mobile-cards="4"
+        :desktop-rows="6"
+        :desktop-columns="4"
+        :meta-columns="1"
+        :show-badge="false"
+      />
+      <div v-else-if="customers.length === 0" class="text-sm text-slate-400">Keine passenden Kunden gefunden.</div>
       <template v-else>
         <div class="space-y-3 md:hidden">
           <button
-            v-for="customer in filteredCustomers"
+            v-for="customer in customers"
             :key="customer.id"
             type="button"
             class="w-full rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300"
@@ -30,7 +37,13 @@
           </button>
         </div>
         <div class="hidden md:block">
-          <UTable :columns="columns" :rows="filteredCustomers" @select="onSelect">
+          <UTable
+            v-model:sort="sort"
+            :columns="columns"
+            :rows="customers"
+            sort-mode="manual"
+            @select="onSelect"
+          >
             <template #createdAt-data="{ row }">
               {{ formatDate(row.createdAt) }}
             </template>
@@ -39,6 +52,17 @@
               <span v-else class="text-slate-400">–</span>
             </template>
           </UTable>
+        </div>
+        <div class="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-slate-500">{{ resultSummary }}</p>
+          <UPagination
+            v-if="showPagination"
+            v-model="currentPage"
+            :page-count="pageSize"
+            :total="totalCustomers"
+            :show-first="true"
+            :show-last="true"
+          />
         </div>
       </template>
     </UCard>
@@ -56,6 +80,18 @@ const { formatDate } = useHelpers()
 const customers = ref<Customer[]>([])
 const search = ref('')
 const loading = ref(true)
+const currentPage = ref(1)
+const debouncedSearch = ref('')
+const totalCustomers = ref(0)
+const totalPages = ref(1)
+const sort = ref<{ column: string | null; direction: 'asc' | 'desc' }>({
+  column: 'createdAt',
+  direction: 'desc',
+})
+
+const pageSize = 20
+let searchDebounceTimeout: ReturnType<typeof setTimeout> | null = null
+let latestLoadId = 0
 
 const columns = [
   { key: 'name', label: 'Name', sortable: true },
@@ -64,23 +100,82 @@ const columns = [
   { key: 'createdAt', label: 'Registriert', sortable: true },
 ]
 
-const filteredCustomers = computed(() => {
-  if (!search.value) return customers.value
-  const q = search.value.toLowerCase()
-  return customers.value.filter(c =>
-    c.name.toLowerCase().includes(q)
-    || c.email.toLowerCase().includes(q)
-    || c.address.city?.toLowerCase().includes(q),
-  )
+const showPagination = computed(() => totalCustomers.value > pageSize)
+const pageStart = computed(() => (totalCustomers.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1))
+const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalCustomers.value))
+const resultSummary = computed(() => {
+  if (totalCustomers.value === 0) return '0 Kunden'
+  if (totalPages.value <= 1) return `${totalCustomers.value} Kunden`
+
+  return `${pageStart.value}–${pageEnd.value} von ${totalCustomers.value} Kunden`
 })
 
 function onSelect(row: Customer) {
   navigateTo(`/admin/customers/${row.id}`)
 }
 
-onMounted(async () => {
-  const res = await api.get<ApiListResponse<Customer>>('/api/admin/customers')
+async function loadCustomers(): Promise<void> {
+  const loadId = ++latestLoadId
+  loading.value = true
+
+  const params = new URLSearchParams({
+    page: `${currentPage.value}`,
+    limit: `${pageSize}`,
+  })
+  if (debouncedSearch.value) {
+    params.set('q', debouncedSearch.value)
+  }
+  if (sort.value.column) {
+    params.set('sort', sort.value.column)
+    params.set('direction', sort.value.direction)
+  }
+
+  const res = await api.get<ApiListResponse<Customer>>(`/api/admin/customers?${params.toString()}`)
+  if (loadId !== latestLoadId) return
+
   customers.value = res.items
+  totalCustomers.value = res.pagination?.total ?? res.items.length
+  totalPages.value = res.pagination?.pages ?? 1
   loading.value = false
+}
+
+watch(currentPage, () => {
+  void loadCustomers()
+})
+
+watch(search, (value) => {
+  if (searchDebounceTimeout !== null) {
+    clearTimeout(searchDebounceTimeout)
+  }
+
+  searchDebounceTimeout = setTimeout(() => {
+    debouncedSearch.value = value.trim()
+
+    if (currentPage.value !== 1) {
+      currentPage.value = 1
+      return
+    }
+
+    void loadCustomers()
+  }, 250)
+})
+
+watch(sort, () => {
+  if (currentPage.value !== 1) {
+    currentPage.value = 1
+    return
+  }
+
+  void loadCustomers()
+}, { deep: true })
+
+onBeforeUnmount(() => {
+  if (searchDebounceTimeout !== null) {
+    clearTimeout(searchDebounceTimeout)
+  }
+})
+
+onMounted(() => {
+  void loadCustomers()
 })
 </script>

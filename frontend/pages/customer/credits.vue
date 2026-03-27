@@ -3,15 +3,35 @@
     <h1 class="text-2xl font-bold text-slate-800 mb-6">Guthaben</h1>
 
     <UCard class="mb-6">
-        <div class="text-center py-4">
-          <p class="text-5xl font-bold" :class="balance >= 0 ? 'text-komm-600' : 'text-red-500'">
-            {{ balance }}
-          </p>
-          <p class="text-sm text-slate-400 mt-2">Verfügbare Credits</p>
-        </div>
-      </UCard>
+      <div v-if="loading" class="py-4 text-center">
+        <USkeleton class="mx-auto h-12 w-24 rounded-md" />
+        <USkeleton class="mx-auto mt-3 h-4 w-32 rounded-md" />
+      </div>
+      <div v-else class="text-center py-4">
+        <p class="text-5xl font-bold" :class="balance >= 0 ? 'text-komm-600' : 'text-red-500'">
+          {{ balance }}
+        </p>
+        <p class="text-sm text-slate-400 mt-2">Verfügbare Credits</p>
+      </div>
+    </UCard>
 
-    <UCard v-if="nextWeeklyGrants.length > 0" class="mb-6">
+    <UCard v-if="loading" class="mb-6">
+      <template #header>
+        <USkeleton class="h-5 w-36 rounded-md" />
+      </template>
+      <div class="space-y-3">
+        <USkeleton class="h-4 w-full rounded-md" />
+        <div
+          v-for="index in 2"
+          :key="index"
+          class="rounded-lg border border-slate-100 bg-slate-50/80 p-3"
+        >
+          <USkeleton class="h-4 w-32 rounded-md" />
+          <USkeleton class="mt-2 h-3 w-40 rounded-md" />
+        </div>
+      </div>
+    </UCard>
+    <UCard v-else-if="nextWeeklyGrants.length > 0" class="mb-6">
       <template #header>
         <h3 class="font-semibold text-slate-800">Nächste Gutschriften</h3>
       </template>
@@ -41,7 +61,15 @@
         <h3 class="font-semibold text-slate-800">Transaktionsverlauf</h3>
       </template>
 
-      <div v-if="loading" class="text-sm text-slate-400">Lade Verlauf…</div>
+      <AppSkeletonCollection
+        v-if="loading"
+        :mobile-cards="4"
+        :desktop-rows="6"
+        :desktop-columns="4"
+        :meta-columns="0"
+        :content-lines="2"
+        :show-badge="true"
+      />
       <div v-else-if="transactions.length === 0" class="text-sm text-slate-400">Noch keine Transaktionen vorhanden.</div>
       <template v-else>
         <div class="space-y-3 md:hidden">

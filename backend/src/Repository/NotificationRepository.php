@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Notification;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -81,19 +82,32 @@ class NotificationRepository extends ServiceEntityRepository
     public function findRecent(int $limit = 100): array
     {
         /** @var list<Notification> $result */
-        $result = $this->createQueryBuilder('n')
-            ->leftJoin('n.courses', 'c')
-            ->addSelect('c')
-            ->leftJoin('c.courseType', 'ct')
-            ->addSelect('ct')
-            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
-            ->orderBy('pinSort', 'DESC')
-            ->addOrderBy('n.createdAt', 'DESC')
+        $result = $this->createRecentAdminListQueryBuilder()
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
 
         return $result;
+    }
+
+    /**
+     * @return array<int, Notification>
+     */
+    public function findPageForAdminList(int $page, int $limit): array
+    {
+        return $this->createRecentAdminListQueryBuilder()
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countForAdminList(): int
+    {
+        return (int) $this->createQueryBuilder('n')
+            ->select('COUNT(n.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     public function save(Notification $entity, bool $flush = true): void
@@ -110,5 +124,17 @@ class NotificationRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    private function createRecentAdminListQueryBuilder(): QueryBuilder
+    {
+        return $this->createQueryBuilder('n')
+            ->leftJoin('n.courses', 'c')
+            ->addSelect('c')
+            ->leftJoin('c.courseType', 'ct')
+            ->addSelect('ct')
+            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
+            ->orderBy('pinSort', 'DESC')
+            ->addOrderBy('n.createdAt', 'DESC');
     }
 }

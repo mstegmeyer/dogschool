@@ -89,6 +89,29 @@ final class NotificationControllerTest extends WebTestCase
         self::assertNull($notifRepo->find($id));
     }
 
+    public function testListNotificationsSupportsPagination(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        for ($i = 0; $i < 3; $i++) {
+            $helper->adminRequest(Request::METHOD_POST, '/api/admin/notifications', $token, json_encode([
+                'courseIds' => [],
+                'title' => 'Paged Notification '.$i,
+                'message' => 'Body '.$i,
+            ]));
+            self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        }
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/notifications?page=1&limit=2', $token);
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertCount(2, $data['items']);
+        self::assertSame(2, $data['pagination']['limit']);
+        self::assertGreaterThanOrEqual(3, $data['pagination']['total']);
+    }
+
     public function testCreateNotificationFailsForUnknownCourse(): void
     {
         $client = static::createClient();

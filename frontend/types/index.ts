@@ -2,8 +2,16 @@
 // Generic API response wrappers
 // ---------------------------------------------------------------------------
 
+export interface ApiPagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
+
 export interface ApiListResponse<T> {
   items: T[]
+  pagination?: ApiPagination
 }
 
 // ---------------------------------------------------------------------------

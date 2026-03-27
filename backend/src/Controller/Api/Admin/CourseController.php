@@ -36,6 +36,33 @@ final class CourseController extends AbstractController
     {
         $archived = $request->query->get('archived');
         $archivedFilter = $archived !== null && $archived !== '' ? filter_var($archived, FILTER_VALIDATE_BOOLEAN) : null;
+        $hasPaginatedRequest = $request->query->has('page')
+            || $request->query->has('limit');
+
+        if ($hasPaginatedRequest) {
+            $page = max(1, $request->query->getInt('page', 1));
+            $limit = min(100, max(1, $request->query->getInt('limit', 20)));
+            $sortBy = match ($request->query->get('sort')) {
+                'archived' => 'archived',
+                default => 'dayOfWeek',
+            };
+            $sortDirection = strtolower((string) $request->query->get('direction', 'asc')) === 'desc'
+                ? 'DESC'
+                : 'ASC';
+            $total = $this->courseRepository->countForAdminList($archivedFilter);
+            $courses = $this->courseRepository->findPageForAdminList($page, $limit, $archivedFilter, $sortBy, $sortDirection);
+
+            return $this->json([
+                'items' => array_map(fn (Course $c) => $this->normalizer->normalizeCourse($c), $courses),
+                'pagination' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                    'pages' => max(1, (int) ceil($total / $limit)),
+                ],
+            ]);
+        }
+
         $courses = $this->courseRepository->findAllWithArchivedFilter($archivedFilter);
 
         return $this->json(['items' => array_map(fn (Course $c) => $this->normalizer->normalizeCourse($c), $courses)]);

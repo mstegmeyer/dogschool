@@ -6,7 +6,17 @@
     </div>
 
     <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }">
-      <div v-if="courseTypes.length === 0 && !loading" class="text-center py-8 text-slate-400 text-sm">
+      <div v-if="loading" class="p-4">
+        <AppSkeletonCollection
+          :mobile-cards="4"
+          :desktop-rows="6"
+          :desktop-columns="4"
+          :meta-columns="0"
+          :content-lines="2"
+          :show-actions="true"
+        />
+      </div>
+      <div v-else-if="courseTypes.length === 0" class="text-center py-8 text-slate-400 text-sm">
         Noch keine Kursarten erstellt
       </div>
       <template v-else>

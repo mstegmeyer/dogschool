@@ -5,7 +5,22 @@
       <UButton icon="i-heroicons-plus" label="Hund hinzufügen" @click="showAdd = true" />
     </div>
 
-    <div v-if="dogs.length === 0 && !loading" class="text-center py-12">
+    <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <UCard v-for="index in 6" :key="index">
+        <div class="flex items-start gap-3">
+          <USkeleton class="h-10 w-10 shrink-0 rounded-full" />
+          <div class="min-w-0 flex-1 space-y-2">
+            <USkeleton class="h-4 w-24 rounded-md" />
+            <USkeleton class="h-3 w-32 rounded-md" />
+            <div class="flex gap-2 pt-1">
+              <USkeleton class="h-5 w-16 rounded-full" />
+              <USkeleton class="h-5 w-14 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </UCard>
+    </div>
+    <div v-else-if="dogs.length === 0" class="text-center py-12">
       <UIcon name="i-heroicons-heart" class="w-12 h-12 text-slate-300 mx-auto mb-3" />
       <p class="text-slate-500">Du hast noch keinen Hund registriert.</p>
       <UButton class="mt-4" label="Jetzt hinzufügen" @click="showAdd = true" />

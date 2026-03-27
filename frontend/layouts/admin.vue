@@ -37,11 +37,20 @@
     <!-- Mobile slideover -->
     <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'w-[min(16rem,calc(100vw-2rem))]' }">
       <div class="mobile-shell-drawer flex flex-col h-full bg-komm-900">
-        <div class="px-6 py-5 border-b border-komm-800">
-          <NuxtLink to="/admin" class="block" @click="mobileMenuOpen = false">
+        <div class="flex items-start justify-between gap-3 px-6 py-5 border-b border-komm-800">
+          <NuxtLink to="/admin" class="block min-w-0" @click="mobileMenuOpen = false">
             <AppLogo tone="on-dark" />
             <span class="block text-xs text-komm-400 mt-1.5">Admin-Bereich</span>
           </NuxtLink>
+          <UButton
+            color="white"
+            variant="ghost"
+            icon="i-heroicons-x-mark"
+            aria-label="Menü schließen"
+            class="shrink-0"
+            :ui="{ color: { white: { ghost: 'text-komm-300 hover:text-white hover:bg-komm-800' } } }"
+            @click="mobileMenuOpen = false"
+          />
         </div>
 
         <nav class="flex-1 px-3 py-4 overflow-y-auto">

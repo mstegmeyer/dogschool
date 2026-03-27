@@ -11,6 +11,7 @@ use App\Service\ApiNormalizer;
 use App\Service\CreditService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -27,8 +28,40 @@ final class ContractController extends AbstractController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
+        $stateParam = $request->query->get('state');
+        $state = is_string($stateParam) && $stateParam !== '' && $stateParam !== 'all'
+            ? ContractState::tryFrom($stateParam)
+            : null;
+        $hasPaginatedRequest = $request->query->has('page')
+            || $request->query->has('limit')
+            || $state !== null;
+
+        if ($hasPaginatedRequest) {
+            $page = max(1, $request->query->getInt('page', 1));
+            $limit = min(100, max(1, $request->query->getInt('limit', 20)));
+            $sortBy = match ($request->query->get('sort')) {
+                'state' => 'state',
+                default => 'createdAt',
+            };
+            $sortDirection = strtolower((string) $request->query->get('direction', 'desc')) === 'asc'
+                ? 'ASC'
+                : 'DESC';
+            $total = $this->contractRepository->countForAdminList($state);
+            $contracts = $this->contractRepository->findPageForAdminList($page, $limit, $state, $sortBy, $sortDirection);
+
+            return $this->json([
+                'items' => array_map(fn (Contract $c) => $this->normalizer->normalizeContract($c), $contracts),
+                'pagination' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                    'pages' => max(1, (int) ceil($total / $limit)),
+                ],
+            ]);
+        }
+
         $contracts = $this->contractRepository->findAllOrderByCreatedAt();
 
         return $this->json(['items' => array_map(fn (Contract $c) => $this->normalizer->normalizeContract($c), $contracts)]);

@@ -39,6 +39,42 @@ final class CustomerControllerTest extends WebTestCase
         self::assertSame($customer->getEmail(), $one['email']);
     }
 
+    public function testListCustomersSupportsPaginationAndSearch(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        $needle = 'Pagination '.uniqid('', true);
+
+        $helper->createCustomerAndLogin('admin-page-1-'.uniqid('', true).'@example.com', 'secret', $needle.' Alpha');
+        $helper->createCustomerAndLogin('admin-page-2-'.uniqid('', true).'@example.com', 'secret', $needle.' Beta');
+        $helper->createCustomerAndLogin('admin-page-3-'.uniqid('', true).'@example.com', 'secret', $needle.' Gamma');
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/customers?page=1&limit=2&q='.rawurlencode($needle),
+            $token,
+        );
+        self::assertResponseIsSuccessful();
+        $pageOne = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertCount(2, $pageOne['items']);
+        self::assertSame(1, $pageOne['pagination']['page']);
+        self::assertSame(2, $pageOne['pagination']['limit']);
+        self::assertSame(3, $pageOne['pagination']['total']);
+        self::assertSame(2, $pageOne['pagination']['pages']);
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/customers?page=2&limit=2&q='.rawurlencode($needle),
+            $token,
+        );
+        self::assertResponseIsSuccessful();
+        $pageTwo = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertCount(1, $pageTwo['items']);
+        self::assertSame(2, $pageTwo['pagination']['page']);
+        self::assertSame(3, $pageTwo['pagination']['total']);
+    }
+
     public function testGetCustomerReturns404ForUnknownId(): void
     {
         $client = static::createClient();

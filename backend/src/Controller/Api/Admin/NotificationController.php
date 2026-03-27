@@ -38,6 +38,25 @@ final class NotificationController extends AbstractController
     public function list(Request $request): JsonResponse
     {
         $courseId = $request->query->get('courseId');
+        $hasPaginatedRequest = $request->query->has('page') || $request->query->has('limit');
+
+        if ($hasPaginatedRequest && ($courseId === null || $courseId === '')) {
+            $page = max(1, $request->query->getInt('page', 1));
+            $limit = min(100, max(1, $request->query->getInt('limit', 20)));
+            $total = $this->notificationRepository->countForAdminList();
+            $notifications = $this->notificationRepository->findPageForAdminList($page, $limit);
+
+            return $this->json([
+                'items' => array_map(fn (Notification $n) => $this->normalizer->normalizeNotification($n), $notifications),
+                'pagination' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                    'pages' => max(1, (int) ceil($total / $limit)),
+                ],
+            ]);
+        }
+
         $notifications = $courseId !== null && $courseId !== ''
             ? $this->notificationRepository->findByCourse($courseId)
             : $this->notificationRepository->findRecent(100);

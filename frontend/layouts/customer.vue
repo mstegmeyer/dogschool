@@ -38,8 +38,8 @@
     </aside>
 
     <!-- Mobile slideover -->
-    <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'max-w-[16rem]' }">
-      <div class="flex flex-col h-full bg-sand-100">
+    <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'w-[min(16rem,calc(100vw-2rem))]' }">
+      <div class="mobile-shell-drawer flex flex-col h-full bg-sand-100">
         <div class="px-6 py-5 border-b border-sand-200">
           <NuxtLink to="/customer" class="block" @click="mobileMenuOpen = false">
             <AppLogo tone="on-light" />
@@ -78,18 +78,19 @@
     </USlideover>
 
     <!-- Mobile top bar -->
-    <header class="lg:hidden fixed top-0 inset-x-0 h-14 bg-sand-100 border-b border-sand-200 flex items-center px-4 z-10">
+    <header class="mobile-shell-header lg:hidden fixed top-0 inset-x-0 bg-sand-100 border-b border-sand-200 flex items-center z-10">
       <UButton
         color="gray"
         variant="ghost"
         icon="i-heroicons-bars-3"
+        class="shrink-0"
         @click="mobileMenuOpen = true"
       />
-      <AppLogo tone="on-light" size="sm" class="ml-3" />
+      <AppLogo tone="on-light" size="sm" class="ml-3 h-6 max-w-[7.5rem] shrink min-w-0" />
     </header>
 
-    <main class="lg:ml-64 min-h-screen pt-14 lg:pt-0">
-      <div class="w-full px-4 py-6 lg:px-6 lg:py-8">
+    <main class="mobile-shell-main lg:ml-64 min-h-screen lg:pt-0">
+      <div class="mobile-shell-content w-full py-6 lg:px-6 lg:py-8">
         <slot />
       </div>
     </main>

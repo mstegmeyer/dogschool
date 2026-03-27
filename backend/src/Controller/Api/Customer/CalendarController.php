@@ -120,6 +120,14 @@ final class CalendarController extends AbstractController
         ]);
     }
 
+    #[Route('/subscription', name: 'subscription', methods: ['GET'])]
+    public function subscription(Customer $customer): JsonResponse
+    {
+        return $this->json([
+            'path' => '/api/calendar/customer/'.$customer->getCalendarFeedToken().'.ics',
+        ]);
+    }
+
     /**
      * @return array{\DateTimeImmutable, \DateTimeImmutable}
      */

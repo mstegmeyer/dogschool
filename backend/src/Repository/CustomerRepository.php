@@ -23,6 +23,11 @@ class CustomerRepository extends ServiceEntityRepository
         return $this->findOneBy(['email' => $email]);
     }
 
+    public function findOneByCalendarFeedToken(string $token): ?Customer
+    {
+        return $this->findOneBy(['calendarFeedToken' => $token]);
+    }
+
     /**
      * @return array<int, Customer>
      */

@@ -209,6 +209,10 @@ export interface BookingResponse {
   creditBalance: number
 }
 
+export interface CalendarSubscriptionResponse {
+  path: string
+}
+
 export interface ProfileUpdatePayload {
   name?: string
   email?: string

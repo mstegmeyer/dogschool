@@ -95,6 +95,19 @@ final class CalendarControllerTest extends WebTestCase
         self::assertSame($from, $data['from']);
     }
 
+    public function testSubscriptionReturnsFeedPath(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $helper->customerRequest(Request::METHOD_GET, '/api/customer/calendar/subscription', $token);
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+
+        self::assertSame('/api/calendar/customer/'.$customer->getCalendarFeedToken().'.ics', $data['path']);
+    }
+
     public function testBookCourseDateSuccess(): void
     {
         $client = static::createClient();

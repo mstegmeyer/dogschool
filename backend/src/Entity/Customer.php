@@ -40,6 +40,9 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::STRING)]
     private string $password;
 
+    #[ORM\Column(type: Types::STRING, length: 36, unique: true)]
+    private string $calendarFeedToken;
+
     #[ORM\Embedded(class: Address::class)]
     private Address $address;
 
@@ -63,6 +66,7 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->id = Uuid::v7()->toRfc4122();
         $this->createdAt = new \DateTimeImmutable();
+        $this->calendarFeedToken = Uuid::v7()->toRfc4122();
         $this->address = new Address();
         $this->bankAccount = new BankAccount();
         $this->dogs = new ArrayCollection();
@@ -112,6 +116,18 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
+
+        return $this;
+    }
+
+    public function getCalendarFeedToken(): string
+    {
+        return $this->calendarFeedToken;
+    }
+
+    public function refreshCalendarFeedToken(): static
+    {
+        $this->calendarFeedToken = Uuid::v7()->toRfc4122();
 
         return $this;
     }

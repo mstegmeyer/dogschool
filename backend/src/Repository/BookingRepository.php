@@ -68,10 +68,55 @@ class BookingRepository extends ServiceEntityRepository
     public function findActiveByCustomer(Customer $customer): array
     {
         $rows = $this->createQueryBuilder('b')
+            ->leftJoin('b.courseDate', 'courseDate')
+            ->addSelect('courseDate')
+            ->leftJoin('courseDate.course', 'course')
+            ->addSelect('course')
+            ->leftJoin('course.courseType', 'courseType')
+            ->addSelect('courseType')
+            ->leftJoin('b.dog', 'dog')
+            ->addSelect('dog')
             ->andWhere('b.customer = :customer')
             ->andWhere('b.cancelledAt IS NULL')
             ->setParameter('customer', $customer)
-            ->orderBy('b.createdAt', 'DESC')
+            ->orderBy('courseDate.date', 'ASC')
+            ->addOrderBy('courseDate.startTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        if (!is_iterable($rows)) {
+            return [];
+        }
+
+        $bookings = [];
+        foreach ($rows as $row) {
+            if ($row instanceof Booking) {
+                $bookings[] = $row;
+            }
+        }
+
+        return $bookings;
+    }
+
+    /**
+     * @return array<int, Booking>
+     */
+    public function findActiveForCalendarFeed(Customer $customer): array
+    {
+        $rows = $this->createQueryBuilder('b')
+            ->leftJoin('b.courseDate', 'courseDate')
+            ->addSelect('courseDate')
+            ->leftJoin('courseDate.course', 'course')
+            ->addSelect('course')
+            ->leftJoin('course.courseType', 'courseType')
+            ->addSelect('courseType')
+            ->leftJoin('b.dog', 'dog')
+            ->addSelect('dog')
+            ->andWhere('b.customer = :customer')
+            ->andWhere('b.cancelledAt IS NULL')
+            ->setParameter('customer', $customer)
+            ->orderBy('courseDate.date', 'ASC')
+            ->addOrderBy('courseDate.startTime', 'ASC')
             ->getQuery()
             ->getResult();
 

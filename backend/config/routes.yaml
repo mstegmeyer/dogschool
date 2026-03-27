@@ -1,3 +1,8 @@
+api_customer_calendar_feed:
+    path: /api/calendar/customer/{token}.ics
+    controller: 'app.login_controller::customerCalendarFeed'
+    methods: [GET]
+
 controllers:
     resource:
         path: ../src/Controller/

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
+use App\Entity\CourseDate;
+use App\Repository\BookingRepository;
+use App\Repository\CustomerRepository;
+use App\Service\CustomerCalendarFeedBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,6 +28,15 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class LoginController extends AbstractController
 {
+    public static function getSubscribedServices(): array
+    {
+        return array_merge(parent::getSubscribedServices(), [
+            CustomerRepository::class,
+            BookingRepository::class,
+            CustomerCalendarFeedBuilder::class,
+        ]);
+    }
+
     #[Route('/api/customer/login', name: 'api_customer_login_check', methods: ['POST'])]
     public function customerLogin(): JsonResponse
     {
@@ -40,5 +53,29 @@ final class LoginController extends AbstractController
             ['error' => 'Send JSON with "username" and "password".'],
             Response::HTTP_BAD_REQUEST
         );
+    }
+
+    public function customerCalendarFeed(string $token): Response
+    {
+        $customerRepository = $this->container->get(CustomerRepository::class);
+        $bookingRepository = $this->container->get(BookingRepository::class);
+        $calendarFeedBuilder = $this->container->get(CustomerCalendarFeedBuilder::class);
+
+        $customer = $customerRepository->findOneByCalendarFeedToken($token);
+        if ($customer === null) {
+            return new Response('Calendar feed not found.', Response::HTTP_NOT_FOUND, [
+                'Content-Type' => 'text/plain; charset=utf-8',
+            ]);
+        }
+
+        $content = $calendarFeedBuilder->build(
+            $customer,
+            $bookingRepository->findActiveForCalendarFeed($customer),
+        );
+
+        return new Response($content, Response::HTTP_OK, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => 'inline; filename="komm-bookings.ics"',
+        ]);
     }
 }

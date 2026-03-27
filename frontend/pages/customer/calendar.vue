@@ -1,7 +1,17 @@
 <template>
   <div>
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-      <h1 class="text-2xl font-bold text-slate-800">Kalender</h1>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-800">Kalender</h1>
+        <UButton
+          color="blue"
+          variant="soft"
+          size="sm"
+          icon="i-heroicons-link"
+          label="Abonnieren"
+          @click="showCalendarSubscription = true"
+        />
+      </div>
       <div class="flex items-center gap-2">
         <UButtonGroup size="xs">
           <UButton
@@ -23,6 +33,67 @@
         <UButton variant="outline" size="sm" label="Heute" class="ml-1" @click="goToday" />
       </div>
     </div>
+
+    <UModal v-model="showCalendarSubscription">
+      <UCard>
+        <template #header>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-800">Kalender abonnieren</h2>
+              <p class="text-sm text-slate-500">
+                Mit diesem Link kannst du deine gebuchten Kurse in deiner Kalender-App als Abo einbinden.
+              </p>
+            </div>
+
+            <UBadge color="blue" variant="soft" size="sm">ICS Feed</UBadge>
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <UAlert
+            color="amber"
+            variant="soft"
+            icon="i-heroicons-lock-closed"
+            title="Privater Link"
+            description="Wenn du ihn teilst, können andere deine gebuchten Kurse sehen."
+          />
+
+          <div class="flex flex-col gap-3">
+            <UInput
+              :model-value="calendarSubscriptionUrl"
+              readonly
+              class="flex-1"
+              placeholder="Kalender-Link wird geladen ..."
+            />
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                label="Kopieren"
+                icon="i-heroicons-clipboard-document"
+                :disabled="!calendarSubscriptionUrl"
+                @click="copyCalendarUrl"
+              />
+              <UButton
+                label="Öffnen"
+                icon="i-heroicons-arrow-top-right-on-square"
+                variant="soft"
+                :disabled="!calendarSubscriptionWebcalUrl"
+                @click="openCalendarUrl"
+              />
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500">
+            Änderungen an Buchungen und Kursabsagen erscheinen, sobald deine Kalender-App das Abo aktualisiert.
+          </p>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end">
+            <UButton label="Schließen" color="gray" variant="ghost" @click="showCalendarSubscription = false" />
+          </div>
+        </template>
+      </UCard>
+    </UModal>
 
     <div :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
       <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[180px]' : ''">
@@ -98,12 +169,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, CourseDate, Dog } from '~/types'
+import type { ApiListResponse, CalendarSubscriptionResponse, CourseDate, Dog } from '~/types'
 
 definePageMeta({ layout: 'customer' })
 
 const api = useApi()
 const toast = useToast()
+const runtimeConfig = useRuntimeConfig()
 const { formatDate, dayNameShort, getWeekMonday } = useHelpers()
 
 const isMobile = ref(false)
@@ -117,11 +189,28 @@ const currentMonday = ref(getWeekMonday())
 const currentDay = ref(new Date().toISOString().split('T')[0])
 const courseDates = ref<CourseDate[]>([])
 const dogs = ref<Dog[]>([])
+const calendarSubscriptionPath = ref('')
+const showCalendarSubscription = ref(false)
 
 /** Pro Kurstermin gewählter Hund (nur relevant bei mehreren Hunden). */
 const dogIdByCourseDate = reactive<Record<string, string>>({})
 
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })))
+const calendarSubscriptionUrl = computed(() => {
+  if (!calendarSubscriptionPath.value) return ''
+
+  const baseUrl = runtimeConfig.public.apiBaseUrl || (import.meta.client ? window.location.origin : '')
+  if (!baseUrl) return calendarSubscriptionPath.value
+
+  try {
+    return new URL(calendarSubscriptionPath.value, baseUrl).toString()
+  } catch {
+    return calendarSubscriptionPath.value
+  }
+})
+const calendarSubscriptionWebcalUrl = computed(() =>
+  calendarSubscriptionUrl.value.replace(/^https?/, 'webcal'),
+)
 
 function dogIdForBooking(cd: CourseDate): string {
   if (dogs.value.length === 0) return ''
@@ -259,12 +348,34 @@ async function loadCalendar(): Promise<void> {
   courseDates.value = res.items
 }
 
+async function loadCalendarSubscription(): Promise<void> {
+  const res = await api.get<CalendarSubscriptionResponse>('/api/customer/calendar/subscription')
+  calendarSubscriptionPath.value = res.path
+}
+
+async function copyCalendarUrl(): Promise<void> {
+  if (!calendarSubscriptionUrl.value || !navigator.clipboard) return
+
+  try {
+    await navigator.clipboard.writeText(calendarSubscriptionUrl.value)
+    toast.add({ title: 'Kalender-Link kopiert', color: 'green' })
+  } catch {
+    toast.add({ title: 'Link konnte nicht kopiert werden', color: 'red' })
+  }
+}
+
+function openCalendarUrl(): void {
+  if (!calendarSubscriptionWebcalUrl.value) return
+  window.location.href = calendarSubscriptionWebcalUrl.value
+}
+
 watch(currentMonday, () => loadCalendar())
 
 onMounted(async () => {
   const [, dogRes] = await Promise.all([
     loadCalendar(),
     api.get<ApiListResponse<Dog>>('/api/customer/dogs'),
+    loadCalendarSubscription(),
   ])
   dogs.value = dogRes.items
 })

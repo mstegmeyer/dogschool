@@ -119,6 +119,7 @@ final class CustomerTest extends TestCase
         $customer = new Customer();
         self::assertNotNull($customer->getAddress());
         self::assertNotNull($customer->getBankAccount());
+        self::assertNotSame('', $customer->getCalendarFeedToken());
         self::assertNull($customer->getAddress()->getStreet());
         self::assertNull($customer->getBankAccount()->getIban());
     }

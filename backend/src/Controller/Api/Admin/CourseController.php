@@ -6,6 +6,7 @@ namespace App\Controller\Api\Admin;
 
 use App\Dto\CoursePayloadDto;
 use App\Entity\Course;
+use App\Entity\CourseDate;
 use App\Entity\CourseType;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
@@ -113,6 +114,10 @@ final class CourseController extends AbstractController
             return $this->json(['error' => 'Course not found'], Response::HTTP_NOT_FOUND);
         }
 
+        $previousDayOfWeek = $course->getDayOfWeek();
+        $previousStartTime = $course->getStartTime();
+        $previousEndTime = $course->getEndTime();
+
         $courseType = null;
         if ($dto->typeCode !== '') {
             $courseType = $this->courseTypeRepository->findByCode($dto->typeCode);
@@ -127,22 +132,52 @@ final class CourseController extends AbstractController
         if (count($errors) > 0) {
             return $this->json(['errors' => $this->normalizer->violationsToArray($errors)], Response::HTTP_BAD_REQUEST);
         }
+
+        $scheduleChanged = $previousDayOfWeek !== $course->getDayOfWeek()
+            || $previousStartTime !== $course->getStartTime()
+            || $previousEndTime !== $course->getEndTime();
+        if ($scheduleChanged) {
+            $this->courseRepository->syncUpcomingCourseDates($course, $previousDayOfWeek);
+        }
+
         $this->courseRepository->save($course);
 
         return $this->json($this->normalizer->normalizeCourse($course));
     }
 
     #[Route('/{id}/archive', name: 'archive', methods: ['POST'])]
-    public function archive(string $id): JsonResponse
+    public function archive(string $id, Request $request): JsonResponse
     {
         $course = $this->courseRepository->find($id);
         if ($course === null) {
             return $this->json(['error' => 'Course not found'], Response::HTTP_NOT_FOUND);
         }
-        $course->setArchived(true);
-        $this->courseRepository->save($course);
 
-        return $this->json($this->normalizer->normalizeCourse($course));
+        $payload = json_decode($request->getContent(), true);
+        $removeFromDateRaw = is_array($payload) ? ($payload['removeFromDate'] ?? null) : null;
+        if (!is_string($removeFromDateRaw) || $removeFromDateRaw === '') {
+            return $this->json(['error' => 'removeFromDate is required (YYYY-MM-DD).'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $timezone = new \DateTimeZone(CourseDate::TIMEZONE);
+        $removeFromDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $removeFromDateRaw, $timezone);
+        if ($removeFromDate === false || $removeFromDate->format('Y-m-d') !== $removeFromDateRaw) {
+            return $this->json(['error' => 'removeFromDate must be a valid date in YYYY-MM-DD format.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $today = new \DateTimeImmutable('today', $timezone);
+        if ($removeFromDate < $today) {
+            return $this->json(['error' => 'removeFromDate cannot be in the past.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $result = $this->courseRepository->archiveFromDate($course, $removeFromDate);
+
+        return $this->json([
+            ...$this->normalizer->normalizeCourse($course),
+            'removeFromDate' => $removeFromDate->format('Y-m-d'),
+            'removedCourseDates' => $result['removedCourseDates'],
+            'refundedBookings' => $result['refundedBookings'],
+        ]);
     }
 
     #[Route('/{id}/unarchive', name: 'unarchive', methods: ['POST'])]

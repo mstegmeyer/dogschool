@@ -78,7 +78,6 @@ class CourseDateRepository extends ServiceEntityRepository
 
         return $dates;
     }
-
     /**
      * @return array<int, CourseDate>
      */

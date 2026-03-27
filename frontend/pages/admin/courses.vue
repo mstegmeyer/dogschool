@@ -143,6 +143,12 @@
               <UInput v-model="form.endTime" type="time" required />
             </UFormGroup>
           </div>
+          <div
+            v-if="showScheduleHint"
+            class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          >
+            {{ scheduleHintText }}
+          </div>
           <UFormGroup label="Kommentar">
             <UTextarea v-model="form.comment" placeholder="Optionaler Kommentar" />
           </UFormGroup>
@@ -153,23 +159,64 @@
         </form>
       </UCard>
     </UModal>
+
+    <UModal v-model="showArchiveModal">
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold text-slate-800">Kurs archivieren</h3>
+        </template>
+
+        <div v-if="archiveCourse" class="space-y-4">
+          <p class="text-sm text-slate-600">
+            Der Kurs <span class="font-medium text-slate-800">{{ archiveCourseLabel }}</span> wird archiviert. Alle Kurstermine ab dem gewählten Datum werden entfernt, und bestehende Buchungen auf diesen Terminen bekommen ihre Credits automatisch zurück.
+          </p>
+
+          <UFormGroup label="Termine entfernen ab">
+            <UInput
+              v-model="archiveForm.removeFromDate"
+              type="date"
+              :min="archiveMinDate"
+              required
+            />
+          </UFormGroup>
+
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p class="font-medium">Bitte bestätigen:</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5">
+              <li>Der Kurs wird auf archiviert gesetzt.</li>
+              <li>Alle zukünftigen Termine ab {{ formatDate(archiveForm.removeFromDate) }} werden gelöscht.</li>
+              <li>Bereits vorhandene Buchungen auf gelöschten Terminen werden automatisch erstattet.</li>
+            </ul>
+          </div>
+
+          <div class="flex justify-end gap-2">
+            <UButton variant="ghost" label="Abbrechen" :disabled="archiving" @click="closeArchiveModal" />
+            <UButton color="red" :loading="archiving" label="Verbindlich archivieren" @click="confirmArchive" />
+          </div>
+        </div>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { FetchError } from 'ofetch'
 import type { ApiListResponse, Course } from '~/types'
 
 definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
-const { dayName, levelLabel } = useHelpers()
+const { dayName, formatDate, levelLabel, todayIso } = useHelpers()
 
 const courses = ref<Course[]>([])
 const loading = ref(true)
 const showModal = ref(false)
+const showArchiveModal = ref(false)
 const saving = ref(false)
+const archiving = ref(false)
 const editingCourse = ref<Course | null>(null)
+const archiveCourse = ref<Course | null>(null)
 const currentPage = ref(1)
 const totalCourses = ref(0)
 const totalPages = ref(1)
@@ -196,6 +243,29 @@ const dayOptions = [
   { label: 'Sonntag', value: 7 },
 ]
 
+const archiveMinDate = computed(() => todayIso())
+const showScheduleHint = computed(() => editingCourse.value !== null && (
+  form.dayOfWeek !== editingCourse.value.dayOfWeek
+  || form.startTime !== editingCourse.value.startTime
+  || form.endTime !== editingCourse.value.endTime
+))
+const scheduleHintText = computed(() => {
+  if (editingCourse.value === null) return ''
+
+  const dayChanged = form.dayOfWeek !== editingCourse.value.dayOfWeek
+  const timeChanged = form.startTime !== editingCourse.value.startTime || form.endTime !== editingCourse.value.endTime
+
+  if (dayChanged && timeChanged) {
+    return 'Beim Speichern werden alle zukünftigen Kurstermine dieses Kurses auf den gewählten Wochentag und die neue Uhrzeit umgestellt.'
+  }
+
+  if (dayChanged) {
+    return 'Beim Speichern werden alle zukünftigen Kurstermine dieses Kurses auf den gewählten Wochentag umgestellt.'
+  }
+
+  return 'Beim Speichern wird die Uhrzeit aller zukünftigen Kurstermine dieses Kurses aktualisiert.'
+})
+
 const form = reactive({
   typeCode: '',
   dayOfWeek: 1,
@@ -203,6 +273,10 @@ const form = reactive({
   endTime: '11:00',
   level: 0,
   comment: '',
+})
+
+const archiveForm = reactive({
+  removeFromDate: todayIso(),
 })
 
 const columns = [
@@ -223,6 +297,12 @@ const resultSummary = computed(() => {
   if (totalPages.value <= 1) return `${totalCourses.value} Kurse`
 
   return `${pageStart.value}–${pageEnd.value} von ${totalCourses.value} Kursen`
+})
+
+const archiveCourseLabel = computed(() => {
+  if (!archiveCourse.value) return ''
+
+  return `${archiveCourse.value.type?.name || 'Kurs'} · ${dayName(archiveCourse.value.dayOfWeek)} · ${archiveCourse.value.startTime} – ${archiveCourse.value.endTime}`
 })
 
 function getRowActions(row: Course) {
@@ -262,6 +342,26 @@ function openEditModal(course: Course) {
   showModal.value = true
 }
 
+function openArchiveModal(course: Course) {
+  archiveCourse.value = course
+  archiveForm.removeFromDate = archiveMinDate.value
+  showArchiveModal.value = true
+}
+
+function closeArchiveModal() {
+  if (archiving.value) return
+
+  showArchiveModal.value = false
+  archiveCourse.value = null
+  archiveForm.removeFromDate = archiveMinDate.value
+}
+
+function resolveArchiveError(cause: unknown): string {
+  const error = cause as FetchError<{ error?: string }>
+
+  return error.data?.error || 'Fehler beim Archivieren des Kurses'
+}
+
 async function saveCourse() {
   saving.value = true
   try {
@@ -282,10 +382,49 @@ async function saveCourse() {
 }
 
 async function toggleArchive(course: Course) {
-  const action = course.archived ? 'unarchive' : 'archive'
-  await api.post(`/api/admin/courses/${course.id}/${action}`)
-  toast.add({ title: course.archived ? 'Kurs reaktiviert' : 'Kurs archiviert', color: 'green' })
-  await loadCourses()
+  if (!course.archived) {
+    openArchiveModal(course)
+    return
+  }
+
+  try {
+    await api.post(`/api/admin/courses/${course.id}/unarchive`)
+    toast.add({ title: 'Kurs reaktiviert', color: 'green' })
+    await loadCourses()
+  } catch {
+    toast.add({ title: 'Fehler beim Reaktivieren', color: 'red' })
+  }
+}
+
+async function confirmArchive() {
+  if (!archiveCourse.value || !archiveForm.removeFromDate) return
+
+  archiving.value = true
+
+  try {
+    const response = await api.post<Course & {
+      removeFromDate: string
+      removedCourseDates: number
+      refundedBookings: number
+    }>(`/api/admin/courses/${archiveCourse.value.id}/archive`, {
+      removeFromDate: archiveForm.removeFromDate,
+    })
+
+    toast.add({
+      title: 'Kurs archiviert',
+      description: `${response.removedCourseDates} Termine ab ${formatDate(response.removeFromDate)} entfernt, ${response.refundedBookings} Buchungen erstattet.`,
+      color: 'green',
+    })
+
+    showArchiveModal.value = false
+    archiveCourse.value = null
+    archiveForm.removeFromDate = archiveMinDate.value
+    await loadCourses()
+  } catch (error) {
+    toast.add({ title: resolveArchiveError(error), color: 'red' })
+  } finally {
+    archiving.value = false
+  }
 }
 
 async function loadCourses(): Promise<void> {

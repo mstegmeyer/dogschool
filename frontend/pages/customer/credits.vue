@@ -36,30 +36,66 @@
       </ul>
     </UCard>
 
-      <UCard>
-        <template #header>
-          <h3 class="font-semibold text-slate-800">Transaktionsverlauf</h3>
-        </template>
-        <UTable :columns="columns" :rows="transactions" :loading="loading">
-          <template #amount-data="{ row }">
-            <span class="font-semibold" :class="row.amount > 0 ? 'text-komm-600' : 'text-red-500'">
-              {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
-            </span>
-          </template>
-          <template #type-data="{ row }">
-            <UBadge
-              :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
-              variant="soft"
-              size="xs"
-            >
-              {{ creditTypeLabel(row.type) }}
-            </UBadge>
-          </template>
-          <template #createdAt-data="{ row }">
-            {{ formatDateTime(row.createdAt) }}
-          </template>
-        </UTable>
-      </UCard>
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold text-slate-800">Transaktionsverlauf</h3>
+      </template>
+
+      <div v-if="loading" class="text-sm text-slate-400">Lade Verlauf…</div>
+      <div v-else-if="transactions.length === 0" class="text-sm text-slate-400">Noch keine Transaktionen vorhanden.</div>
+      <template v-else>
+        <div class="space-y-3 md:hidden">
+          <div
+            v-for="transaction in transactions"
+            :key="transaction.id"
+            class="rounded-lg border border-slate-200 bg-white p-3"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-semibold" :class="transaction.amount > 0 ? 'text-komm-600' : 'text-red-500'">
+                  {{ transaction.amount > 0 ? '+' : '' }}{{ transaction.amount }}
+                </p>
+                <UBadge
+                  :color="transaction.type === 'WEEKLY_GRANT' ? 'primary' : transaction.type === 'BOOKING' ? 'blue' : transaction.type === 'CANCELLATION' ? 'amber' : 'gray'"
+                  variant="soft"
+                  size="xs"
+                  class="mt-2"
+                >
+                  {{ creditTypeLabel(transaction.type) }}
+                </UBadge>
+              </div>
+              <p class="text-right text-xs text-slate-500">
+                {{ formatDateTime(transaction.createdAt) }}
+              </p>
+            </div>
+            <p class="mt-3 text-sm text-slate-600">
+              {{ transaction.description }}
+            </p>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <UTable :columns="columns" :rows="transactions">
+            <template #amount-data="{ row }">
+              <span class="font-semibold" :class="row.amount > 0 ? 'text-komm-600' : 'text-red-500'">
+                {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
+              </span>
+            </template>
+            <template #type-data="{ row }">
+              <UBadge
+                :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
+                variant="soft"
+                size="xs"
+              >
+                {{ creditTypeLabel(row.type) }}
+              </UBadge>
+            </template>
+            <template #createdAt-data="{ row }">
+              {{ formatDateTime(row.createdAt) }}
+            </template>
+          </UTable>
+        </div>
+      </template>
+    </UCard>
   </div>
 </template>
 

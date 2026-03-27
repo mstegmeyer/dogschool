@@ -1,24 +1,68 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Mitteilungen</h1>
-      <UButton icon="i-heroicons-plus" label="Neue Mitteilung" @click="openCreateModal" />
+      <UButton icon="i-heroicons-plus" label="Neue Mitteilung" class="justify-center" @click="openCreateModal" />
     </div>
 
     <UCard :ui="{ body: { padding: 'p-0 sm:p-0' } }">
       <div v-if="notifications.length === 0 && !loading" class="text-center py-8 text-slate-400 text-sm">
         Noch keine Mitteilungen erstellt
       </div>
-      <div v-else class="overflow-x-auto">
-        <UTable
-          :columns="columns"
-          :rows="notifications"
-          :loading="loading"
-          :ui="{
-            th: { base: 'text-left text-xs font-semibold text-slate-500 py-2 px-3' },
-            td: { base: 'py-1.5 px-3 align-top text-sm' },
-          }"
-        >
+      <template v-else>
+        <div class="space-y-3 p-4 md:hidden">
+          <div
+            v-for="notification in notifications"
+            :key="notification.id"
+            class="rounded-lg border border-slate-200 bg-white p-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-medium text-slate-800">{{ notification.title }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ formatDateTime(notification.createdAt) }}</p>
+              </div>
+              <div class="flex gap-1">
+                <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="openEditModal(notification)" />
+                <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="deleteNotification(notification)" />
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span v-if="notification.isPinned" class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded px-1.5 py-0.5 whitespace-nowrap">
+                <UIcon name="i-heroicons-map-pin" class="h-3.5 w-3.5" />
+                bis {{ formatDate(notification.pinnedUntil) }}
+              </span>
+              <span v-else-if="notification.pinnedUntil" class="text-xs text-slate-400 whitespace-nowrap">
+                abgelaufen
+              </span>
+              <span v-if="notification.isGlobal" class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 rounded px-1.5 py-0.5">
+                <UIcon name="i-heroicons-globe-alt" class="h-3.5 w-3.5" />
+                Alle Kurse
+              </span>
+              <span
+                v-for="course in notification.isGlobal ? [] : notification.courses"
+                :key="course.id"
+                class="text-xs text-slate-600 bg-slate-100 rounded px-1.5 py-0.5"
+              >
+                {{ formatNotificationCourse(course) }}
+              </span>
+            </div>
+            <p class="mt-3 text-sm text-slate-600">
+              {{ notification.message }}
+            </p>
+            <p class="mt-3 text-xs text-slate-400">
+              Von {{ notification.authorName || '–' }}
+            </p>
+          </div>
+        </div>
+        <div class="hidden overflow-x-auto md:block">
+          <UTable
+            :columns="columns"
+            :rows="notifications"
+            :ui="{
+              th: { base: 'text-left text-xs font-semibold text-slate-500 py-2 px-3' },
+              td: { base: 'py-1.5 px-3 align-top text-sm' },
+            }"
+          >
           <template #createdAt-data="{ row }">
             <span class="text-xs text-slate-500 whitespace-nowrap tabular-nums">
               {{ formatDateTime(row.createdAt) }}
@@ -66,8 +110,9 @@
               <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="deleteNotification(row)" />
             </div>
           </template>
-        </UTable>
-      </div>
+          </UTable>
+        </div>
+      </template>
     </UCard>
 
     <UModal v-model="showModal">

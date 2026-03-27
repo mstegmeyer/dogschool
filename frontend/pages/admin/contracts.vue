@@ -1,18 +1,71 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Verträge</h1>
-      <USelectMenu v-model="stateFilter" :options="stateOptions" value-attribute="value" class="w-44" />
+      <USelectMenu v-model="stateFilter" :options="stateOptions" value-attribute="value" class="w-full sm:w-44" />
     </div>
 
     <UCard>
-      <div class="overflow-x-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
-        <UTable
-          :columns="columns"
-          :rows="filteredContracts"
-          :loading="loading"
-          class="min-w-[720px]"
-        >
+      <div v-if="loading" class="text-sm text-slate-400">Verträge werden geladen…</div>
+      <div v-else-if="filteredContracts.length === 0" class="text-sm text-slate-400">Keine Verträge für diesen Filter gefunden.</div>
+      <template v-else>
+        <div class="space-y-3 md:hidden">
+          <div
+            v-for="contract in filteredContracts"
+            :key="contract.id"
+            class="rounded-lg border border-slate-200 bg-white p-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-medium text-slate-800">{{ contract.dogName || '–' }}</p>
+                <p class="text-sm text-slate-500">{{ contract.customerName || '–' }}</p>
+              </div>
+              <UBadge :color="contractStateColor(contract.state)" variant="soft" size="xs">
+                {{ contractStateLabel(contract.state) }}
+              </UBadge>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <p class="text-slate-400">Kurse</p>
+                <p class="font-medium text-slate-700">{{ contract.coursesPerWeek }}× / Wo.</p>
+              </div>
+              <div>
+                <p class="text-slate-400">Preis</p>
+                <p class="font-medium text-slate-700">{{ formatContractMonthlyPrice(contract.price, contract.type) }}</p>
+              </div>
+              <div>
+                <p class="text-slate-400">Zeitraum</p>
+                <p class="font-medium text-slate-700">
+                  {{ contract.startDate ? `${formatDate(contract.startDate)} – ${contract.endDate ? formatDate(contract.endDate) : '∞'}` : '–' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-slate-400">Erstellt</p>
+                <p class="font-medium text-slate-700">{{ formatDate(contract.createdAt) }}</p>
+              </div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <template v-if="contract.state === 'REQUESTED'">
+                <UButton size="sm" color="primary" variant="soft" label="Genehmigen" @click="approve(contract)" />
+                <UButton size="sm" color="red" variant="soft" label="Ablehnen" @click="decline(contract)" />
+              </template>
+              <UButton
+                v-else-if="contract.state === 'ACTIVE'"
+                size="sm"
+                color="red"
+                variant="soft"
+                label="Kündigen"
+                @click="openCancelConfirm(contract)"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="hidden overflow-x-auto -mx-4 px-4 sm:-mx-6 sm:px-6 md:block">
+          <UTable
+            :columns="columns"
+            :rows="filteredContracts"
+            class="min-w-[720px]"
+          >
         <template #participant-data="{ row }">
           <div class="min-w-[8rem] max-w-[14rem] py-0.5">
             <p class="font-medium text-slate-800 truncate" :title="row.dogName || ''">
@@ -58,9 +111,10 @@
               @click="openCancelConfirm(row)"
             />
           </div>
-        </template>
-        </UTable>
-      </div>
+          </template>
+          </UTable>
+        </div>
+      </template>
     </UCard>
 
     <UModal v-model="showCancelModal">

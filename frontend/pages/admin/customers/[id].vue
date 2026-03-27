@@ -10,14 +10,14 @@
         <template #header>
           <h3 class="font-semibold text-slate-800">Kundendaten</h3>
         </template>
-        <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
           <div>
             <p class="text-slate-400 text-xs">Name</p>
             <p class="font-medium text-slate-700">{{ customer.name }}</p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">E-Mail</p>
-            <p class="font-medium text-slate-700">{{ customer.email }}</p>
+            <p class="break-all font-medium text-slate-700">{{ customer.email }}</p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">Straße</p>
@@ -31,7 +31,7 @@
           </div>
           <div>
             <p class="text-slate-400 text-xs">IBAN</p>
-            <p class="font-medium text-slate-700">{{ customer.bankAccount.iban || '–' }}</p>
+            <p class="break-all font-medium text-slate-700">{{ customer.bankAccount.iban || '–' }}</p>
           </div>
           <div>
             <p class="text-slate-400 text-xs">Kontoinhaber</p>
@@ -73,25 +73,59 @@
       <template #header>
         <h3 class="font-semibold text-slate-800">Guthaben-Verlauf</h3>
       </template>
-      <UTable :columns="creditColumns" :rows="creditHistory">
-        <template #amount-data="{ row }">
-          <span :class="row.amount > 0 ? 'text-komm-600 font-semibold' : 'text-red-500 font-semibold'">
-            {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
-          </span>
-        </template>
-        <template #type-data="{ row }">
-          <UBadge
-            :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
-            variant="soft"
-            size="xs"
+      <div v-if="creditHistory.length === 0" class="text-sm text-slate-400">
+        Noch keine Guthaben-Buchungen vorhanden.
+      </div>
+      <template v-else>
+        <div class="space-y-3 md:hidden">
+          <div
+            v-for="entry in creditHistory"
+            :key="entry.id"
+            class="rounded-lg border border-slate-200 bg-white p-3"
           >
-            {{ creditTypeLabel(row.type) }}
-          </UBadge>
-        </template>
-        <template #createdAt-data="{ row }">
-          {{ formatDateTime(row.createdAt) }}
-        </template>
-      </UTable>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p :class="entry.amount > 0 ? 'text-komm-600 font-semibold' : 'text-red-500 font-semibold'">
+                  {{ entry.amount > 0 ? '+' : '' }}{{ entry.amount }}
+                </p>
+                <UBadge
+                  :color="entry.type === 'WEEKLY_GRANT' ? 'primary' : entry.type === 'BOOKING' ? 'blue' : entry.type === 'CANCELLATION' ? 'amber' : 'gray'"
+                  variant="soft"
+                  size="xs"
+                  class="mt-2"
+                >
+                  {{ creditTypeLabel(entry.type) }}
+                </UBadge>
+              </div>
+              <p class="text-right text-xs text-slate-500">
+                {{ formatDateTime(entry.createdAt) }}
+              </p>
+            </div>
+            <p class="mt-3 text-sm text-slate-600">{{ entry.description }}</p>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <UTable :columns="creditColumns" :rows="creditHistory">
+            <template #amount-data="{ row }">
+              <span :class="row.amount > 0 ? 'text-komm-600 font-semibold' : 'text-red-500 font-semibold'">
+                {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
+              </span>
+            </template>
+            <template #type-data="{ row }">
+              <UBadge
+                :color="row.type === 'WEEKLY_GRANT' ? 'primary' : row.type === 'BOOKING' ? 'blue' : row.type === 'CANCELLATION' ? 'amber' : 'gray'"
+                variant="soft"
+                size="xs"
+              >
+                {{ creditTypeLabel(row.type) }}
+              </UBadge>
+            </template>
+            <template #createdAt-data="{ row }">
+              {{ formatDateTime(row.createdAt) }}
+            </template>
+          </UTable>
+        </div>
+      </template>
     </UCard>
   </div>
 </template>

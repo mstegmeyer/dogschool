@@ -1,50 +1,97 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-6">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Kurse</h1>
-      <div class="flex gap-2">
-        <USelectMenu v-model="archiveFilter" :options="filterOptions" value-attribute="value" class="w-40" />
-        <UButton icon="i-heroicons-plus" label="Neuer Kurs" @click="openCreateModal" />
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <USelectMenu v-model="archiveFilter" :options="filterOptions" value-attribute="value" class="w-full sm:w-40" />
+        <UButton icon="i-heroicons-plus" label="Neuer Kurs" class="justify-center" @click="openCreateModal" />
       </div>
     </div>
 
     <UCard>
-      <UTable :columns="columns" :rows="courses" :loading="loading">
-        <template #type-data="{ row }">
-          <div>
-            <span class="font-medium">{{ row.type?.name || '–' }}</span>
-            <UBadge class="ml-2" size="xs" variant="soft" color="gray">{{ row.type?.code }}</UBadge>
-          </div>
-        </template>
-        <template #dayOfWeek-data="{ row }">
-          {{ dayName(row.dayOfWeek) }}
-        </template>
-        <template #time-data="{ row }">
-          {{ row.startTime }} – {{ row.endTime }}
-        </template>
-        <template #level-data="{ row }">
-          {{ levelLabel(row.level) }}
-        </template>
-        <template #subscribers-data="{ row }">
-          <UTooltip
-            v-if="row.subscriberCount > 0"
-            :text="row.subscribers.map((s: { name: string }) => s.name).join(', ')"
+      <div v-if="loading" class="text-sm text-slate-400">Kurse werden geladen…</div>
+      <div v-else-if="courses.length === 0" class="text-sm text-slate-400">Keine Kurse gefunden.</div>
+      <template v-else>
+        <div class="space-y-3 md:hidden">
+          <div
+            v-for="course in courses"
+            :key="course.id"
+            class="rounded-lg border border-slate-200 bg-white p-4"
           >
-            <span class="font-medium text-komm-600 cursor-default">{{ row.subscriberCount }}</span>
-          </UTooltip>
-          <span v-else class="text-slate-400">0</span>
-        </template>
-        <template #archived-data="{ row }">
-          <UBadge :color="row.archived ? 'gray' : 'primary'" variant="soft" size="xs">
-            {{ row.archived ? 'Archiviert' : 'Aktiv' }}
-          </UBadge>
-        </template>
-        <template #actions-data="{ row }">
-          <UDropdown :items="getRowActions(row)">
-            <UButton variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
-          </UDropdown>
-        </template>
-      </UTable>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="font-medium text-slate-800">{{ course.type?.name || '–' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ dayName(course.dayOfWeek) }} · {{ course.startTime }} – {{ course.endTime }}</p>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <UBadge size="xs" variant="soft" color="gray">{{ course.type?.code }}</UBadge>
+                <UBadge :color="course.archived ? 'gray' : 'primary'" variant="soft" size="xs">
+                  {{ course.archived ? 'Archiviert' : 'Aktiv' }}
+                </UBadge>
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <p class="text-slate-400">Stufe</p>
+                <p class="font-medium text-slate-700">{{ levelLabel(course.level) }}</p>
+              </div>
+              <div>
+                <p class="text-slate-400">Abonnenten</p>
+                <p class="font-medium text-slate-700">{{ course.subscriberCount }}</p>
+              </div>
+            </div>
+            <p v-if="course.comment" class="mt-3 text-sm text-slate-600">{{ course.comment }}</p>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <UButton size="sm" variant="soft" label="Bearbeiten" @click="openEditModal(course)" />
+              <UButton
+                size="sm"
+                :color="course.archived ? 'primary' : 'gray'"
+                variant="ghost"
+                :label="course.archived ? 'Reaktivieren' : 'Archivieren'"
+                @click="toggleArchive(course)"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <UTable :columns="columns" :rows="courses">
+            <template #type-data="{ row }">
+              <div>
+                <span class="font-medium">{{ row.type?.name || '–' }}</span>
+                <UBadge class="ml-2" size="xs" variant="soft" color="gray">{{ row.type?.code }}</UBadge>
+              </div>
+            </template>
+            <template #dayOfWeek-data="{ row }">
+              {{ dayName(row.dayOfWeek) }}
+            </template>
+            <template #time-data="{ row }">
+              {{ row.startTime }} – {{ row.endTime }}
+            </template>
+            <template #level-data="{ row }">
+              {{ levelLabel(row.level) }}
+            </template>
+            <template #subscribers-data="{ row }">
+              <UTooltip
+                v-if="row.subscriberCount > 0"
+                :text="row.subscribers.map((s: { name: string }) => s.name).join(', ')"
+              >
+                <span class="font-medium text-komm-600 cursor-default">{{ row.subscriberCount }}</span>
+              </UTooltip>
+              <span v-else class="text-slate-400">0</span>
+            </template>
+            <template #archived-data="{ row }">
+              <UBadge :color="row.archived ? 'gray' : 'primary'" variant="soft" size="xs">
+                {{ row.archived ? 'Archiviert' : 'Aktiv' }}
+              </UBadge>
+            </template>
+            <template #actions-data="{ row }">
+              <UDropdown :items="getRowActions(row)">
+                <UButton variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
+              </UDropdown>
+            </template>
+          </UTable>
+        </div>
+      </template>
     </UCard>
 
     <!-- Create/Edit Modal -->
@@ -57,7 +104,7 @@
           <UFormGroup label="Kurstyp (Code)">
             <UInput v-model="form.typeCode" placeholder="z.B. MH, JUHU, AGI" required />
           </UFormGroup>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UFormGroup label="Wochentag">
               <USelectMenu v-model="form.dayOfWeek" :options="dayOptions" value-attribute="value" />
             </UFormGroup>
@@ -65,7 +112,7 @@
               <UInput v-model.number="form.level" type="number" min="0" max="4" />
             </UFormGroup>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <UFormGroup label="Startzeit">
               <UInput v-model="form.startTime" type="time" required />
             </UFormGroup>

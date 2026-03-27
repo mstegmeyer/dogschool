@@ -16,7 +16,52 @@
                 <span class="text-sm font-semibold text-slate-700">{{ dayName(group.dayOfWeek) }}</span>
                 <span class="text-xs text-slate-400">{{ group.courses.length }} Kurse</span>
               </div>
-              <div class="overflow-x-auto">
+              <div class="divide-y divide-slate-100 md:hidden">
+                <div
+                  v-for="course in group.courses"
+                  :key="course.id"
+                  class="space-y-3 p-3"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="font-medium text-slate-800 leading-tight">
+                        {{ course.type?.name || 'Kurs' }}
+                      </p>
+                      <p v-if="course.comment" class="mt-1 text-xs text-slate-500">
+                        {{ course.comment }}
+                      </p>
+                    </div>
+                    <UBadge v-if="course.type?.code" variant="soft" color="gray" size="xs">
+                      {{ course.type.code }}
+                    </UBadge>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p class="text-slate-400">Zeit</p>
+                      <p class="font-medium text-slate-700">{{ course.startTime }}–{{ course.endTime }}</p>
+                    </div>
+                    <div>
+                      <p class="text-slate-400">Stufe</p>
+                      <p class="font-medium text-slate-700">{{ levelLabel(course.level) }}</p>
+                    </div>
+                  </div>
+                  <UButton
+                    v-if="isSubscribed(course.id)"
+                    color="red"
+                    variant="soft"
+                    block
+                    label="Abbestellen"
+                    @click="unsubscribe(course)"
+                  />
+                  <UButton
+                    v-else
+                    block
+                    label="Abonnieren"
+                    @click="subscribe(course)"
+                  />
+                </div>
+              </div>
+              <div class="hidden overflow-x-auto md:block">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="text-left text-xs text-slate-500 border-b border-slate-100">
@@ -86,15 +131,53 @@
                 :key="group.dayOfWeek"
                 class="border border-slate-200 rounded-lg overflow-hidden bg-white"
               >
-                <div class="px-3 py-2 bg-komm-50 border-b border-komm-100 flex items-center justify-between">
-                  <span class="text-sm font-semibold text-komm-800">{{ dayName(group.dayOfWeek) }}</span>
-                  <UBadge color="primary" variant="soft" size="xs">{{ group.courses.length }}</UBadge>
+              <div class="px-3 py-2 bg-komm-50 border-b border-komm-100 flex items-center justify-between">
+                <span class="text-sm font-semibold text-komm-800">{{ dayName(group.dayOfWeek) }}</span>
+                <UBadge color="primary" variant="soft" size="xs">{{ group.courses.length }}</UBadge>
+              </div>
+              <div class="divide-y divide-slate-100 md:hidden">
+                <div
+                  v-for="course in group.courses"
+                  :key="course.id"
+                  class="space-y-3 p-3"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="font-medium text-slate-800 leading-tight">
+                        {{ course.type?.name || 'Kurs' }}
+                      </p>
+                      <p v-if="course.comment" class="mt-1 text-xs text-slate-500">
+                        {{ course.comment }}
+                      </p>
+                    </div>
+                    <UBadge v-if="course.type?.code" variant="soft" color="gray" size="xs">
+                      {{ course.type.code }}
+                    </UBadge>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p class="text-slate-400">Zeit</p>
+                      <p class="font-medium text-slate-700">{{ course.startTime }}–{{ course.endTime }}</p>
+                    </div>
+                    <div>
+                      <p class="text-slate-400">Stufe</p>
+                      <p class="font-medium text-slate-700">{{ levelLabel(course.level) }}</p>
+                    </div>
+                  </div>
+                  <UButton
+                    color="red"
+                    variant="soft"
+                    block
+                    label="Abbestellen"
+                    @click="unsubscribe(course)"
+                  />
                 </div>
-                <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr class="text-left text-xs text-slate-500 border-b border-slate-100">
-                        <th class="px-3 py-1.5 font-medium">Kurs</th>
+              </div>
+              <div class="hidden overflow-x-auto md:block">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs text-slate-500 border-b border-slate-100">
+                      <th class="px-3 py-1.5 font-medium">Kurs</th>
                         <th class="px-2 py-1.5 font-medium w-[88px]">Zeit</th>
                         <th class="px-2 py-1.5 font-medium w-[72px]">Stufe</th>
                         <th class="px-2 py-1.5 font-medium w-[100px] text-right">Aktion</th>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Api\Admin;
 
+use App\Dto\ContractCancellationDto;
 use App\Entity\Contract;
 use App\Enum\ContractState;
 use App\Repository\ContractRepository;
@@ -13,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -91,8 +93,41 @@ final class ContractController extends AbstractController
     }
 
     #[Route('/{id}/cancel', name: 'cancel', methods: ['POST'])]
-    public function cancel(string $id): JsonResponse
+    public function cancel(
+        string $id,
+        #[MapRequestPayload(acceptFormat: 'json')] ContractCancellationDto $dto,
+    ): JsonResponse
     {
+        $contract = $this->contractRepository->find($id);
+        if ($contract === null) {
+            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($contract->getState() !== ContractState::ACTIVE) {
+            return $this->json(['error' => 'Only active contracts can be cancelled'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($dto->endDate === null || $dto->endDate === '') {
+            return $this->json(['errors' => ['endDate' => 'Enddatum ist erforderlich.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $endDate = new \DateTimeImmutable($dto->endDate);
+        } catch (\Exception) {
+            return $this->json(['errors' => ['endDate' => 'Ungültiges Enddatum.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        $startDate = $contract->getStartDate();
+        if ($startDate !== null && $endDate < $startDate) {
+            return $this->json(['errors' => ['endDate' => 'Enddatum darf nicht vor dem Vertragsbeginn liegen.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($endDate->format('Y-m-t') !== $endDate->format('Y-m-d')) {
+            return $this->json(['errors' => ['endDate' => 'Enddatum muss der letzte Tag eines Monats sein.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        $contract->setEndDate($endDate);
+
         return $this->setState($id, ContractState::CANCELLED);
     }
 

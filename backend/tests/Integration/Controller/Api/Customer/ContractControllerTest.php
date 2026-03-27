@@ -50,7 +50,6 @@ final class ContractControllerTest extends WebTestCase
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
             'dogId' => $dog->getId(),
             'startDate' => '2025-06-01',
-            'endDate' => '2026-06-01',
             'price' => '120.00',
             'coursesPerWeek' => 2,
         ]));
@@ -59,11 +58,12 @@ final class ContractControllerTest extends WebTestCase
         self::assertArrayHasKey('id', $data);
         self::assertSame('REQUESTED', $data['state']);
         self::assertSame('120.00', $data['price']);
-        self::assertSame('2026-06-01', $data['endDate']);
+        self::assertNull($data['endDate']);
 
         $contractRepo = $container->get(ContractRepository::class);
         $contracts = $contractRepo->findByCustomer($customer);
         self::assertCount(1, $contracts);
+        self::assertNull($contracts[0]->getEndDate());
     }
 
     public function testRequestContractWithoutEndDateKeepsItOpenEnded(): void
@@ -97,6 +97,55 @@ final class ContractControllerTest extends WebTestCase
         self::assertNull($contracts[0]->getEndDate());
     }
 
+    public function testRequestContractRejectsExplicitEndDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepo = $container->get(DogRepository::class);
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Rejected End Date Dog');
+        $dogRepo->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => '2025-06-01',
+            'endDate' => '2025-12-31',
+            'price' => '120.00',
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Enddatum darf bei Vertragsanfragen nicht gesetzt werden.', $data['errors']['endDate'] ?? null);
+    }
+
+    public function testRequestContractRejectsNonMonthStartDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepo = $container->get(DogRepository::class);
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Mid Month Dog');
+        $dogRepo->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => '2025-06-15',
+            'price' => '120.00',
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Startdatum muss der erste Tag eines Monats sein.', $data['errors']['startDate'] ?? null);
+    }
+
     public function testRequestContractFailsWithWrongDogId(): void
     {
         $client = static::createClient();
@@ -106,7 +155,6 @@ final class ContractControllerTest extends WebTestCase
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
             'dogId' => '00000000-0000-0000-0000-000000000000',
             'startDate' => '2025-06-01',
-            'endDate' => '2026-06-01',
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);

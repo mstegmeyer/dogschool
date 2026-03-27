@@ -411,7 +411,7 @@ final class CreditServiceTest extends TestCase
     }
 
     #[Test]
-    public function applyContractCancellationCreditsReversesPreviousGrants(): void
+    public function applyContractCancellationCreditsReversesOnlyWeeksAfterTheEffectiveEnd(): void
     {
         $customer = new Customer();
         $customer->setName('C');
@@ -423,9 +423,19 @@ final class CreditServiceTest extends TestCase
         $contract->setCoursesPerWeek(2);
         $contract->setPrice('99');
         $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
-        $contract->setEndDate(new \DateTimeImmutable('2026-01-01'));
+        $contract->setEndDate(new \DateTimeImmutable('2025-03-31'));
 
-        $this->creditTransactionRepo->method('sumWeeklyGrantAmountForContract')->willReturn(10);
+        $grantWeek14 = new CreditTransaction();
+        $grantWeek14->setAmount(2);
+        $grantWeek14->setType(CreditTransactionType::WEEKLY_GRANT);
+        $grantWeek14->setWeekRef('2025-W14');
+
+        $grantWeek15 = new CreditTransaction();
+        $grantWeek15->setAmount(2);
+        $grantWeek15->setType(CreditTransactionType::WEEKLY_GRANT);
+        $grantWeek15->setWeekRef('2025-W15');
+
+        $this->creditTransactionRepo->method('findWeeklyGrantsAfterWeek')->willReturn([$grantWeek14, $grantWeek15]);
         $this->creditTransactionRepo->method('getBalance')->willReturn(5);
 
         $persisted = [];
@@ -441,8 +451,9 @@ final class CreditServiceTest extends TestCase
         self::assertCount(1, $persisted);
         $tx = $persisted[0];
         self::assertInstanceOf(CreditTransaction::class, $tx);
-        self::assertSame(-10, $tx->getAmount());
+        self::assertSame(-4, $tx->getAmount());
         self::assertSame(CreditTransactionType::MANUAL_ADJUSTMENT, $tx->getType());
+        self::assertStringContainsString('31.03.2025', $tx->getDescription());
     }
 
     #[Test]
@@ -458,9 +469,14 @@ final class CreditServiceTest extends TestCase
         $contract->setCoursesPerWeek(2);
         $contract->setPrice('99');
         $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
-        $contract->setEndDate(new \DateTimeImmutable('2026-01-01'));
+        $contract->setEndDate(new \DateTimeImmutable('2025-03-31'));
 
-        $this->creditTransactionRepo->method('sumWeeklyGrantAmountForContract')->willReturn(10);
+        $grant = new CreditTransaction();
+        $grant->setAmount(2);
+        $grant->setType(CreditTransactionType::WEEKLY_GRANT);
+        $grant->setWeekRef('2025-W14');
+
+        $this->creditTransactionRepo->method('findWeeklyGrantsAfterWeek')->willReturn([$grant]);
         $this->creditTransactionRepo->method('getBalance')->willReturn(-3);
 
         $persisted = [];
@@ -480,21 +496,46 @@ final class CreditServiceTest extends TestCase
     }
 
     #[Test]
-    public function applyContractCancellationCreditsSkipsNonPerpetualContract(): void
+    public function applyContractCancellationCreditsSkipsWhenThereAreNoWeeksToReverse(): void
     {
         $customer = new Customer();
         $customer->setName('C');
         $customer->setEmail('c@example.com');
         $customer->setPassword('x');
 
-        $contract = $this->createMock(Contract::class);
-        $contract->method('getCustomer')->willReturn($customer);
-        $contract->method('getType')->willReturn(ContractType::PERPETUAL);
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setEndDate(new \DateTimeImmutable('2025-03-31'));
 
-        $this->creditTransactionRepo->method('sumWeeklyGrantAmountForContract')->willReturn(0);
+        $this->creditTransactionRepo->method('findWeeklyGrantsAfterWeek')->willReturn([]);
         $this->em->expects(self::never())->method('persist');
 
         $this->service->applyContractCancellationCredits($contract);
+    }
+
+    #[Test]
+    public function getNextWeeklyCreditHintsIncludesCancelledContractsUntilTheirEndDate(): void
+    {
+        $customer = new Customer();
+        $customer->setName('C');
+        $customer->setEmail('c@example.com');
+        $customer->setPassword('x');
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setState(\App\Enum\ContractState::CANCELLED);
+        $contract->setCoursesPerWeek(2);
+        $contract->setStartDate(new \DateTimeImmutable('first day of this month'));
+        $contract->setEndDate(new \DateTimeImmutable('+14 days'));
+
+        $this->contractRepo->method('findCreditEligiblePerpetualByCustomer')->willReturn([$contract]);
+        $this->creditTransactionRepo->method('weeklyGrantExists')->willReturn(false);
+
+        $hints = $this->service->getNextWeeklyCreditHints($customer);
+
+        self::assertCount(1, $hints);
+        self::assertSame(2, $hints[0]['amount']);
     }
 
     #[Test]

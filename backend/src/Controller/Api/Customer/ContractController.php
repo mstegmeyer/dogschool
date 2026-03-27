@@ -44,6 +44,24 @@ final class ContractController extends AbstractController
         Customer $customer,
         #[MapRequestPayload(acceptFormat: 'json')] ContractRequestDto $dto,
     ): JsonResponse {
+        if ($dto->endDate !== null && $dto->endDate !== '') {
+            return $this->json(['errors' => ['endDate' => 'Enddatum darf bei Vertragsanfragen nicht gesetzt werden.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($dto->startDate === null || $dto->startDate === '') {
+            return $this->json(['errors' => ['startDate' => 'Startdatum ist erforderlich.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $startDate = new \DateTimeImmutable($dto->startDate);
+        } catch (\Exception) {
+            return $this->json(['errors' => ['startDate' => 'Ungültiges Startdatum.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($startDate->format('d') !== '01') {
+            return $this->json(['errors' => ['startDate' => 'Startdatum muss der erste Tag eines Monats sein.']], Response::HTTP_BAD_REQUEST);
+        }
+
         $dog = $this->dogRepository->findOneByIdAndCustomer($dto->dogId, $customer);
         if ($dog === null) {
             return $this->json(['errors' => ['dogId' => 'Invalid or not your dog']], Response::HTTP_BAD_REQUEST);
@@ -53,8 +71,8 @@ final class ContractController extends AbstractController
         $contract->setCustomer($customer);
         $contract->setDog($dog);
         $contract->setState(ContractState::REQUESTED);
-        $contract->setStartDate(new \DateTimeImmutable($dto->startDate ?: 'now'));
-        $contract->setEndDate($dto->endDate ? new \DateTimeImmutable($dto->endDate) : null);
+        $contract->setStartDate($startDate);
+        $contract->setEndDate(null);
         $contract->setPrice($dto->price ?? '0');
         $contract->setCoursesPerWeek($dto->coursesPerWeek ?? 0);
 

@@ -18,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'app:grant-weekly-credits',
-    description: 'Grant weekly course credits to customers with active perpetual contracts.',
+    description: 'Grant weekly course credits to customers with credit-eligible perpetual contracts.',
 )]
 class GrantWeeklyCreditsCommand extends Command
 {
@@ -45,10 +45,7 @@ class GrantWeeklyCreditsCommand extends Command
 
         $io->info(sprintf('Granting weekly credits for week %s ...', $weekRef));
 
-        $contracts = $this->contractRepository->findBy([
-            'state' => ContractState::ACTIVE,
-            'type' => ContractType::PERPETUAL,
-        ]);
+        $contracts = $this->contractRepository->findAllCreditEligiblePerpetual();
 
         $granted = 0;
         $skipped = 0;

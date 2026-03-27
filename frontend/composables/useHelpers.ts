@@ -55,6 +55,31 @@ export const useHelpers = () => {
     return toIsoDate(date)
   }
 
+  function toMonthStartIso(iso: string): string {
+    const date = parseDateValue(iso)
+    date.setDate(1)
+    return toIsoDate(date)
+  }
+
+  function toMonthEndIso(iso: string): string {
+    const date = parseDateValue(iso)
+    return toIsoDate(new Date(date.getFullYear(), date.getMonth() + 1, 0))
+  }
+
+  function isFirstOfMonth(iso: string): boolean {
+    return parseDateValue(iso).getDate() === 1
+  }
+
+  function isLastOfMonth(iso: string): boolean {
+    const date = parseDateValue(iso)
+    return date.getDate() === new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
+
+  function firstDayOfNextMonthIso(): string {
+    const today = parseDateValue(todayIso())
+    return toIsoDate(new Date(today.getFullYear(), today.getMonth() + 1, 1))
+  }
+
   function getIsoDayOfWeek(iso: string): number {
     const day = parseDateValue(iso).getDay()
     return day === 0 ? 7 : day
@@ -132,7 +157,7 @@ export const useHelpers = () => {
   return {
     dayName, dayNameShort,
     formatDate, formatDateShort, formatDateTime,
-    todayIso, addDaysToIso, getIsoDayOfWeek,
+    todayIso, addDaysToIso, toMonthStartIso, toMonthEndIso, isFirstOfMonth, isLastOfMonth, firstDayOfNextMonthIso, getIsoDayOfWeek,
     contractStateLabel, contractStateColor,
     creditTypeLabel, levelLabel,
     getWeekMonday,

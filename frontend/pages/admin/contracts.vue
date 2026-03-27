@@ -142,15 +142,25 @@
         <template #header>
           <h3 class="font-semibold text-slate-800">Vertrag kündigen?</h3>
         </template>
-        <p class="text-sm text-slate-600">
-          Möchtest du den Vertrag für
-          <strong>{{ contractToCancel?.dogName }}</strong>
-          ({{ contractToCancel?.customerName }}) wirklich kündigen? Diese Aktion kann nicht rückgängig gemacht werden.
-        </p>
+        <div class="space-y-4">
+          <p class="text-sm text-slate-600">
+            Wähle das Enddatum, bis zu dem für
+            <strong>{{ contractToCancel?.dogName }}</strong>
+            ({{ contractToCancel?.customerName }}) noch Credits gutgeschrieben werden sollen.
+          </p>
+          <UFormGroup label="Vertragsende" help="Nur der letzte Tag eines Monats ist möglich.">
+            <UInput
+              v-model="cancelForm.endDate"
+              type="date"
+              :min="contractToCancel?.startDate ?? undefined"
+              @change="normalizeCancelEndDate"
+            />
+          </UFormGroup>
+        </div>
         <template #footer>
           <div class="flex justify-end gap-2">
             <UButton variant="ghost" label="Abbrechen" @click="showCancelModal = false" />
-            <UButton color="red" label="Kündigen" :loading="cancelling" @click="confirmCancel" />
+            <UButton color="red" label="Kündigen" :loading="cancelling" :disabled="!cancelForm.endDate" @click="confirmCancel" />
           </div>
         </template>
       </UCard>
@@ -165,7 +175,7 @@ definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
-const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice } = useHelpers()
+const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice, toMonthEndIso, isLastOfMonth } = useHelpers()
 
 const contracts = ref<Contract[]>([])
 const loading = ref(true)
@@ -181,6 +191,7 @@ const sort = ref<{ column: string | null; direction: 'asc' | 'desc' }>({
 const showCancelModal = ref(false)
 const contractToCancel = ref<Contract | null>(null)
 const cancelling = ref(false)
+const cancelForm = reactive({ endDate: '' })
 const pageSize = 20
 
 const stateOptions = [
@@ -213,18 +224,34 @@ const resultSummary = computed(() => {
 
 function openCancelConfirm(contract: Contract) {
   contractToCancel.value = contract
+  cancelForm.endDate = contract.endDate ?? ''
   showCancelModal.value = true
 }
 
+function normalizeCancelEndDate() {
+  if (cancelForm.endDate) {
+    cancelForm.endDate = toMonthEndIso(cancelForm.endDate)
+  }
+}
+
 async function confirmCancel() {
-  if (!contractToCancel.value) return
+  if (!contractToCancel.value || !cancelForm.endDate) return
+  if (!isLastOfMonth(cancelForm.endDate)) {
+    toast.add({ title: 'Bitte den letzten Tag eines Monats wählen', color: 'red' })
+    return
+  }
   cancelling.value = true
   try {
-    await api.post(`/api/admin/contracts/${contractToCancel.value.id}/cancel`)
+    await api.post(`/api/admin/contracts/${contractToCancel.value.id}/cancel`, {
+      endDate: cancelForm.endDate,
+    })
     toast.add({ title: 'Vertrag gekündigt', color: 'red' })
     showCancelModal.value = false
     contractToCancel.value = null
+    cancelForm.endDate = ''
     await loadContracts()
+  } catch {
+    toast.add({ title: 'Fehler beim Kündigen', color: 'red' })
   } finally {
     cancelling.value = false
   }

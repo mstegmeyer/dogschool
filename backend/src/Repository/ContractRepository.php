@@ -45,6 +45,38 @@ class ContractRepository extends ServiceEntityRepository
     /**
      * @return array<int, Contract>
      */
+    public function findCreditEligiblePerpetualByCustomer(Customer $customer): array
+    {
+        return $this->createQueryBuilder('contract')
+            ->andWhere('contract.customer = :customer')
+            ->andWhere('contract.type = :type')
+            ->andWhere('contract.state IN (:states)')
+            ->setParameter('customer', $customer)
+            ->setParameter('type', ContractType::PERPETUAL)
+            ->setParameter('states', [ContractState::ACTIVE, ContractState::CANCELLED])
+            ->orderBy('contract.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return array<int, Contract>
+     */
+    public function findAllCreditEligiblePerpetual(): array
+    {
+        return $this->createQueryBuilder('contract')
+            ->andWhere('contract.type = :type')
+            ->andWhere('contract.state IN (:states)')
+            ->setParameter('type', ContractType::PERPETUAL)
+            ->setParameter('states', [ContractState::ACTIVE, ContractState::CANCELLED])
+            ->orderBy('contract.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return array<int, Contract>
+     */
     public function findAllOrderByCreatedAt(): array
     {
         return $this->findBy([], ['createdAt' => 'DESC']);

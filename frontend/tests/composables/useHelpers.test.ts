@@ -10,6 +10,11 @@ describe('useHelpers', () => {
     formatDateTime,
     todayIso,
     addDaysToIso,
+    toMonthStartIso,
+    toMonthEndIso,
+    isFirstOfMonth,
+    isLastOfMonth,
+    firstDayOfNextMonthIso,
     getIsoDayOfWeek,
     contractStateLabel,
     contractStateColor,
@@ -85,6 +90,40 @@ describe('useHelpers', () => {
     it('moves date-only values across a week boundary correctly', () => {
       expect(addDaysToIso('2026-03-29', 1)).toBe('2026-03-30')
       expect(addDaysToIso('2026-03-30', -7)).toBe('2026-03-23')
+    })
+  })
+
+  describe('toMonthStartIso', () => {
+    it('normalises a date-only value to the first of that month', () => {
+      expect(toMonthStartIso('2026-03-29')).toBe('2026-03-01')
+    })
+  })
+
+  describe('isFirstOfMonth', () => {
+    it('detects first-of-month dates correctly', () => {
+      expect(isFirstOfMonth('2026-04-01')).toBe(true)
+      expect(isFirstOfMonth('2026-04-02')).toBe(false)
+    })
+  })
+
+  describe('toMonthEndIso', () => {
+    it('normalises a date-only value to the last day of that month', () => {
+      expect(toMonthEndIso('2026-02-11')).toBe('2026-02-28')
+      expect(toMonthEndIso('2024-02-11')).toBe('2024-02-29')
+    })
+  })
+
+  describe('isLastOfMonth', () => {
+    it('detects last-of-month dates correctly', () => {
+      expect(isLastOfMonth('2026-04-30')).toBe(true)
+      expect(isLastOfMonth('2026-04-29')).toBe(false)
+    })
+  })
+
+  describe('firstDayOfNextMonthIso', () => {
+    it('returns the first day of the next month', () => {
+      const result = firstDayOfNextMonthIso()
+      expect(result).toMatch(/^\d{4}-\d{2}-01$/)
     })
   })
 

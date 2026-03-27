@@ -41,8 +41,8 @@ final class CreditService
     }
 
     /**
-     * After an ACTIVE perpetual contract is cancelled: reverse WEEKLY_GRANT totals for that contract,
-     * then ensure the customer's balance is not negative.
+     * After a contract is cancelled with an effective end date, reverse weekly grants
+     * that fall after the final effective contract week and keep the balance non-negative.
      */
     public function applyContractCancellationCredits(Contract $contract): void
     {
@@ -51,7 +51,14 @@ final class CreditService
             return;
         }
 
-        $sum = $this->creditTransactionRepository->sumWeeklyGrantAmountForContract($contract);
+        $endDate = $contract->getEndDate();
+        if ($endDate === null) {
+            return;
+        }
+
+        $lastEligibleWeekRef = $endDate->format('o-\WW');
+        $futureGrants = $this->creditTransactionRepository->findWeeklyGrantsAfterWeek($contract, $lastEligibleWeekRef);
+        $sum = array_sum(array_map(static fn (CreditTransaction $tx): int => $tx->getAmount(), $futureGrants));
         if ($sum <= 0) {
             return;
         }
@@ -62,7 +69,8 @@ final class CreditService
         $tx->setType(CreditTransactionType::MANUAL_ADJUSTMENT);
         $tx->setContract($contract);
         $tx->setDescription(sprintf(
-            'Vertragsende: Rückbuchung der bisherigen Wochen-Gutschriften dieses Vertrags (%d Credits).',
+            'Vertragsende %s: Rückbuchung der Wochen-Gutschriften nach Vertragsende (%d Credits).',
+            $endDate->format('d.m.Y'),
             $sum,
         ));
         $this->em->persist($tx);
@@ -94,7 +102,7 @@ final class CreditService
         $nextMonday = $now->setTime(0, 0)->modify(sprintf('+%d days', $daysToNextMonday));
 
         $hints = [];
-        foreach ($this->contractRepository->findActivePerpetualByCustomer($customer) as $contract) {
+        foreach ($this->contractRepository->findCreditEligiblePerpetualByCustomer($customer) as $contract) {
             if ($contract->getCoursesPerWeek() <= 0) {
                 continue;
             }

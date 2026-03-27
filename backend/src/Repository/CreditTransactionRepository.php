@@ -85,6 +85,23 @@ class CreditTransactionRepository extends ServiceEntityRepository
             ->getSingleScalarResult() > 0;
     }
 
+    /**
+     * @return array<int, CreditTransaction>
+     */
+    public function findWeeklyGrantsAfterWeek(Contract $contract, string $weekRef): array
+    {
+        return $this->createQueryBuilder('ct')
+            ->andWhere('ct.contract = :contract')
+            ->andWhere('ct.type = :type')
+            ->andWhere('ct.weekRef > :weekRef')
+            ->setParameter('contract', $contract)
+            ->setParameter('type', CreditTransactionType::WEEKLY_GRANT)
+            ->setParameter('weekRef', $weekRef)
+            ->orderBy('ct.weekRef', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(CreditTransaction $entity, bool $flush = true): void
     {
         $this->getEntityManager()->persist($entity);

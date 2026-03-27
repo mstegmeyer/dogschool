@@ -152,6 +152,121 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame('DECLINED', $data['state']);
     }
 
+    public function testCancelContractSetsEndDateAndCancelledState(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-cancel-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Cancel Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::ACTIVE);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setEndDate(null);
+        $contract->setPrice('50.00');
+        $contract->setCoursesPerWeek(1);
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/cancel', $token, json_encode([
+            'endDate' => '2025-03-31',
+        ]));
+        self::assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('CANCELLED', $data['state']);
+        self::assertSame('2025-03-31', $data['endDate']);
+
+        $reloaded = $contractRepo->find($contract->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(ContractState::CANCELLED, $reloaded->getState());
+        self::assertSame('2025-03-31', $reloaded->getEndDate()?->format('Y-m-d'));
+    }
+
+    public function testCancelContractRequiresEndDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-cancel-empty-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Missing End Date Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::ACTIVE);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setEndDate(null);
+        $contract->setPrice('50.00');
+        $contract->setCoursesPerWeek(1);
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/cancel', $token, json_encode([]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Enddatum ist erforderlich.', $data['errors']['endDate'] ?? null);
+    }
+
+    public function testCancelContractRejectsNonMonthEndDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-cancel-midmonth-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Mid Month Cancellation Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::ACTIVE);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setEndDate(null);
+        $contract->setPrice('50.00');
+        $contract->setCoursesPerWeek(1);
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/cancel', $token, json_encode([
+            'endDate' => '2025-03-15',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Enddatum muss der letzte Tag eines Monats sein.', $data['errors']['endDate'] ?? null);
+    }
+
     public function testGetContractReturns404ForUnknownId(): void
     {
         $client = static::createClient();

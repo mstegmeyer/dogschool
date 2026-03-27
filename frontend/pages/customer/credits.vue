@@ -36,7 +36,7 @@
         <h3 class="font-semibold text-slate-800">Nächste Gutschriften</h3>
       </template>
       <p class="text-xs text-slate-500 mb-3">
-        Bei aktiven Dauer-Verträgen werden Credits einmal pro Kalenderwoche gutgeschrieben (siehe Verlauf). Unten siehst du den nächsten voraussichtlichen Zuschlagstermin.
+        Bei laufenden Dauer-Verträgen werden Credits einmal pro Kalenderwoche gutgeschrieben (siehe Verlauf). Unten siehst du den nächsten voraussichtlichen Zuschlagstermin.
       </p>
       <ul class="space-y-3">
         <li

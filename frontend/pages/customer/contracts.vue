@@ -69,14 +69,13 @@
           <UFormGroup label="Kurse pro Woche">
             <UInput v-model.number="requestForm.coursesPerWeek" type="number" min="1" max="7" />
           </UFormGroup>
-          <div class="grid grid-cols-2 gap-4">
-            <UFormGroup label="Beginn">
-              <UInput v-model="requestForm.startDate" type="date" />
-            </UFormGroup>
-            <UFormGroup label="Ende (optional)">
-              <UInput v-model="requestForm.endDate" type="date" />
-            </UFormGroup>
-          </div>
+          <UFormGroup label="Beginn" help="Nur der erste Tag eines Monats ist möglich.">
+            <UInput
+              v-model="requestForm.startDate"
+              type="date"
+              @change="normalizeRequestStartDate"
+            />
+          </UFormGroup>
           <div class="flex justify-end gap-2">
             <UButton variant="ghost" label="Abbrechen" @click="showRequest = false" />
             <UButton type="submit" :loading="saving" label="Anfragen" />
@@ -94,7 +93,7 @@ definePageMeta({ layout: 'customer' })
 
 const api = useApi()
 const toast = useToast()
-const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice } = useHelpers()
+const { formatDate, contractStateLabel, contractStateColor, formatContractMonthlyPrice, toMonthStartIso, isFirstOfMonth, firstDayOfNextMonthIso } = useHelpers()
 
 const contracts = ref<Contract[]>([])
 const dogs = ref<Dog[]>([])
@@ -102,20 +101,31 @@ const loading = ref(true)
 const showRequest = ref(false)
 const saving = ref(false)
 
-const requestForm = reactive({ dogId: '', coursesPerWeek: 2, startDate: '', endDate: '' })
+const requestForm = reactive({ dogId: '', coursesPerWeek: 2, startDate: firstDayOfNextMonthIso() })
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })))
 
+function normalizeRequestStartDate() {
+  if (requestForm.startDate) {
+    requestForm.startDate = toMonthStartIso(requestForm.startDate)
+  }
+}
+
 async function requestContract() {
+  if (!requestForm.startDate || !isFirstOfMonth(requestForm.startDate)) {
+    toast.add({ title: 'Bitte einen Monatsersten als Startdatum wählen', color: 'red' })
+    return
+  }
+
   saving.value = true
   try {
     await api.post('/api/customer/contracts', {
       dogId: requestForm.dogId,
       coursesPerWeek: requestForm.coursesPerWeek,
       startDate: requestForm.startDate || null,
-      endDate: requestForm.endDate || null,
     })
     toast.add({ title: 'Vertrag angefragt', color: 'green' })
     showRequest.value = false
+    requestForm.startDate = firstDayOfNextMonthIso()
     await loadContracts()
   } catch {
     toast.add({ title: 'Fehler bei der Anfrage', color: 'red' })

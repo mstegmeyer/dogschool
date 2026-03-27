@@ -49,6 +49,7 @@ frontend/
 
 ```bash
 npm install
+cp .env.example .env.local
 ```
 
 ## Development
@@ -85,6 +86,13 @@ Tests use **Vitest** with `happy-dom` as the DOM environment. Coverage reports a
 npm run build
 npm run preview   # Preview the production build locally
 ```
+
+## PWA / web push
+
+- The frontend includes a web app manifest plus `push-sw.js` for standards-based PWA web push.
+- Set `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` in `frontend/.env.local` to the same public VAPID key used by the backend.
+- On iPhone, Web Push only works for the saved Home Screen app, not a normal Safari tab.
+- Existing permissions/subscriptions are synced quietly after login. First-time opt-in happens explicitly from the customer profile settings.
 
 ## Type system
 

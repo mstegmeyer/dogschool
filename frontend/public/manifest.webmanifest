@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "Komm! Hundeschule",
+  "short_name": "Komm!",
+  "description": "Komm! Hundeschule & Hundehotel – Verwaltung",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "300x300",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

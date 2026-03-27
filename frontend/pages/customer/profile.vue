@@ -1,53 +1,95 @@
 <template>
-  <div>
+  <div class="space-y-6">
     <h1 class="text-2xl font-bold text-slate-800 mb-6">Mein Profil</h1>
 
     <UCard>
-        <form class="space-y-4" @submit.prevent="saveProfile">
-          <UFormGroup label="Name">
-            <UInput v-model="form.name" />
-          </UFormGroup>
-          <UFormGroup label="E-Mail">
-            <UInput v-model="form.email" type="email" />
-          </UFormGroup>
+      <form class="space-y-4" @submit.prevent="saveProfile">
+        <UFormGroup label="Name">
+          <UInput v-model="form.name" />
+        </UFormGroup>
+        <UFormGroup label="E-Mail">
+          <UInput v-model="form.email" type="email" />
+        </UFormGroup>
 
-          <UDivider label="Adresse" />
+        <UDivider label="Adresse" />
 
-          <div class="grid grid-cols-2 gap-4">
-            <UFormGroup label="Straße" class="col-span-2">
-              <UInput v-model="form.address.street" />
-            </UFormGroup>
-            <UFormGroup label="PLZ">
-              <UInput v-model="form.address.postalCode" />
-            </UFormGroup>
-            <UFormGroup label="Ort">
-              <UInput v-model="form.address.city" />
-            </UFormGroup>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormGroup label="Straße" class="col-span-2">
+            <UInput v-model="form.address.street" />
+          </UFormGroup>
+          <UFormGroup label="PLZ">
+            <UInput v-model="form.address.postalCode" />
+          </UFormGroup>
+          <UFormGroup label="Ort">
+            <UInput v-model="form.address.city" />
+          </UFormGroup>
+        </div>
+
+        <UDivider label="Bankverbindung" />
+
+        <div class="grid grid-cols-2 gap-4">
+          <UFormGroup label="IBAN" class="col-span-2">
+            <UInput v-model="form.bankAccount.iban" />
+          </UFormGroup>
+          <UFormGroup label="BIC">
+            <UInput v-model="form.bankAccount.bic" />
+          </UFormGroup>
+          <UFormGroup label="Kontoinhaber">
+            <UInput v-model="form.bankAccount.accountHolder" />
+          </UFormGroup>
+        </div>
+
+        <UDivider label="Passwort ändern" />
+
+        <UFormGroup label="Neues Passwort (optional)">
+          <UInput v-model="form.password" type="password" placeholder="Leer lassen für keine Änderung" />
+        </UFormGroup>
+
+        <UButton type="submit" :loading="saving" label="Speichern" />
+      </form>
+    </UCard>
+
+    <UCard>
+      <div class="space-y-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-800">Benachrichtigungen</h2>
+            <p class="text-sm text-slate-500">
+              Aktiviere Push-Mitteilungen für wichtige Hinweise und neue Nachrichten.
+            </p>
           </div>
 
-          <UDivider label="Bankverbindung" />
+          <UBadge :color="notificationBadgeColor" variant="soft" size="sm">
+            {{ notificationStatusLabel }}
+          </UBadge>
+        </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <UFormGroup label="IBAN" class="col-span-2">
-              <UInput v-model="form.bankAccount.iban" />
-            </UFormGroup>
-            <UFormGroup label="BIC">
-              <UInput v-model="form.bankAccount.bic" />
-            </UFormGroup>
-            <UFormGroup label="Kontoinhaber">
-              <UInput v-model="form.bankAccount.accountHolder" />
-            </UFormGroup>
-          </div>
+        <UAlert
+          :color="notificationAlertColor"
+          variant="soft"
+          :title="notificationStatusTitle"
+          :description="notificationStatusDescription"
+          icon="i-heroicons-bell-alert"
+        />
 
-          <UDivider label="Passwort ändern" />
-
-          <UFormGroup label="Neues Passwort (optional)">
-            <UInput v-model="form.password" type="password" placeholder="Leer lassen für keine Änderung" />
-          </UFormGroup>
-
-          <UButton type="submit" :loading="saving" label="Speichern" />
-        </form>
-      </UCard>
+        <div class="flex flex-wrap gap-3">
+          <UButton
+            v-if="canEnableNotifications"
+            label="Benachrichtigungen aktivieren"
+            :loading="notificationSaving"
+            @click="enableNotifications"
+          />
+          <UButton
+            v-if="canDisableNotifications"
+            label="Benachrichtigungen deaktivieren"
+            color="gray"
+            variant="soft"
+            :loading="notificationSaving"
+            @click="disableNotifications"
+          />
+        </div>
+      </div>
+    </UCard>
   </div>
 </template>
 
@@ -59,8 +101,16 @@ definePageMeta({ layout: 'customer' })
 const { user, fetchProfile } = useAuth()
 const api = useApi()
 const toast = useToast()
+const {
+  pushStatus,
+  pushError,
+  refreshStatus,
+  enablePush,
+  disablePush,
+} = usePushNotifications()
 
 const saving = ref(false)
+const notificationSaving = ref(false)
 
 const form = reactive({
   name: '',
@@ -69,6 +119,96 @@ const form = reactive({
   address: { street: '', postalCode: '', city: '' },
   bankAccount: { iban: '', bic: '', accountHolder: '' },
 })
+
+const notificationStatusLabel = computed(() => {
+  switch (pushStatus.value) {
+    case 'enabled':
+      return 'Aktiv'
+    case 'install-required':
+      return 'Home-Bildschirm'
+    case 'blocked':
+      return 'Blockiert'
+    case 'available':
+      return 'Verfügbar'
+    case 'error':
+      return 'Fehler'
+    default:
+      return 'Nicht verfügbar'
+  }
+})
+
+const notificationStatusTitle = computed(() => {
+  switch (pushStatus.value) {
+    case 'enabled':
+      return 'Push-Mitteilungen sind aktiv'
+    case 'install-required':
+      return 'Installation auf dem Home-Bildschirm erforderlich'
+    case 'blocked':
+      return 'Benachrichtigungen wurden blockiert'
+    case 'available':
+      return 'Benachrichtigungen können aktiviert werden'
+    case 'error':
+      return 'Benachrichtigungen konnten nicht eingerichtet werden'
+    default:
+      return 'Web Push wird auf diesem Gerät nicht unterstützt'
+  }
+})
+
+const notificationStatusDescription = computed(() => {
+  if (pushError.value) {
+    return pushError.value
+  }
+
+  switch (pushStatus.value) {
+    case 'enabled':
+      return 'Dieses Gerät ist für Push-Mitteilungen registriert.'
+    case 'install-required':
+      return 'Auf dem iPhone funktioniert Web Push nur in der zum Home-Bildschirm hinzugefügten App.'
+    case 'blocked':
+      return 'Bitte erlaube Benachrichtigungen in den Browser- oder System-Einstellungen.'
+    case 'available':
+      return 'Du kannst Push-Mitteilungen für dieses Gerät direkt hier aktivieren.'
+    case 'error':
+      return 'Bitte versuche es erneut. Falls das Problem bleibt, melde dich kurz bei uns.'
+    default:
+      return 'Dieses Gerät oder dieser Browser unterstützt Web Push aktuell nicht.'
+  }
+})
+
+const notificationBadgeColor = computed(() => {
+  switch (pushStatus.value) {
+    case 'enabled':
+      return 'green'
+    case 'install-required':
+      return 'amber'
+    case 'blocked':
+    case 'error':
+      return 'red'
+    case 'available':
+      return 'blue'
+    default:
+      return 'gray'
+  }
+})
+
+const notificationAlertColor = computed(() => {
+  switch (pushStatus.value) {
+    case 'enabled':
+      return 'green'
+    case 'install-required':
+      return 'amber'
+    case 'blocked':
+    case 'error':
+      return 'red'
+    case 'available':
+      return 'blue'
+    default:
+      return 'gray'
+  }
+})
+
+const canEnableNotifications = computed(() => ['available', 'install-required', 'error'].includes(pushStatus.value))
+const canDisableNotifications = computed(() => pushStatus.value === 'enabled')
 
 async function saveProfile(): Promise<void> {
   saving.value = true
@@ -90,8 +230,43 @@ async function saveProfile(): Promise<void> {
   }
 }
 
+async function enableNotifications(): Promise<void> {
+  notificationSaving.value = true
+  try {
+    const enabled = await enablePush('customer')
+    if (enabled) {
+      toast.add({ title: 'Benachrichtigungen aktiviert', color: 'green' })
+    } else {
+      toast.add({ title: notificationStatusTitle.value, description: notificationStatusDescription.value, color: 'amber' })
+    }
+  } catch {
+    toast.add({ title: 'Benachrichtigungen konnten nicht aktiviert werden', color: 'red' })
+  } finally {
+    notificationSaving.value = false
+  }
+}
+
+async function disableNotifications(): Promise<void> {
+  notificationSaving.value = true
+  try {
+    const disabled = await disablePush('customer')
+    toast.add({
+      title: disabled ? 'Benachrichtigungen deaktiviert' : 'Keine aktive Registrierung gefunden',
+      color: disabled ? 'green' : 'amber',
+    })
+  } catch {
+    toast.add({ title: 'Benachrichtigungen konnten nicht deaktiviert werden', color: 'red' })
+  } finally {
+    notificationSaving.value = false
+  }
+}
+
 onMounted(async () => {
-  await fetchProfile()
+  await Promise.all([
+    fetchProfile(),
+    refreshStatus(),
+  ])
+
   if (user.value) {
     form.name = user.value.name || ''
     form.email = user.value.email || ''

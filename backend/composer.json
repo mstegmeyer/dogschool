@@ -11,6 +11,7 @@
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "doctrine/orm": "^3.6",
         "lexik/jwt-authentication-bundle": "^3.2",
+        "minishlink/web-push": "^9",
         "symfony/console": "8.0.*",
         "symfony/dotenv": "8.0.*",
         "symfony/flex": "^2",

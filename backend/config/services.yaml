@@ -25,5 +25,12 @@ services:
         tags:
             - { name: controller.argument_value_resolver, priority: 130 }
 
+    App\Service\Push\WebPushSender: ~
+
+    App\Service\PushNotificationDispatcher:
+        arguments:
+            $pushSenders:
+                - '@App\Service\Push\WebPushSender'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

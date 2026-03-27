@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Repository\CourseRepository;
 use App\Repository\NotificationRepository;
 use App\Service\ApiNormalizer;
+use App\Service\PushNotificationDispatcher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,6 +29,7 @@ final class NotificationController extends AbstractController
         private readonly NotificationRepository $notificationRepository,
         private readonly CourseRepository $courseRepository,
         private readonly ApiNormalizer $normalizer,
+        private readonly PushNotificationDispatcher $pushNotificationDispatcher,
         private readonly ValidatorInterface $validator,
     ) {
     }
@@ -80,6 +82,7 @@ final class NotificationController extends AbstractController
             return $this->json(['errors' => $this->normalizer->violationsToArray($errors)], Response::HTTP_BAD_REQUEST);
         }
         $this->notificationRepository->save($notification);
+        $this->pushNotificationDispatcher->dispatchNotificationCreated($notification);
 
         return $this->json($this->normalizer->normalizeNotification($notification), Response::HTTP_CREATED);
     }

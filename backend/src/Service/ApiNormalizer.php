@@ -13,6 +13,7 @@ use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\Notification;
+use App\Entity\PushDevice;
 use App\Enum\ContractType;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -150,6 +151,21 @@ final class ApiNormalizer
             'pinnedUntil' => $notification->getPinnedUntil()?->format(\DateTimeInterface::ATOM),
             'isPinned' => $notification->isPinned(),
             'createdAt' => $notification->getCreatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function normalizePushDevice(PushDevice $pushDevice): array
+    {
+        return [
+            'id' => $pushDevice->getId(),
+            'token' => $pushDevice->getToken(),
+            'platform' => $pushDevice->getPlatform(),
+            'provider' => $pushDevice->getProvider(),
+            'deviceName' => $pushDevice->getDeviceName(),
+            'createdAt' => $pushDevice->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $pushDevice->getUpdatedAt()->format(\DateTimeInterface::ATOM),
+            'lastSeenAt' => $pushDevice->getLastSeenAt()->format(\DateTimeInterface::ATOM),
         ];
     }
 

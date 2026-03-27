@@ -13,7 +13,7 @@ API backend for the dog school customer management system.
 
 ```bash
 composer install
-cp .env .env.local   # adjust DATABASE_URL if needed
+cp .env.example .env.local   # add local secrets / overrides
 php bin/console doctrine:schema:create
 php bin/console lexik:jwt:generate-keypair   # if keys are missing
 ```
@@ -53,6 +53,8 @@ php bin/console app:create-user customer <email> <password> --name="Customer Nam
 |--------|------|-------------|
 | GET | `/api/customer/me` | Own profile |
 | PUT/PATCH | `/api/customer/me` | Update own profile (name, email, password, address, bank account) |
+| POST | `/api/customer/me/push-devices` | Register/update this customer's web push subscription |
+| POST | `/api/customer/me/push-devices/unregister` | Remove this customer's stored web push subscription |
 | GET | `/api/customer/dogs` | List own dogs |
 | POST | `/api/customer/dogs` | Create dog |
 | GET | `/api/customer/contracts` | List own contracts |
@@ -68,6 +70,8 @@ php bin/console app:create-user customer <email> <password> --name="Customer Nam
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/admin/customers` | List customers |
+| POST | `/api/admin/me/push-devices` | Register/update this admin's web push subscription |
+| POST | `/api/admin/me/push-devices/unregister` | Remove this admin's stored web push subscription |
 | GET | `/api/admin/customers/{id}` | Get customer |
 | PUT/PATCH | `/api/admin/customers/{id}` | Update customer data |
 | GET | `/api/admin/contracts` | List all contracts |
@@ -94,7 +98,19 @@ php bin/console app:create-user customer <email> <password> --name="Customer Nam
 - **Contract**: versioned (contractGroupId + version), startDate, endDate, dog, price, type (enum: PERPETUAL), coursesPerWeek, state (REQUESTED → ACTIVE/DECLINED → CANCELLED).
 - **Course**: dayOfWeek (1–7), startTime/endTime (HH:MM), optional durationMinutes, type (JUHU, MH, TK), level (0–4), archived. Has many notifications.
 - **Notification**: title, message, author (User), course, createdAt.
+- **PushDevice**: token, platform (`web`), provider (`webpush`), optional deviceName. Belongs to either one customer or one admin user.
 - **User** (admin): username, password, fullName.
+
+## PWA / web push notes
+
+- The backend stores browser push registrations and dispatches notifications through standards-based Web Push.
+- Customer/admin notification registrations are stored in the `push_device` table and reused for subsequent sends.
+- Notification creation runs through a dispatch hook, so sending stays decoupled from the controller flow.
+
+### Delivery credentials
+
+- Set `WEB_PUSH_VAPID_SUBJECT`, `WEB_PUSH_VAPID_PUBLIC_KEY`, and `WEB_PUSH_VAPID_PRIVATE_KEY` in `backend/.env.local`.
+- The frontend must also receive the same public VAPID key via `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`.
 
 All entities use UUID primary keys.
 

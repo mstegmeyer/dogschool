@@ -18,6 +18,7 @@ services:
       - caddy_config:/config
     env_file:
       - ./backend/.env
+      - ./backend/.env.local
     environment:
       SERVER_NAME: ":80"
       # Overrides sqlite default from .env when running in Compose
@@ -58,6 +59,8 @@ services:
       - frontend_nuxt:/app/.nuxt
     environment:
       API_PROXY_TARGET: http://frankenphp:80
+    env_file:
+      - ./frontend/.env.local
     command: sh -c "npm install && npm run dev"
 
 volumes:

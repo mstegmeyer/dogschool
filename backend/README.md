@@ -58,7 +58,7 @@ php bin/console app:create-user customer <email> <password> --name="Customer Nam
 | GET | `/api/customer/dogs` | List own dogs |
 | POST | `/api/customer/dogs` | Create dog |
 | GET | `/api/customer/contracts` | List own contracts |
-| POST | `/api/customer/contracts` | Request new contract (body: dogId, startDate, endDate, price, coursesPerWeek) |
+| POST | `/api/customer/contracts` | Request new contract (body: dogId, startDate, endDate optional, price, coursesPerWeek) |
 | GET | `/api/customer/courses` | List all non-archived courses |
 | GET | `/api/customer/courses/subscribed` | List courses the customer is subscribed to |
 | POST | `/api/customer/courses/{id}/subscribe` | Subscribe to a course |
@@ -95,7 +95,7 @@ php bin/console app:create-user customer <email> <password> --name="Customer Nam
 
 - **Customer**: name, email, password, address (street, postalCode, city, country), bank account (iban, bic, accountHolder). Has many dogs and contracts; can subscribe to many courses.
 - **Dog**: name, color, gender, race; belongs to one customer.
-- **Contract**: versioned (contractGroupId + version), startDate, endDate, dog, price, type (enum: PERPETUAL), coursesPerWeek, state (REQUESTED → ACTIVE/DECLINED → CANCELLED).
+- **Contract**: versioned (contractGroupId + version), startDate, optional endDate, dog, price, type (enum: PERPETUAL), coursesPerWeek, state (REQUESTED → ACTIVE/DECLINED → CANCELLED).
 - **Course**: dayOfWeek (1–7), startTime/endTime (HH:MM), optional durationMinutes, type (JUHU, MH, TK), level (0–4), archived. Has many notifications.
 - **Notification**: title, message, author (User), course, createdAt.
 - **PushDevice**: token, platform (`web`), provider (`webpush`), optional deviceName. Belongs to either one customer or one admin user.

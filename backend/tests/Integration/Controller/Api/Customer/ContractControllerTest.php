@@ -59,10 +59,42 @@ final class ContractControllerTest extends WebTestCase
         self::assertArrayHasKey('id', $data);
         self::assertSame('REQUESTED', $data['state']);
         self::assertSame('120.00', $data['price']);
+        self::assertSame('2026-06-01', $data['endDate']);
 
         $contractRepo = $container->get(ContractRepository::class);
         $contracts = $contractRepo->findByCustomer($customer);
         self::assertCount(1, $contracts);
+    }
+
+    public function testRequestContractWithoutEndDateKeepsItOpenEnded(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepo = $container->get(DogRepository::class);
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Open Contract Dog');
+        $dogRepo->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => '2025-06-01',
+            'price' => '120.00',
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertArrayHasKey('id', $data);
+        self::assertArrayHasKey('endDate', $data);
+        self::assertNull($data['endDate']);
+
+        $contractRepo = $container->get(ContractRepository::class);
+        $contracts = $contractRepo->findByCustomer($customer);
+        self::assertCount(1, $contracts);
+        self::assertNull($contracts[0]->getEndDate());
     }
 
     public function testRequestContractFailsWithWrongDogId(): void

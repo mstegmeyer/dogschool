@@ -53,8 +53,8 @@ final class ContractController extends AbstractController
         $contract->setCustomer($customer);
         $contract->setDog($dog);
         $contract->setState(ContractState::REQUESTED);
-        $contract->setStartDate(new \DateTimeImmutable($dto->startDate ?? 'now'));
-        $contract->setEndDate(new \DateTimeImmutable($dto->endDate ?? '+1 year'));
+        $contract->setStartDate(new \DateTimeImmutable($dto->startDate ?: 'now'));
+        $contract->setEndDate($dto->endDate ? new \DateTimeImmutable($dto->endDate) : null);
         $contract->setPrice($dto->price ?? '0');
         $contract->setCoursesPerWeek($dto->coursesPerWeek ?? 0);
 

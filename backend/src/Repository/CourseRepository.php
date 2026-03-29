@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CreditTransaction;
+use App\Entity\User;
 use App\Enum\CreditTransactionType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
@@ -222,6 +223,50 @@ class CourseRepository extends ServiceEntityRepository
             $courseDate->setEndTime($course->getEndTime());
 
             $lastAssignedStart = $candidateStart;
+            ++$updated;
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Copy a changed course trainer onto future dates that still use the old default.
+     *
+     * @return int number of updated rows
+     */
+    public function syncUpcomingCourseDateTrainerDefaults(Course $course, ?User $previousTrainer, ?\DateTimeImmutable $now = null): int
+    {
+        $timezone = new \DateTimeZone(CourseDate::TIMEZONE);
+        $reference = ($now ?? new \DateTimeImmutable('now', $timezone))->setTimezone($timezone);
+        $today = $reference->setTime(0, 0);
+
+        /** @var list<CourseDate> $courseDates */
+        $courseDates = $this->getEntityManager()->createQueryBuilder()
+            ->select('cd')
+            ->from(CourseDate::class, 'cd')
+            ->andWhere('cd.course = :course')
+            ->andWhere('cd.date >= :from')
+            ->setParameter('course', $course)
+            ->setParameter('from', $today, Types::DATE_IMMUTABLE)
+            ->addOrderBy('cd.date', 'ASC')
+            ->addOrderBy('cd.startTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $updated = 0;
+        $previousTrainerId = $previousTrainer?->getId();
+        $nextTrainer = $course->getTrainer();
+
+        foreach ($courseDates as $courseDate) {
+            if ($courseDate->startsAt() < $reference) {
+                continue;
+            }
+
+            if ($courseDate->getTrainer()?->getId() !== $previousTrainerId) {
+                continue;
+            }
+
+            $courseDate->setTrainer($nextTrainer);
             ++$updated;
         }
 

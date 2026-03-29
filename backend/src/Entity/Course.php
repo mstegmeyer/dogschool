@@ -44,6 +44,10 @@ class Course
     #[ORM\JoinColumn(nullable: false)]
     private ?CourseTypeEntity $courseType = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $trainer = null;
+
     /** Level 0-4. */
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\Range(min: 0, max: 4)]
@@ -143,6 +147,18 @@ class Course
     public function setCourseType(CourseTypeEntity $courseType): static
     {
         $this->courseType = $courseType;
+
+        return $this;
+    }
+
+    public function getTrainer(): ?User
+    {
+        return $this->trainer;
+    }
+
+    public function setTrainer(?User $trainer): static
+    {
+        $this->trainer = $trainer;
 
         return $this;
     }

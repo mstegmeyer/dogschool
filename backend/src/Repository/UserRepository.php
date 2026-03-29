@@ -23,6 +23,17 @@ class UserRepository extends ServiceEntityRepository
         return $this->findOneBy(['username' => $username]);
     }
 
+    /**
+     * @return list<User>
+     */
+    public function findAllOrderedByFullName(): array
+    {
+        /** @var list<User> $users */
+        $users = $this->findBy([], ['fullName' => 'ASC', 'username' => 'ASC']);
+
+        return $users;
+    }
+
     public function save(User $entity, bool $flush = true): void
     {
         $this->getEntityManager()->persist($entity);

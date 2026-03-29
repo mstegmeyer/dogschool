@@ -196,7 +196,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $trainers = $this->indexTrainers($manager);
 
         $customers = $this->createCustomers($manager);
-        $courses = $this->createCourses($manager, $courseTypes);
+        $courses = $this->createCourses($manager, $courseTypes, $trainers);
         $courseDates = $this->createCourseDates($manager, $courses);
         $this->createSubscriptions($manager, $customers, $courses);
         $this->createContracts($manager, $customers);
@@ -308,9 +308,10 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
      *
      * @return Course[]
      */
-    private function createCourses(ObjectManager $manager, array $courseTypes): array
+    private function createCourses(ObjectManager $manager, array $courseTypes, array $trainers): array
     {
         $courses = [];
+        $trainerPool = array_values($trainers);
         foreach (self::COURSE_DEFS as [$typeCode, $dow, $start, $end, $level]) {
             if (!isset($courseTypes[$typeCode])) {
                 continue;
@@ -321,6 +322,9 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             $c->setStartTime($start);
             $c->setEndTime($end);
             $c->setLevel($level);
+            if ($trainerPool !== []) {
+                $c->setTrainer($trainerPool[count($courses) % count($trainerPool)]);
+            }
             $c->computeDurationMinutes();
             $manager->persist($c);
             $courses[] = $c;
@@ -359,6 +363,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             while ($current <= $until) {
                 $cd = new CourseDate();
                 $cd->setCourse($course);
+                $cd->setTrainer($course->getTrainer());
                 $cd->setDate($current);
                 $cd->setStartTime($course->getStartTime());
                 $cd->setEndTime($course->getEndTime());

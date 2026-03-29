@@ -53,6 +53,9 @@
               {{ cd.courseType?.name || 'Kurs' }}
             </p>
             <p class="text-slate-400 mt-0.5">{{ cd.startTime }} – {{ cd.endTime }}</p>
+            <p class="mt-1 truncate text-slate-500">
+              Trainer: {{ cd.trainer?.fullName || 'Nicht zugewiesen' }}
+            </p>
             <div class="flex items-center gap-1 mt-1">
               <UTooltip
                 v-if="cd.bookingCount"
@@ -98,6 +101,18 @@
             <span class="text-slate-500">Uhrzeit</span>
             <span class="font-medium">{{ selectedDate.startTime }} – {{ selectedDate.endTime }}</span>
           </div>
+          <div class="flex justify-between gap-4">
+            <span class="text-slate-500">Trainer</span>
+            <span class="text-right font-medium">
+              {{ selectedDate.trainer?.fullName || 'Nicht zugewiesen' }}
+            </span>
+          </div>
+          <div
+            v-if="selectedDate.trainerOverridden && selectedDate.courseTrainer"
+            class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+          >
+            Standard für den Kurs: {{ selectedDate.courseTrainer.fullName }}
+          </div>
           <div class="flex justify-between">
             <span class="text-slate-500">Buchungen</span>
             <span class="font-medium">{{ selectedDate.bookingCount }}</span>
@@ -118,6 +133,25 @@
                 {{ sub.name }}
               </li>
             </ul>
+          </div>
+
+          <div class="border-t border-slate-100 pt-3">
+            <UFormGroup label="Trainer für diesen Termin">
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <USelectMenu
+                  v-model="selectedTrainerId"
+                  :options="trainerOptions"
+                  value-attribute="value"
+                  class="flex-1"
+                />
+                <UButton
+                  label="Trainer speichern"
+                  :loading="savingTrainer"
+                  :disabled="selectedTrainerId === (selectedDate.trainer?.id || '')"
+                  @click="saveTrainerOverride"
+                />
+              </div>
+            </UFormGroup>
           </div>
 
           <div class="border-t border-slate-100 pt-3">
@@ -178,7 +212,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, CourseDate } from '~/types'
+import type { ApiListResponse, CourseDate, TrainerInfo } from '~/types'
 
 definePageMeta({ layout: 'admin' })
 
@@ -196,9 +230,12 @@ watchEffect(() => { viewMode.value = isMobile.value ? 'day' : 'week' })
 const currentDay = ref(todayIso())
 const currentMonday = ref(getWeekMonday(currentDay.value))
 const courseDates = ref<CourseDate[]>([])
+const trainers = ref<TrainerInfo[]>([])
 const showDetail = ref(false)
 const selectedDate = ref<CourseDate | null>(null)
+const selectedTrainerId = ref('')
 const cancelling = ref(false)
+const savingTrainer = ref(false)
 const cancelNotify = ref(false)
 const cancelNotifyTitle = ref('')
 const cancelNotifyMessage = ref('')
@@ -206,6 +243,13 @@ const loading = ref(true)
 
 const weekStart = computed(() => currentMonday.value)
 const weekEnd = computed(() => addDaysToIso(currentMonday.value, 6))
+const trainerOptions = computed(() => [
+  { label: 'Standard vom Kurs verwenden', value: '' },
+  ...trainers.value.map(trainer => ({
+    label: trainer.fullName,
+    value: trainer.id,
+  })),
+])
 
 const weekDays = computed(() => {
   const days = []
@@ -273,10 +317,31 @@ function syncMondayFromDay() {
 
 function openDetail(cd: CourseDate) {
   selectedDate.value = cd
+  selectedTrainerId.value = cd.trainer?.id || ''
   cancelNotify.value = false
   cancelNotifyTitle.value = `Kursausfall: ${cd.courseType?.name || 'Kurs'} am ${formatDate(cd.date)}`
   cancelNotifyMessage.value = ''
   showDetail.value = true
+}
+
+async function saveTrainerOverride() {
+  if (!selectedDate.value) return
+
+  savingTrainer.value = true
+  try {
+    await api.put(`/api/admin/calendar/course-dates/${selectedDate.value.id}/trainer`, {
+      trainerId: selectedTrainerId.value || null,
+    })
+    toast.add({ title: 'Trainer aktualisiert', color: 'green' })
+    await loadCalendar()
+    const refreshed = courseDates.value.find(courseDate => courseDate.id === selectedDate.value?.id) || null
+    selectedDate.value = refreshed
+    selectedTrainerId.value = refreshed?.trainer?.id || ''
+  } catch (cause) {
+    toast.add({ title: extractApiErrorMessage(cause, 'Der Trainer konnte nicht gespeichert werden.', { preferFieldSummary: false }), color: 'red' })
+  } finally {
+    savingTrainer.value = false
+  }
 }
 
 async function cancelDate(cd: CourseDate) {
@@ -316,6 +381,14 @@ async function loadCalendar(): Promise<void> {
   }
 }
 
+async function loadTrainers(): Promise<void> {
+  const res = await api.get<ApiListResponse<TrainerInfo>>('/api/admin/trainers')
+  trainers.value = res.items
+}
+
 watch(currentMonday, () => loadCalendar())
-onMounted(() => loadCalendar())
+onMounted(() => {
+  void loadCalendar()
+  void loadTrainers()
+})
 </script>

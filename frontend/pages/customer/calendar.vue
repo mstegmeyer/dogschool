@@ -121,6 +121,9 @@
               {{ cd.courseType?.name || 'Kurs' }}
             </p>
             <p class="text-slate-400 mt-0.5">{{ cd.startTime }} – {{ cd.endTime }}</p>
+            <p class="mt-1 text-slate-500">
+              Trainer: {{ cd.trainer?.fullName || 'Wird noch zugewiesen' }}
+            </p>
 
             <template v-if="cd.cancelled">
               <UBadge color="red" variant="soft" size="xs" class="mt-1">Abgesagt</UBadge>

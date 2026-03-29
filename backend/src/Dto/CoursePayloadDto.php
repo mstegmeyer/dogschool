@@ -22,6 +22,8 @@ final class CoursePayloadDto
         public string $typeCode = '',
         #[Assert\Range(min: 0, max: 4)]
         public int $level = 0,
+        #[Assert\Uuid]
+        public ?string $trainerId = null,
         /** Customer special wishes / comment. */
         public ?string $comment = null,
         public ?bool $archived = null,

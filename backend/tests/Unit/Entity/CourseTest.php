@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Entity;
 
 use App\Entity\Course;
+use App\Entity\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -55,5 +56,18 @@ final class CourseTest extends TestCase
         $course = new Course();
         self::assertNotEmpty($course->getId());
         self::assertSame(36, strlen($course->getId()));
+    }
+
+    #[Test]
+    public function trainerCanBeAssigned(): void
+    {
+        $course = new Course();
+        $trainer = new User();
+        $trainer->setUsername('florian');
+        $trainer->setFullName('Florian');
+
+        $course->setTrainer($trainer);
+
+        self::assertSame($trainer, $course->getTrainer());
     }
 }

@@ -8,8 +8,10 @@ use App\Dto\CoursePayloadDto;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
+use App\Entity\User;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
+use App\Repository\UserRepository;
 use App\Service\ApiNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,6 +29,7 @@ final class CourseController extends AbstractController
     public function __construct(
         private readonly CourseRepository $courseRepository,
         private readonly CourseTypeRepository $courseTypeRepository,
+        private readonly UserRepository $userRepository,
         private readonly ApiNormalizer $normalizer,
         private readonly ValidatorInterface $validator,
     ) {
@@ -91,8 +94,12 @@ final class CourseController extends AbstractController
         if ($courseType === null) {
             return $this->json(['errors' => ['typeCode' => 'Unknown course type code.']], Response::HTTP_BAD_REQUEST);
         }
+        $trainer = $this->resolveTrainer($dto->trainerId);
+        if ($trainer === false) {
+            return $this->json(['errors' => ['trainerId' => 'Unknown trainer.']], Response::HTTP_BAD_REQUEST);
+        }
         $course = new Course();
-        $this->applyPayload($course, $dto, $courseType);
+        $this->applyPayload($course, $dto, $courseType, true, $trainer);
         $course->computeDurationMinutes();
 
         $errors = $this->validator->validate($course);
@@ -107,6 +114,7 @@ final class CourseController extends AbstractController
     #[Route('/{id}', name: 'update', methods: ['PUT', 'PATCH'])]
     public function update(
         string $id,
+        Request $request,
         #[MapRequestPayload(acceptFormat: 'json')] CoursePayloadDto $dto,
     ): JsonResponse {
         $course = $this->courseRepository->find($id);
@@ -117,6 +125,7 @@ final class CourseController extends AbstractController
         $previousDayOfWeek = $course->getDayOfWeek();
         $previousStartTime = $course->getStartTime();
         $previousEndTime = $course->getEndTime();
+        $previousTrainer = $course->getTrainer();
 
         $courseType = null;
         if ($dto->typeCode !== '') {
@@ -125,7 +134,15 @@ final class CourseController extends AbstractController
                 return $this->json(['errors' => ['typeCode' => 'Unknown course type code.']], Response::HTTP_BAD_REQUEST);
             }
         }
-        $this->applyPayload($course, $dto, $courseType);
+        $applyTrainer = $this->requestContainsKey($request, 'trainerId');
+        $trainer = null;
+        if ($applyTrainer) {
+            $trainer = $this->resolveTrainer($dto->trainerId);
+            if ($trainer === false) {
+                return $this->json(['errors' => ['trainerId' => 'Unknown trainer.']], Response::HTTP_BAD_REQUEST);
+            }
+        }
+        $this->applyPayload($course, $dto, $courseType, $applyTrainer, $trainer);
         $course->computeDurationMinutes();
 
         $errors = $this->validator->validate($course);
@@ -138,6 +155,9 @@ final class CourseController extends AbstractController
             || $previousEndTime !== $course->getEndTime();
         if ($scheduleChanged) {
             $this->courseRepository->syncUpcomingCourseDates($course, $previousDayOfWeek);
+        }
+        if (($previousTrainer?->getId() ?? null) !== ($course->getTrainer()?->getId() ?? null)) {
+            $this->courseRepository->syncUpcomingCourseDateTrainerDefaults($course, $previousTrainer);
         }
 
         $this->courseRepository->save($course);
@@ -193,8 +213,13 @@ final class CourseController extends AbstractController
         return $this->json($this->normalizer->normalizeCourse($course));
     }
 
-    private function applyPayload(Course $course, CoursePayloadDto $dto, ?CourseType $courseType): void
-    {
+    private function applyPayload(
+        Course $course,
+        CoursePayloadDto $dto,
+        ?CourseType $courseType,
+        bool $applyTrainer,
+        User|false|null $trainer,
+    ): void {
         $course->setDayOfWeek($dto->dayOfWeek);
         $course->setStartTime($dto->startTime);
         $course->setEndTime($dto->endTime);
@@ -202,11 +227,30 @@ final class CourseController extends AbstractController
             $course->setCourseType($courseType);
         }
         $course->setLevel($dto->level);
+        if ($applyTrainer && $trainer !== false) {
+            $course->setTrainer($trainer);
+        }
         if ($dto->comment !== null) {
             $course->setComment($dto->comment === '' ? null : $dto->comment);
         }
         if ($dto->archived !== null) {
             $course->setArchived($dto->archived);
         }
+    }
+
+    private function requestContainsKey(Request $request, string $key): bool
+    {
+        $data = json_decode($request->getContent(), true);
+
+        return is_array($data) && array_key_exists($key, $data);
+    }
+
+    private function resolveTrainer(?string $trainerId): User|false|null
+    {
+        if ($trainerId === null || $trainerId === '') {
+            return null;
+        }
+
+        return $this->userRepository->find($trainerId) ?? false;
     }
 }

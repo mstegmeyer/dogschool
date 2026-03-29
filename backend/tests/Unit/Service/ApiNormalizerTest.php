@@ -80,18 +80,23 @@ final class ApiNormalizerTest extends TestCase
         $courseType = new CourseType();
         $courseType->setCode('MH');
         $courseType->setName('Mensch-Hund');
+        $trainer = new User();
+        $trainer->setUsername('lea');
+        $trainer->setFullName('Lea');
         $course = new Course();
         $course->setDayOfWeek(1);
         $course->setStartTime('09:00');
         $course->setEndTime('10:00');
         $course->setCourseType($courseType);
         $course->setLevel(2);
+        $course->setTrainer($trainer);
         $data = $this->normalizer->normalizeCourse($course);
         self::assertSame(1, $data['dayOfWeek']);
         self::assertSame('MH', $data['type']['code']);
         self::assertSame('Mensch-Hund', $data['type']['name']);
         self::assertSame('RECURRING', $data['type']['recurrenceKind']);
         self::assertSame(2, $data['level']);
+        self::assertSame('Lea', $data['trainer']['fullName']);
     }
 
     #[Test]
@@ -224,14 +229,22 @@ final class ApiNormalizerTest extends TestCase
         $courseType = new CourseType();
         $courseType->setCode('AGI');
         $courseType->setName('Agility');
+        $courseTrainer = new User();
+        $courseTrainer->setUsername('manuela');
+        $courseTrainer->setFullName('Manuela');
+        $overrideTrainer = new User();
+        $overrideTrainer->setUsername('caro');
+        $overrideTrainer->setFullName('Caro');
         $course = new Course();
         $course->setDayOfWeek(1);
         $course->setStartTime('18:00');
         $course->setEndTime('19:00');
         $course->setCourseType($courseType);
+        $course->setTrainer($courseTrainer);
 
         $cd = new CourseDate();
         $cd->setCourse($course);
+        $cd->setTrainer($overrideTrainer);
         $cd->setDate(new \DateTimeImmutable('2026-03-23'));
         $cd->setStartTime('18:00');
         $cd->setEndTime('19:00');
@@ -254,6 +267,9 @@ final class ApiNormalizerTest extends TestCase
         self::assertCount(1, $data['bookings']);
         self::assertSame('Bella', $data['bookings'][0]['dogName']);
         self::assertSame('Anna', $data['bookings'][0]['customerName']);
+        self::assertSame('Caro', $data['trainer']['fullName']);
+        self::assertSame('Manuela', $data['courseTrainer']['fullName']);
+        self::assertTrue($data['trainerOverridden']);
     }
 
     #[Test]

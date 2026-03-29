@@ -9,6 +9,7 @@ use App\Entity\Notification;
 use App\Entity\User;
 use App\Repository\CourseDateRepository;
 use App\Repository\NotificationRepository;
+use App\Repository\UserRepository;
 use App\Service\ApiNormalizer;
 use App\Service\CreditService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +28,7 @@ final class CalendarController extends AbstractController
     public function __construct(
         private readonly CourseDateRepository $courseDateRepository,
         private readonly NotificationRepository $notificationRepository,
+        private readonly UserRepository $userRepository,
         private readonly ApiNormalizer $normalizer,
         private readonly ValidatorInterface $validator,
         private readonly CreditService $creditService,
@@ -80,6 +82,35 @@ final class CalendarController extends AbstractController
         $errors = $this->validator->validate($cd);
         if (count($errors) > 0) {
             return $this->json(['errors' => $this->normalizer->violationsToArray($errors)], Response::HTTP_BAD_REQUEST);
+        }
+
+        $this->courseDateRepository->save($cd);
+
+        return $this->json($this->normalizer->normalizeCourseDateForAdmin($cd));
+    }
+
+    #[Route('/course-dates/{id}/trainer', name: 'update_trainer', methods: ['PUT'])]
+    public function updateTrainer(string $id, Request $request): JsonResponse
+    {
+        $cd = $this->courseDateRepository->find($id);
+        if ($cd === null) {
+            return $this->json(['error' => 'CourseDate not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        $trainerId = is_array($payload) ? ($payload['trainerId'] ?? null) : null;
+        if ($trainerId !== null && !is_string($trainerId)) {
+            return $this->json(['errors' => ['trainerId' => 'trainerId must be a string or null.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($trainerId === null || $trainerId === '') {
+            $cd->setTrainer($cd->getCourse()?->getTrainer());
+        } else {
+            $trainer = $this->userRepository->find($trainerId);
+            if ($trainer === null) {
+                return $this->json(['errors' => ['trainerId' => 'Unknown trainer.']], Response::HTTP_BAD_REQUEST);
+            }
+            $cd->setTrainer($trainer);
         }
 
         $this->courseDateRepository->save($cd);

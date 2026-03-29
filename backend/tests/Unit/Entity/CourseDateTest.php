@@ -8,6 +8,7 @@ use App\Entity\Booking;
 use App\Entity\CourseDate;
 use App\Entity\Customer;
 use App\Entity\Dog;
+use App\Entity\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -99,5 +100,18 @@ final class CourseDateTest extends TestCase
         self::assertTrue($cd->isCancelled());
         $cd->setCancelled(false);
         self::assertFalse($cd->isCancelled());
+    }
+
+    #[Test]
+    public function trainerCanBeAssigned(): void
+    {
+        $cd = new CourseDate();
+        $trainer = new User();
+        $trainer->setUsername('lea');
+        $trainer->setFullName('Lea');
+
+        $cd->setTrainer($trainer);
+
+        self::assertSame($trainer, $cd->getTrainer());
     }
 }

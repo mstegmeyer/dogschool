@@ -64,6 +64,7 @@ final class CourseDateService
             if (!$this->courseDateRepository->existsForCourseAndDate($course, $current)) {
                 $cd = new CourseDate();
                 $cd->setCourse($course);
+                $cd->setTrainer($course->getTrainer());
                 $cd->setDate($current);
                 $cd->setStartTime($course->getStartTime());
                 $cd->setEndTime($course->getEndTime());

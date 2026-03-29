@@ -7,9 +7,11 @@ namespace App\Tests\Integration\Controller\Api\Admin;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
+use App\Entity\User;
 use App\Repository\CourseDateRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
+use App\Repository\UserRepository;
 use App\Tests\Helper\ApiTestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,7 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class CalendarControllerTest extends WebTestCase
 {
-    private function seedCourseDate(string $dateStr): array
+    private function seedCourseDate(string $dateStr, ?User $trainer = null): array
     {
         $container = static::getContainer();
         $courseTypeRepo = $container->get(CourseTypeRepository::class);
@@ -35,17 +37,27 @@ final class CalendarControllerTest extends WebTestCase
         $course->setStartTime('10:00');
         $course->setEndTime('11:00');
         $course->setCourseType($courseType);
+        $course->setTrainer($trainer);
         $courseRepo->save($course);
 
         $cdRepo = $container->get(CourseDateRepository::class);
         $cd = new CourseDate();
         $cd->setCourse($course);
+        $cd->setTrainer($trainer);
         $cd->setDate(new \DateTimeImmutable($dateStr));
         $cd->setStartTime('10:00');
         $cd->setEndTime('11:00');
         $cdRepo->save($cd);
 
         return ['courseDate' => $cd, 'course' => $course];
+    }
+
+    private function reloadUser(User $user): User
+    {
+        $reloaded = static::getContainer()->get(UserRepository::class)->find($user->getId());
+        self::assertNotNull($reloaded);
+
+        return $reloaded;
     }
 
     public function testListCalendarRequiresAuth(): void
@@ -148,5 +160,36 @@ final class CalendarControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertFalse($data['cancelled']);
+    }
+
+    public function testUpdateTrainerForSingleCourseDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['user' => $defaultTrainer] = $helper->createAdminAndLogin(fullName: 'Default Trainer');
+        ['user' => $replacementTrainer] = $helper->createAdminAndLogin(fullName: 'Replacement Trainer');
+        $defaultTrainer = $this->reloadUser($defaultTrainer);
+        $replacementTrainer = $this->reloadUser($replacementTrainer);
+
+        $seeded = $this->seedCourseDate((new \DateTimeImmutable('+5 days'))->format('Y-m-d'), $defaultTrainer);
+        $cdId = $seeded['courseDate']->getId();
+
+        $helper->adminRequest(
+            Request::METHOD_PUT,
+            '/api/admin/calendar/course-dates/'.$cdId.'/trainer',
+            $token,
+            json_encode(['trainerId' => $replacementTrainer->getId()])
+        );
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Replacement Trainer', $data['trainer']['fullName']);
+        self::assertTrue($data['trainerOverridden']);
+
+        $courseDateRepo = static::getContainer()->get(CourseDateRepository::class);
+        $reloadedCourseDate = $courseDateRepo->find($cdId);
+        self::assertNotNull($reloadedCourseDate);
+        self::assertSame($replacementTrainer->getId(), $reloadedCourseDate->getTrainer()?->getId());
     }
 }

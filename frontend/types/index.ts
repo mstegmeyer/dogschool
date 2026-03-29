@@ -78,6 +78,13 @@ export interface CourseType {
   recurrenceKind: RecurrenceKind
 }
 
+export interface TrainerInfo {
+  id: string
+  username: string
+  fullName: string
+  phone: string | null
+}
+
 export interface Course {
   id: string
   dayOfWeek: DayOfWeek
@@ -86,6 +93,7 @@ export interface Course {
   durationMinutes: number | null
   type: CourseTypeInfo | null
   level: CourseLevel
+  trainer: TrainerInfo | null
   comment: string | null
   archived: boolean
   subscriberCount: number
@@ -109,6 +117,9 @@ export interface CourseDate {
   dayOfWeek: DayOfWeek
   startTime: string
   endTime: string
+  trainer: TrainerInfo | null
+  courseTrainer?: TrainerInfo | null
+  trainerOverridden?: boolean
   cancelled: boolean
   bookingCount: number
   createdAt: string

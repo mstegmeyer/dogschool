@@ -42,7 +42,7 @@ final class CourseControllerTest extends WebTestCase
         return $courseType;
     }
 
-    private function seedCourse(CourseType $courseType, string $dateStr): Course
+    private function seedCourse(CourseType $courseType, string $dateStr, ?User $trainer = null): Course
     {
         $course = new Course();
         $course->setDayOfWeek((int) (new \DateTimeImmutable($dateStr))->format('N'));
@@ -50,16 +50,18 @@ final class CourseControllerTest extends WebTestCase
         $course->setEndTime('11:00');
         $course->setCourseType($courseType);
         $course->setLevel(1);
+        $course->setTrainer($trainer);
 
         static::getContainer()->get(CourseRepository::class)->save($course);
 
         return $course;
     }
 
-    private function seedCourseDate(Course $course, string $dateStr): CourseDate
+    private function seedCourseDate(Course $course, string $dateStr, ?User $trainer = null): CourseDate
     {
         $courseDate = new CourseDate();
         $courseDate->setCourse($course);
+        $courseDate->setTrainer($trainer ?? $course->getTrainer());
         $courseDate->setDate(new \DateTimeImmutable($dateStr));
         $courseDate->setStartTime($course->getStartTime());
         $courseDate->setEndTime($course->getEndTime());
@@ -67,6 +69,14 @@ final class CourseControllerTest extends WebTestCase
         static::getContainer()->get(CourseDateRepository::class)->save($courseDate);
 
         return $courseDate;
+    }
+
+    private function reloadUser(User $user): User
+    {
+        $reloaded = static::getContainer()->get(UserRepository::class)->find($user->getId());
+        self::assertNotNull($reloaded);
+
+        return $reloaded;
     }
 
     public function testListCoursesRequiresAdminAuth(): void
@@ -82,6 +92,7 @@ final class CourseControllerTest extends WebTestCase
         $client = static::createClient();
         $container = static::getContainer();
         $this->ensureCourseType();
+        $trainerData = ApiTestHelper::create($client)->createAdminAndLogin(fullName: 'Assigned Trainer');
         $userRepo = $container->get(UserRepository::class);
         $hasher = $container->get(UserPasswordHasherInterface::class);
 
@@ -118,6 +129,7 @@ final class CourseControllerTest extends WebTestCase
                 'endTime' => '11:00',
                 'typeCode' => 'JUHU',
                 'level' => 1,
+                'trainerId' => $trainerData['user']->getId(),
             ])
         );
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -128,10 +140,12 @@ final class CourseControllerTest extends WebTestCase
         self::assertSame('JUHU', $data['type']['code']);
         self::assertSame('Junghunde', $data['type']['name']);
         self::assertSame('RECURRING', $data['type']['recurrenceKind']);
+        self::assertSame('Assigned Trainer', $data['trainer']['fullName']);
 
         $courseRepo = $container->get(CourseRepository::class);
         $course = $courseRepo->find($data['id']);
         self::assertNotNull($course);
+        self::assertSame($trainerData['user']->getId(), $course->getTrainer()?->getId());
 
         $courseId = $data['id'];
 
@@ -358,5 +372,55 @@ final class CourseControllerTest extends WebTestCase
         self::assertSame($pastDate->format('Y-m-d'), $reloadedPastCourseDate->getDate()->format('Y-m-d'));
         self::assertSame($firstUpcomingDate->modify(sprintf('%+d days', $dayShift))->format('Y-m-d'), $reloadedUpcomingCourseDate->getDate()->format('Y-m-d'));
         self::assertSame($secondUpcomingDate->modify(sprintf('%+d days', $dayShift))->format('Y-m-d'), $reloadedSecondUpcomingCourseDate->getDate()->format('Y-m-d'));
+    }
+
+    public function testUpdatingCourseTrainerSyncsDefaultFutureDatesButKeepsOverrides(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['user' => $oldTrainer] = $helper->createAdminAndLogin(fullName: 'Old Trainer');
+        ['user' => $newTrainer] = $helper->createAdminAndLogin(fullName: 'New Trainer');
+        ['user' => $overrideTrainer] = $helper->createAdminAndLogin(fullName: 'Override Trainer');
+        $oldTrainer = $this->reloadUser($oldTrainer);
+        $newTrainer = $this->reloadUser($newTrainer);
+        $overrideTrainer = $this->reloadUser($overrideTrainer);
+
+        $timezone = new \DateTimeZone(CourseDate::TIMEZONE);
+        $today = new \DateTimeImmutable('today', $timezone);
+        $firstUpcomingDate = $today->modify('+7 days');
+        $secondUpcomingDate = $firstUpcomingDate->modify('+7 days');
+
+        $courseType = $this->ensureCourseType('TRAINER', 'Trainer Test');
+        $course = $this->seedCourse($courseType, $firstUpcomingDate->format('Y-m-d'), $oldTrainer);
+        $defaultCourseDate = $this->seedCourseDate($course, $firstUpcomingDate->format('Y-m-d'));
+        $overrideCourseDate = $this->seedCourseDate($course, $secondUpcomingDate->format('Y-m-d'), $overrideTrainer);
+
+        $helper->adminRequest(
+            Request::METHOD_PATCH,
+            '/api/admin/courses/'.$course->getId(),
+            $token,
+            json_encode([
+                'dayOfWeek' => $course->getDayOfWeek(),
+                'startTime' => $course->getStartTime(),
+                'endTime' => $course->getEndTime(),
+                'level' => $course->getLevel(),
+                'typeCode' => $courseType->getCode(),
+                'trainerId' => $newTrainer->getId(),
+            ])
+        );
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('New Trainer', $data['trainer']['fullName']);
+
+        $courseDateRepo = static::getContainer()->get(CourseDateRepository::class);
+        $reloadedDefaultCourseDate = $courseDateRepo->find($defaultCourseDate->getId());
+        $reloadedOverrideCourseDate = $courseDateRepo->find($overrideCourseDate->getId());
+
+        self::assertNotNull($reloadedDefaultCourseDate);
+        self::assertNotNull($reloadedOverrideCourseDate);
+        self::assertSame($newTrainer->getId(), $reloadedDefaultCourseDate->getTrainer()?->getId());
+        self::assertSame($overrideTrainer->getId(), $reloadedOverrideCourseDate->getTrainer()?->getId());
     }
 }

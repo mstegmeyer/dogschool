@@ -47,6 +47,10 @@
                 <p class="font-medium text-slate-700">{{ course.subscriberCount }}</p>
               </div>
             </div>
+            <div class="mt-3 text-xs">
+              <p class="text-slate-400">Trainer</p>
+              <p class="font-medium text-slate-700">{{ course.trainer?.fullName || 'Nicht zugewiesen' }}</p>
+            </div>
             <p v-if="course.comment" class="mt-3 text-sm text-slate-600">{{ course.comment }}</p>
             <div class="mt-4 grid grid-cols-2 gap-2">
               <UButton size="sm" variant="soft" label="Bearbeiten" @click="openEditModal(course)" />
@@ -81,6 +85,11 @@
             </template>
             <template #level-data="{ row }">
               {{ levelLabel(row.level) }}
+            </template>
+            <template #trainer-data="{ row }">
+              <span :class="row.trainer ? 'font-medium text-slate-700' : 'text-slate-400'">
+                {{ row.trainer?.fullName || 'Nicht zugewiesen' }}
+              </span>
             </template>
             <template #subscribers-data="{ row }">
               <UTooltip
@@ -143,6 +152,15 @@
               <UInput v-model="form.endTime" type="time" required @update:model-value="clearFieldError('endTime')" />
             </UFormGroup>
           </div>
+          <UFormGroup label="Trainer" :error="errorFor('trainerId')">
+            <USelectMenu
+              v-model="form.trainerId"
+              :options="trainerOptions"
+              value-attribute="value"
+              placeholder="Trainer auswählen"
+              @update:model-value="clearFieldError('trainerId')"
+            />
+          </UFormGroup>
           <div
             v-if="showScheduleHint"
             class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
@@ -202,7 +220,7 @@
 
 <script setup lang="ts">
 import type { FetchError } from 'ofetch'
-import type { ApiListResponse, Course } from '~/types'
+import type { ApiListResponse, Course, TrainerInfo } from '~/types'
 
 definePageMeta({ layout: 'admin' })
 
@@ -212,6 +230,7 @@ const { dayName, formatDate, levelLabel, todayIso } = useHelpers()
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback()
 
 const courses = ref<Course[]>([])
+const trainers = ref<TrainerInfo[]>([])
 const loading = ref(true)
 const showModal = ref(false)
 const showArchiveModal = ref(false)
@@ -246,6 +265,13 @@ const dayOptions = [
 ]
 
 const archiveMinDate = computed(() => todayIso())
+const trainerOptions = computed(() => [
+  { label: 'Keine Zuordnung', value: '' },
+  ...trainers.value.map(trainer => ({
+    label: trainer.fullName,
+    value: trainer.id,
+  })),
+])
 const showScheduleHint = computed(() => editingCourse.value !== null && (
   form.dayOfWeek !== editingCourse.value.dayOfWeek
   || form.startTime !== editingCourse.value.startTime
@@ -274,6 +300,7 @@ const form = reactive({
   startTime: '10:00',
   endTime: '11:00',
   level: 0,
+  trainerId: '',
   comment: '',
 })
 
@@ -287,6 +314,7 @@ const columns = [
   { key: 'dayOfWeek', label: 'Tag', sortable: true },
   { key: 'time', label: 'Uhrzeit' },
   { key: 'level', label: 'Stufe' },
+  { key: 'trainer', label: 'Trainer' },
   { key: 'subscribers', label: 'Abonnenten' },
   { key: 'archived', label: 'Status', sortable: true },
   { key: 'actions', label: '' },
@@ -330,6 +358,7 @@ function openCreateModal() {
   form.startTime = '10:00'
   form.endTime = '11:00'
   form.level = 0
+  form.trainerId = ''
   form.comment = ''
   clearFormErrors()
   showModal.value = true
@@ -342,6 +371,7 @@ function openEditModal(course: Course) {
   form.startTime = course.startTime
   form.endTime = course.endTime
   form.level = course.level
+  form.trainerId = course.trainer?.id || ''
   form.comment = course.comment || ''
   clearFormErrors()
   showModal.value = true
@@ -388,11 +418,15 @@ async function saveCourse() {
 
   saving.value = true
   try {
+    const payload = {
+      ...form,
+      trainerId: form.trainerId || null,
+    }
     if (editingCourse.value) {
-      await api.put(`/api/admin/courses/${editingCourse.value.id}`, form)
+      await api.put(`/api/admin/courses/${editingCourse.value.id}`, payload)
       toast.add({ title: 'Kurs aktualisiert', color: 'green' })
     } else {
-      await api.post('/api/admin/courses', form)
+      await api.post('/api/admin/courses', payload)
       toast.add({ title: 'Kurs erstellt', color: 'green' })
     }
     closeCourseModal()
@@ -402,6 +436,11 @@ async function saveCourse() {
   } finally {
     saving.value = false
   }
+}
+
+async function loadTrainers(): Promise<void> {
+  const res = await api.get<ApiListResponse<TrainerInfo>>('/api/admin/trainers')
+  trainers.value = res.items
 }
 
 async function toggleArchive(course: Course) {
@@ -499,6 +538,9 @@ watch(sort, () => {
 }, { deep: true })
 
 onMounted(() => {
-  void loadCourses()
+  void Promise.all([
+    loadCourses(),
+    loadTrainers(),
+  ])
 })
 </script>

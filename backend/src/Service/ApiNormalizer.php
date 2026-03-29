@@ -14,6 +14,7 @@ use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\Notification;
 use App\Entity\PushDevice;
+use App\Entity\User;
 use App\Enum\ContractType;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -117,6 +118,7 @@ final class ApiNormalizer
                 ]
                 : null,
             'level' => $course->getLevel(),
+            'trainer' => $this->normalizeTrainer($course->getTrainer()),
             'comment' => $course->getComment(),
             'archived' => $course->isArchived(),
             'subscriberCount' => count($subscribers),
@@ -174,6 +176,8 @@ final class ApiNormalizer
     {
         $course = $cd->getCourse();
         $courseType = $course?->getCourseType();
+        $courseTrainer = $course?->getTrainer();
+        $effectiveTrainer = $cd->getTrainer() ?? $courseTrainer;
 
         return [
             'id' => $cd->getId(),
@@ -190,6 +194,10 @@ final class ApiNormalizer
             'dayOfWeek' => (int) $cd->getDate()->format('N'),
             'startTime' => $cd->getStartTime(),
             'endTime' => $cd->getEndTime(),
+            'trainer' => $this->normalizeTrainer($effectiveTrainer),
+            'courseTrainer' => $this->normalizeTrainer($courseTrainer),
+            'trainerOverridden' => ($cd->getTrainer()?->getId() ?? null) !== null
+                && $cd->getTrainer()?->getId() !== $courseTrainer?->getId(),
             'cancelled' => $cd->isCancelled(),
             'bookingCount' => count($cd->getActiveBookings()),
             'createdAt' => $cd->getCreatedAt()->format(\DateTimeInterface::ATOM),
@@ -301,5 +309,20 @@ final class ApiNormalizer
         }
 
         return $arr;
+    }
+
+    /** @return array{id: string, username: string, fullName: string, phone: ?string}|null */
+    public function normalizeTrainer(?User $trainer): ?array
+    {
+        if ($trainer === null) {
+            return null;
+        }
+
+        return [
+            'id' => $trainer->getId(),
+            'username' => $trainer->getUsername(),
+            'fullName' => $trainer->getFullName(),
+            'phone' => $trainer->getPhone(),
+        ];
     }
 }

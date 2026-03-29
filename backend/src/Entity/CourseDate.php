@@ -28,6 +28,10 @@ class CourseDate
     #[ORM\JoinColumn(nullable: false)]
     private ?Course $course = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $trainer = null;
+
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
     private \DateTimeImmutable $date;
 
@@ -69,6 +73,18 @@ class CourseDate
     public function setCourse(Course $course): static
     {
         $this->course = $course;
+
+        return $this;
+    }
+
+    public function getTrainer(): ?User
+    {
+        return $this->trainer;
+    }
+
+    public function setTrainer(?User $trainer): static
+    {
+        $this->trainer = $trainer;
 
         return $this;
     }

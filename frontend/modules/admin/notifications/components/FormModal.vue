@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="notification-form-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">
           {{ editing ? 'Mitteilung bearbeiten' : 'Neue Mitteilung' }}
@@ -9,12 +9,13 @@
       <form class="space-y-4" @submit.prevent="emit('submit')">
         <UFormGroup label="Reichweite" :error="fieldErrors.courseIds">
           <div class="mb-2 flex items-center gap-3">
-            <UToggle v-model="form.isGlobal" />
+            <UToggle data-testid="notification-global-toggle" v-model="form.isGlobal" />
             <span class="text-sm text-slate-600">
               {{ form.isGlobal ? 'Globale Mitteilung (alle Kunden)' : 'Bestimmte Kurse auswählen' }}
             </span>
           </div>
           <USelectMenu
+            data-testid="notification-course-select"
             v-if="!form.isGlobal"
             v-model="form.courseIds"
             :options="courseOptions"
@@ -25,18 +26,18 @@
           />
         </UFormGroup>
         <UFormGroup label="Titel" :error="fieldErrors.title">
-          <UInput v-model="form.title" placeholder="Betreff" required @update:model-value="emit('clear-field-error', 'title')" />
+          <UInput data-testid="notification-title" v-model="form.title" placeholder="Betreff" required @update:model-value="emit('clear-field-error', 'title')" />
         </UFormGroup>
         <UFormGroup label="Nachricht" :error="fieldErrors.message">
-          <UTextarea v-model="form.message" placeholder="Nachricht an die Kursteilnehmer…" :rows="4" required @update:model-value="emit('clear-field-error', 'message')" />
+          <UTextarea data-testid="notification-message" v-model="form.message" placeholder="Nachricht an die Kursteilnehmer…" :rows="4" required @update:model-value="emit('clear-field-error', 'message')" />
         </UFormGroup>
         <UFormGroup label="Angepinnt bis" hint="Optional – Mitteilung wird bis zu diesem Datum oben angezeigt" :error="fieldErrors.pinnedUntil">
-          <UInput v-model="form.pinnedUntil" type="date" @update:model-value="emit('clear-field-error', 'pinnedUntil')" />
+          <UInput data-testid="notification-pinned-until" v-model="form.pinnedUntil" type="date" @update:model-value="emit('clear-field-error', 'pinnedUntil')" />
         </UFormGroup>
         <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" label="Abbrechen" @click="emit('cancel')" />
-          <UButton type="submit" :loading="saving" label="Speichern" />
+          <UButton data-testid="save-notification" type="submit" :loading="saving" label="Speichern" />
         </div>
       </form>
     </UCard>

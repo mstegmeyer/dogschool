@@ -13,6 +13,7 @@ use App\Repository\CourseDateRepository;
 use App\Repository\CustomerRepository;
 use App\Repository\NotificationRepository;
 use App\Service\ApiNormalizer;
+use App\Support\AppClock;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -59,7 +60,7 @@ final class CourseController extends AbstractController
             return $this->json(['error' => 'Course not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $now = new \DateTimeImmutable('now', new \DateTimeZone(CourseDate::TIMEZONE));
+        $now = AppClock::now(new \DateTimeZone(CourseDate::TIMEZONE));
         $upcomingUntil = $now->modify('+1 month');
         $notificationSince = $now->modify('-6 months');
 

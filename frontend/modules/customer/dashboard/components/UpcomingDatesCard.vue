@@ -47,6 +47,7 @@
           <div v-else-if="courseDate.subscribed && !courseDate.bookingWindowClosed" class="flex shrink-0 items-center gap-1.5">
             <USelectMenu
               v-if="dogs.length > 1"
+              :data-testid="`dashboard-dog-select-${courseDate.id}`"
               :model-value="dogIdByCourseDate[courseDate.id]"
               :options="dogOptions"
               value-attribute="value"
@@ -56,6 +57,7 @@
               @update:model-value="emit('update:dog-id', { courseDateId: courseDate.id, dogId: $event })"
             />
             <UButton
+              :data-testid="`dashboard-book-${courseDate.id}`"
               size="xs"
               label="Buchen"
               :disabled="!dogIdForBooking(courseDate)"

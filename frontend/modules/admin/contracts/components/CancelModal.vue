@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="contract-cancel-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">Vertrag kündigen?</h3>
       </template>
@@ -12,6 +12,7 @@
         </p>
         <UFormGroup label="Vertragsende" help="Nur der letzte Tag eines Monats ist möglich." :error="endDateError">
           <UInput
+            data-testid="contract-end-date"
             :model-value="endDate"
             type="date"
             :min="contract?.startDate ?? undefined"
@@ -24,7 +25,7 @@
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" label="Abbrechen" @click="emit('cancel')" />
-          <UButton color="red" label="Kündigen" :loading="saving" @click="emit('submit')" />
+          <UButton data-testid="confirm-contract-cancel" color="red" label="Kündigen" :loading="saving" @click="emit('submit')" />
         </div>
       </template>
     </UCard>

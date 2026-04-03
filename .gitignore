@@ -16,3 +16,11 @@ Thumbs.db
 **/.env.*.local
 **/.env.local.php
 **/config/jwt/*.pem
+
+# Root E2E workspace
+/tests/node_modules/
+/tests/playwright-report/
+/tests/test-results/
+/tests/.auth/
+/tests/.cache/
+/frontend/test-results/

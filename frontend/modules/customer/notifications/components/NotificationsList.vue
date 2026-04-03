@@ -16,6 +16,7 @@
     <UCard
       v-for="notification in notifications"
       :key="notification.id"
+      :data-testid="`notification-card-${notification.id}`"
       :ui="cardUi(notification)"
     >
       <AppNotificationDetail :notification="notification" />

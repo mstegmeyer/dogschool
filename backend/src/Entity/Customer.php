@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Entity\Embeddable\Address;
 use App\Entity\Embeddable\BankAccount;
+use App\Support\AppClock;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -65,7 +66,7 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     public function __construct()
     {
         $this->id = Uuid::v7()->toRfc4122();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = AppClock::now();
         $this->calendarFeedToken = Uuid::v7()->toRfc4122();
         $this->address = new Address();
         $this->bankAccount = new BankAccount();
@@ -123,6 +124,13 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     public function getCalendarFeedToken(): string
     {
         return $this->calendarFeedToken;
+    }
+
+    public function setCalendarFeedToken(string $calendarFeedToken): static
+    {
+        $this->calendarFeedToken = $calendarFeedToken;
+
+        return $this;
     }
 
     public function refreshCalendarFeedToken(): static

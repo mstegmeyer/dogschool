@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50 overflow-x-hidden">
     <!-- Desktop sidebar -->
-    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-komm-900 flex-col z-10">
+    <aside data-testid="admin-desktop-sidebar" class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-komm-900 flex-col z-10">
       <div class="px-6 py-5 border-b border-komm-800">
         <NuxtLink to="/admin" class="block">
           <AppLogo tone="on-dark" />
@@ -23,6 +23,7 @@
 
       <div class="p-3 border-t border-komm-800">
         <UButton
+          data-testid="admin-logout"
           color="white"
           variant="ghost"
           block
@@ -36,13 +37,14 @@
 
     <!-- Mobile slideover -->
     <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'w-[min(16rem,calc(100vw-2rem))]' }">
-      <div class="mobile-shell-drawer flex flex-col h-full bg-komm-900">
+      <div data-testid="admin-mobile-menu" class="mobile-shell-drawer flex flex-col h-full bg-komm-900">
         <div class="flex items-start justify-between gap-3 px-6 py-5 border-b border-komm-800">
           <NuxtLink to="/admin" class="block min-w-0" @click="mobileMenuOpen = false">
             <AppLogo tone="on-dark" />
             <span class="block text-xs text-komm-400 mt-1.5">Admin-Bereich</span>
           </NuxtLink>
           <UButton
+            data-testid="admin-logout"
             color="white"
             variant="ghost"
             icon="i-heroicons-x-mark"
@@ -82,10 +84,12 @@
     <!-- Mobile top bar -->
     <header class="mobile-shell-header lg:hidden fixed top-0 inset-x-0 bg-komm-900 flex items-center z-10">
       <UButton
+        data-testid="admin-mobile-menu-toggle"
         color="white"
         variant="ghost"
         icon="i-heroicons-bars-3"
         class="shrink-0"
+        aria-label="Menü öffnen"
         :ui="{ color: { white: { ghost: 'text-komm-200 hover:text-white hover:bg-komm-800' } } }"
         @click="mobileMenuOpen = true"
       />

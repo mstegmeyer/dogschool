@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="add-dog-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">Hund hinzufügen</h3>
       </template>

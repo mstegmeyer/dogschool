@@ -18,6 +18,7 @@
         <div
           v-for="notification in notifications"
           :key="notification.id"
+          :data-testid="`notification-card-${notification.id}`"
           class="rounded-lg border border-slate-200 bg-white p-4"
         >
           <div class="flex items-start justify-between gap-3">
@@ -26,8 +27,8 @@
               <p class="mt-1 text-xs text-slate-500">{{ formatDateTime(notification.createdAt) }}</p>
             </div>
             <div class="flex gap-1">
-              <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', notification)" />
-              <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', notification)" />
+              <UButton :data-testid="`edit-notification-mobile-${notification.id}`" icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', notification)" />
+              <UButton :data-testid="`delete-notification-mobile-${notification.id}`" icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', notification)" />
             </div>
           </div>
           <div class="mt-3 flex flex-wrap gap-2">
@@ -83,7 +84,7 @@
             <span v-else class="text-xs text-slate-300">–</span>
           </template>
           <template #title-data="{ row }">
-            <span class="line-clamp-2 font-medium text-slate-800" :title="row.title">{{ row.title }}</span>
+            <span :data-testid="`notification-row-${row.id}`" class="line-clamp-2 font-medium text-slate-800" :title="row.title">{{ row.title }}</span>
           </template>
           <template #courses-data="{ row }">
             <span v-if="row.isGlobal" class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-amber-700 bg-amber-50">
@@ -110,8 +111,8 @@
           </template>
           <template #actions-data="{ row }">
             <div class="flex shrink-0 justify-end gap-0.5">
-              <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', row)" />
-              <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', row)" />
+              <UButton :data-testid="`edit-notification-${row.id}`" icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', row)" />
+              <UButton :data-testid="`delete-notification-${row.id}`" icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', row)" />
             </div>
           </template>
         </UTable>

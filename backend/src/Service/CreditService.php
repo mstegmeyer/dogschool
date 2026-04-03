@@ -15,6 +15,7 @@ use App\Enum\RecurrenceKind;
 use App\Repository\BookingRepository;
 use App\Repository\ContractRepository;
 use App\Repository\CreditTransactionRepository;
+use App\Support\AppClock;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class CreditService
@@ -94,7 +95,7 @@ final class CreditService
     public function getNextWeeklyCreditHints(Customer $customer): array
     {
         $tz = new \DateTimeZone(CourseDate::TIMEZONE);
-        $now = new \DateTimeImmutable('now', $tz);
+        $now = AppClock::now($tz);
         $currentWeekRef = $now->format('o-\WW');
 
         $n = (int) $now->format('N');

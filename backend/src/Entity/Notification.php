@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Support\AppClock;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -47,7 +48,7 @@ class Notification
     public function __construct()
     {
         $this->id = Uuid::v7()->toRfc4122();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = AppClock::now();
         $this->courses = new ArrayCollection();
     }
 
@@ -116,7 +117,7 @@ class Notification
             return false;
         }
 
-        return $this->pinnedUntil > ($now ?? new \DateTimeImmutable());
+        return $this->pinnedUntil > ($now ?? AppClock::now());
     }
 
     /** @return Collection<int, Course> */

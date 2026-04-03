@@ -6,8 +6,8 @@
       :rows="courses"
       sort-mode="manual"
     >
-      <template #type-data="{ row }">
-        <div>
+          <template #type-data="{ row }">
+        <div :data-testid="`course-row-${row.id}`">
           <span class="font-medium">{{ row.type?.name || '–' }}</span>
           <UBadge class="ml-2" size="xs" variant="soft" color="gray">{{ row.type?.code }}</UBadge>
         </div>
@@ -42,7 +42,7 @@
       </template>
       <template #actions-data="{ row }">
         <UDropdown :items="getRowActions(row)">
-          <UButton variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
+          <UButton :data-testid="`course-actions-${row.id}`" variant="ghost" icon="i-heroicons-ellipsis-vertical" size="xs" />
         </UDropdown>
       </template>
     </UTable>

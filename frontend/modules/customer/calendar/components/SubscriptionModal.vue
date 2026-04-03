@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="calendar-subscription-modal">
       <template #header>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -25,6 +25,7 @@
 
         <div class="flex flex-col gap-3">
           <UInput
+            data-testid="calendar-subscription-url"
             :model-value="calendarSubscriptionUrl"
             readonly
             class="flex-1"
@@ -32,12 +33,14 @@
           />
           <div class="flex flex-wrap gap-2">
             <UButton
+              data-testid="copy-calendar-url"
               label="Kopieren"
               icon="i-heroicons-clipboard-document"
               :disabled="!calendarSubscriptionUrl"
               @click="emit('copy')"
             />
             <UButton
+              data-testid="open-calendar-url"
               label="Öffnen"
               icon="i-heroicons-arrow-top-right-on-square"
               variant="soft"

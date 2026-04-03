@@ -26,6 +26,7 @@
         v-for="notification in notifications.slice(0, 4)"
         :key="notification.id"
         type="button"
+        :data-testid="`dashboard-notification-${notification.id}`"
         class="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-komm-500"
         @click="emit('select', notification)"
       >

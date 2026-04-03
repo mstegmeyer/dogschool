@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Enum\ContractState;
 use App\Enum\ContractType;
+use App\Support\AppClock;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
@@ -59,7 +60,7 @@ class Contract
     {
         $this->id = Uuid::v7()->toRfc4122();
         $this->contractGroupId = Uuid::v7()->toRfc4122();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = AppClock::now();
         $this->type = ContractType::PERPETUAL;
         $this->state = ContractState::REQUESTED;
     }

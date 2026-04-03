@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard v-if="notification">
+    <UCard v-if="notification" data-testid="dashboard-notification-modal">
       <template #header>
         <div class="flex items-center justify-between gap-3">
           <h3 class="font-semibold text-slate-800">Mitteilung</h3>

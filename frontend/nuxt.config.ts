@@ -10,6 +10,7 @@ interface ModuleRoute {
 
 const MODULE_ROOT = resolve(__dirname, 'modules')
 const SKIPPED_SEGMENTS = new Set(['components', 'composables', 'types', 'utils'])
+const API_PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://localhost:8080'
 
 function toRouteSegments(filePath: string): string[] {
   const directory = relative(MODULE_ROOT, filePath)
@@ -125,6 +126,13 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
   css: ['~/assets/app.css'],
   pages: true,
+  routeRules: process.env.API_PROXY_TARGET
+    ? {
+        '/api/**': {
+          proxy: `${API_PROXY_TARGET}/api/**`,
+        },
+      }
+    : {},
 
   dir: {
     modules: '_nuxt-modules',
@@ -155,7 +163,7 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       '/api': {
-        target: (process.env.API_PROXY_TARGET || 'http://localhost:8080') + '/api',
+        target: `${API_PROXY_TARGET}/api`,
         changeOrigin: true,
       },
     },

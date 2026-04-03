@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="course-archive-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">Kurs archivieren</h3>
       </template>
@@ -12,6 +12,7 @@
 
         <UFormGroup label="Termine entfernen ab" :error="error">
           <UInput
+            data-testid="archive-remove-from-date"
             :model-value="removeFromDate"
             type="date"
             :min="minDate"
@@ -31,7 +32,7 @@
 
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" label="Abbrechen" :disabled="archiving" @click="emit('cancel')" />
-          <UButton color="red" :loading="archiving" label="Verbindlich archivieren" @click="emit('confirm')" />
+          <UButton data-testid="confirm-course-archive" color="red" :loading="archiving" label="Verbindlich archivieren" @click="emit('confirm')" />
         </div>
       </div>
     </UCard>

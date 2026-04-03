@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Support\AppClock;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
@@ -45,7 +46,7 @@ class Booking
     public function __construct()
     {
         $this->id = Uuid::v7()->toRfc4122();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = AppClock::now();
     }
 
     public function getId(): string

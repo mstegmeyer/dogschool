@@ -1,12 +1,13 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="request-contract-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">Vertrag anfragen</h3>
       </template>
       <form class="space-y-4" @submit.prevent="emit('submit')">
         <UFormGroup label="Hund" :error="fieldErrors.dogId">
           <USelectMenu
+            data-testid="request-contract-dog"
             v-model="form.dogId"
             :options="dogOptions"
             value-attribute="value"
@@ -19,6 +20,7 @@
         </UFormGroup>
         <UFormGroup label="Beginn" help="Nur der erste Tag eines Monats ist möglich." :error="fieldErrors.startDate">
           <UInput
+            data-testid="request-contract-start-date"
             v-model="form.startDate"
             type="date"
             @change="emit('normalize-start-date')"

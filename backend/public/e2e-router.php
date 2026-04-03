@@ -1,13 +1,13 @@
 <?php
 
+use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\TerminableInterface;
-use Symfony\Component\Dotenv\Dotenv;
 
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $staticTarget = __DIR__.$requestPath;
 
-if ('/' !== $requestPath && is_file($staticTarget)) {
+if ($requestPath !== '/' && is_file($staticTarget)) {
     return false;
 }
 

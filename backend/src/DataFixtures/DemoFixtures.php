@@ -305,6 +305,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     /**
      * @param array<string, CourseType> $courseTypes
+     * @param array<string, User>       $trainers
      *
      * @return Course[]
      */

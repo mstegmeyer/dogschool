@@ -22,6 +22,19 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+/**
+ * @phpstan-type ManifestCustomer array{
+ *     id: string,
+ *     name: string,
+ *     email: string,
+ *     password: string,
+ *     calendarFeedToken: string,
+ *     dogIds: list<string>,
+ *     dogNames: list<string>
+ * }
+ * @phpstan-type ManifestCourseType array{id: string, code: string, name: string}
+ * @phpstan-type ManifestCourseDate array{current: string, next: string}
+ */
 final class E2eSeedService
 {
     public const FIXED_NOW = '2026-04-06T09:00:00+02:00';
@@ -229,6 +242,9 @@ final class E2eSeedService
      */
     private function createDedicatedCourseTypes(array &$manifest): void
     {
+        /** @var array<string, ManifestCourseType> $manifestCourseTypes */
+        $manifestCourseTypes = &$manifest['courseTypes'];
+
         foreach ([
             'course_type_edit' => ['code' => 'E2EEDIT', 'name' => 'E2E Editierbar'],
             'course_type_delete' => ['code' => 'E2EDEL', 'name' => 'E2E Loeschbar'],
@@ -237,7 +253,7 @@ final class E2eSeedService
             $courseType->setCode($definition['code']);
             $courseType->setName($definition['name']);
             $this->em->persist($courseType);
-            $manifest['courseTypes'][$key] = [
+            $manifestCourseTypes[$key] = [
                 'id' => $courseType->getId(),
                 'code' => $courseType->getCode(),
                 'name' => $courseType->getName(),
@@ -253,6 +269,8 @@ final class E2eSeedService
     private function createCustomers(array &$manifest): array
     {
         $customers = [];
+        /** @var array<string, ManifestCustomer> $manifestCustomers */
+        $manifestCustomers = &$manifest['customers'];
 
         foreach (self::PERSONAS as $key => $definition) {
             $address = null;
@@ -266,7 +284,7 @@ final class E2eSeedService
                 $definition['name'],
                 $definition['email'],
                 $definition['dogs'],
-                $manifest['customers'],
+                $manifestCustomers,
                 $key,
                 $address,
                 $bank,
@@ -277,11 +295,14 @@ final class E2eSeedService
     }
 
     /**
-     * @param array<string, mixed> $manifest
+     * @param array<string, mixed>                                            $manifest
      * @param array<string, array{customer: Customer, dogs: array<int, Dog>}> $customers
      */
     private function createFillerCustomers(array &$manifest, array &$customers): void
     {
+        /** @var array<string, ManifestCustomer> $manifestCustomers */
+        $manifestCustomers = &$manifest['customers'];
+
         for ($index = 1; $index <= 15; ++$index) {
             $key = sprintf('customer_fill_%02d', $index);
             $customers[$key] = $this->createCustomerRecord(
@@ -293,7 +314,7 @@ final class E2eSeedService
                     'gender' => $index % 2 === 0 ? 'female' : 'male',
                     'color' => $index % 2 === 0 ? 'Braun' : 'Schwarz',
                 ]],
-                $manifest['customers'],
+                $manifestCustomers,
                 $key,
             );
         }
@@ -301,9 +322,9 @@ final class E2eSeedService
 
     /**
      * @param array<int, array{name: string, race: string, gender: string, color: string}> $dogDefinitions
-     * @param array<string, mixed> $manifestCustomers
-     * @param array{street: string, postalCode: string, city: string}|null $address
-     * @param array{iban: string, bic: string, accountHolder: string}|null $bank
+     * @param array<string, ManifestCustomer>                                              $manifestCustomers
+     * @param array{street: string, postalCode: string, city: string}|null                 $address
+     * @param array{iban: string, bic: string, accountHolder: string}|null                 $bank
      *
      * @return array{customer: Customer, dogs: array<int, Dog>}
      */
@@ -379,13 +400,16 @@ final class E2eSeedService
 
     /**
      * @param array<string, CourseType> $courseTypes
-     * @param array<string, User> $trainers
-     * @param array<string, mixed> $manifest
+     * @param array<string, User>       $trainers
+     * @param array<string, mixed>      $manifest
      *
      * @return array<string, Course>
      */
     private function createCourses(array $courseTypes, array $trainers, array &$manifest): array
     {
+        /** @var array<string, string> $manifestCourses */
+        $manifestCourses = &$manifest['courses'];
+
         $definitions = [
             ['key' => 'customer_single_course', 'code' => 'MH', 'day' => 1, 'start' => '10:00', 'end' => '11:00', 'level' => 1, 'trainer' => 'florian', 'comment' => 'Single booking flow'],
             ['key' => 'customer_multi_course', 'code' => 'APP', 'day' => 1, 'start' => '12:00', 'end' => '13:00', 'level' => 2, 'trainer' => 'manuela', 'comment' => 'Multi booking flow'],
@@ -438,7 +462,7 @@ final class E2eSeedService
             $this->em->persist($course);
 
             $courses[$definition['key']] = $course;
-            $manifest['courses'][$definition['key']] = $course->getId();
+            $manifestCourses[$definition['key']] = $course->getId();
         }
 
         return $courses;
@@ -446,7 +470,7 @@ final class E2eSeedService
 
     /**
      * @param array<string, Course> $courses
-     * @param array<string, mixed> $manifest
+     * @param array<string, mixed>  $manifest
      *
      * @return array<string, array{current: CourseDate, next: CourseDate}>
      */
@@ -454,6 +478,8 @@ final class E2eSeedService
     {
         $courseDates = [];
         $cancelledCurrentKeys = ['admin_reactivate_course'];
+        /** @var array<string, ManifestCourseDate> $manifestCourseDates */
+        $manifestCourseDates = &$manifest['courseDates'];
 
         foreach ($courses as $key => $course) {
             $current = $this->createCourseDateForWeek(
@@ -467,7 +493,7 @@ final class E2eSeedService
             );
 
             $courseDates[$key] = ['current' => $current, 'next' => $next];
-            $manifest['courseDates'][$key] = [
+            $manifestCourseDates[$key] = [
                 'current' => $current->getId(),
                 'next' => $next->getId(),
             ];
@@ -510,7 +536,7 @@ final class E2eSeedService
 
     /**
      * @param array<string, array{customer: Customer, dogs: array<int, Dog>}> $customers
-     * @param array<string, Course> $courses
+     * @param array<string, Course>                                           $courses
      */
     private function assignSubscriptions(array $customers, array $courses): void
     {
@@ -537,7 +563,7 @@ final class E2eSeedService
 
     /**
      * @param array<string, array{customer: Customer, dogs: array<int, Dog>}> $customers
-     * @param array<string, mixed> $manifest
+     * @param array<string, mixed>                                            $manifest
      *
      * @return array<string, Contract>
      */
@@ -599,9 +625,9 @@ final class E2eSeedService
 
     /**
      * @param array<string, array{customer: Customer, dogs: array<int, Dog>}> $customers
-     * @param array<string, Course> $courses
-     * @param array<string, array{current: CourseDate, next: CourseDate}> $courseDates
-     * @param array<string, Contract> $contracts
+     * @param array<string, Course>                                           $courses
+     * @param array<string, array{current: CourseDate, next: CourseDate}>     $courseDates
+     * @param array<string, Contract>                                         $contracts
      */
     private function createCreditsAndBookings(array $customers, array $courses, array $courseDates, array $contracts): void
     {
@@ -688,8 +714,8 @@ final class E2eSeedService
 
     /**
      * @param array<string, Course> $courses
-     * @param array<string, User> $trainers
-     * @param array<string, mixed> $manifest
+     * @param array<string, User>   $trainers
+     * @param array<string, mixed>  $manifest
      */
     private function createNotifications(array $courses, array $trainers, array &$manifest): void
     {

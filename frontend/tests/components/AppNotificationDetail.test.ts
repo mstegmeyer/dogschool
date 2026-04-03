@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { computed } from 'vue'
-import AppNotificationDetail from '~/components/AppNotificationDetail.vue'
+import AppNotificationDetail from '~/components/notification/AppNotificationDetail.vue'
 import { uiPageStubs } from '../nuxt/ui-test-stubs'
 
 vi.stubGlobal('computed', computed)

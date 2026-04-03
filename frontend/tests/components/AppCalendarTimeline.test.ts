@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h } from 'vue'
-import AppCalendarTimeline from '~/components/AppCalendarTimeline.vue'
+import AppCalendarTimeline from '~/components/calendar/AppCalendarTimeline.vue'
 import type { CourseDate } from '~/types'
 import type { CalendarTimelineDay } from '~/composables/useCalendarTimeline'
 

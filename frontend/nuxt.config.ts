@@ -1,6 +1,141 @@
+import { readdirSync, statSync } from 'node:fs'
+import { join, relative, resolve, sep } from 'node:path'
+
+interface ModuleRoute {
+  name: string
+  path: string
+  file: string
+  meta: Record<string, any>
+}
+
+const MODULE_ROOT = resolve(__dirname, 'modules')
+const SKIPPED_SEGMENTS = new Set(['components', 'composables', 'types', 'utils'])
+
+function toRouteSegments(filePath: string): string[] {
+  const directory = relative(MODULE_ROOT, filePath)
+    .replace(/\/index\.vue$/, '')
+    .split(sep)
+    .filter(Boolean)
+
+  const [namespace, ...segments] = directory
+
+  if (!namespace) return []
+  if (namespace === 'public' || namespace === 'auth') return segments
+  if ((namespace === 'admin' || namespace === 'customer') && segments[0] === 'dashboard') {
+    return [namespace, ...segments.slice(1)]
+  }
+
+  return [namespace, ...segments]
+}
+
+function segmentToRoutePath(segment: string): string {
+  if (segment.startsWith('[') && segment.endsWith(']')) {
+    return `:${segment.slice(1, -1)}`
+  }
+
+  return segment
+}
+
+function segmentToRouteName(segment: string): string {
+  if (segment.startsWith('[') && segment.endsWith(']')) {
+    return segment.slice(1, -1)
+  }
+
+  return segment
+}
+
+function resolveRouteMeta(filePath: string): Record<string, any> {
+  const namespace = relative(MODULE_ROOT, filePath).split(sep).filter(Boolean)[0]
+
+  switch (namespace) {
+    case 'admin':
+      return { layout: 'admin' }
+    case 'customer':
+      return { layout: 'customer' }
+    case 'auth':
+      return { layout: 'auth' }
+    case 'public':
+      return { layout: false }
+    default:
+      return {}
+  }
+}
+
+function collectModuleRoutes(directory: string = MODULE_ROOT): ModuleRoute[] {
+  const routes: ModuleRoute[] = []
+
+  function walk(currentDirectory: string): void {
+    for (const entry of readdirSync(currentDirectory)) {
+      const absolutePath = join(currentDirectory, entry)
+      const relativePath = relative(MODULE_ROOT, absolutePath)
+      const relativeSegments = relativePath.split(sep).filter(Boolean)
+
+      if (relativeSegments.some(segment => SKIPPED_SEGMENTS.has(segment))) {
+        continue
+      }
+
+      const stats = statSync(absolutePath)
+      if (stats.isDirectory()) {
+        walk(absolutePath)
+        continue
+      }
+
+      if (!stats.isFile() || entry !== 'index.vue') {
+        continue
+      }
+
+      const routeSegments = toRouteSegments(absolutePath)
+      const routePath = routeSegments.length === 0
+        ? '/'
+        : `/${routeSegments.map(segmentToRoutePath).join('/')}`
+      const routeName = routeSegments.length === 0
+        ? 'index'
+        : routeSegments.map(segmentToRouteName).join('-')
+
+      routes.push({
+        name: routeName,
+        path: routePath,
+        file: absolutePath,
+        meta: resolveRouteMeta(absolutePath),
+      })
+    }
+  }
+
+  walk(directory)
+
+  return routes.sort((left, right) => {
+    const leftSegments = left.path.split('/').filter(Boolean)
+    const rightSegments = right.path.split('/').filter(Boolean)
+    const leftDynamicCount = leftSegments.filter(segment => segment.startsWith(':')).length
+    const rightDynamicCount = rightSegments.filter(segment => segment.startsWith(':')).length
+
+    if (leftSegments.length !== rightSegments.length) {
+      return leftSegments.length - rightSegments.length
+    }
+
+    if (leftDynamicCount !== rightDynamicCount) {
+      return leftDynamicCount - rightDynamicCount
+    }
+
+    return left.path.localeCompare(right.path)
+  })
+}
+
 export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
   css: ['~/assets/app.css'],
+  pages: true,
+
+  dir: {
+    modules: '_nuxt-modules',
+  },
+
+  components: [
+    {
+      path: '~/components',
+      pathPrefix: false,
+    },
+  ],
 
   runtimeConfig: {
     public: {
@@ -23,6 +158,12 @@ export default defineNuxtConfig({
         target: (process.env.API_PROXY_TARGET || 'http://localhost:8080') + '/api',
         changeOrigin: true,
       },
+    },
+  },
+
+  hooks: {
+    'pages:extend'(pages) {
+      pages.splice(0, pages.length, ...collectModuleRoutes())
     },
   },
 

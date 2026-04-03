@@ -1,19 +1,44 @@
 import { expect, test, type Page } from '@playwright/test'
 
+function todayIso(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
+}
+
+function parseIsoDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function toIsoDate(value: Date): string {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function weekMondayIso(value: string = todayIso()): string {
+  const date = parseIsoDate(value)
+  const day = date.getDay() === 0 ? 7 : date.getDay()
+  date.setDate(date.getDate() - (day - 1))
+  return toIsoDate(date)
+}
+
 function makeCourseDate(overrides: Record<string, unknown> = {}) {
+  const monday = weekMondayIso()
+
   return {
     id: 'course-date-1',
     courseId: 'course-1',
     courseType: { code: 'JH', name: 'Junghund', recurrenceKind: 'RECURRING' },
     level: 3,
-    date: '2026-03-23',
+    date: monday,
     dayOfWeek: 1,
     startTime: '10:00',
     endTime: '11:00',
     trainer: null,
     cancelled: false,
     bookingCount: 0,
-    createdAt: '2026-03-20T09:00:00+01:00',
+    createdAt: `${monday}T09:00:00+01:00`,
     booked: false,
     bookings: [],
     bookingWindowClosed: false,
@@ -102,6 +127,12 @@ test.describe('customer calendar booking controls', () => {
     })
 
     await page.goto('/customer/calendar')
+
+    const sidebar = page.locator('aside')
+
+    await expect(sidebar).toHaveCount(1, { timeout: 15000 })
+    await expect(sidebar.first()).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Mein Bereich')).toBeVisible({ timeout: 15000 })
 
     const card = page.locator('[data-course-date-id="course-single"]')
     const trigger = page.getByTestId('open-booking-course-single')

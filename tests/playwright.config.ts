@@ -9,7 +9,7 @@ const BACKEND_ROOT = path.join(REPO_ROOT, 'backend')
 const FRONTEND_BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4174'
 const API_BASE_URL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:9080'
 const WEB_PUSH_VAPID_PUBLIC_KEY = process.env.NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY || 'BEl6XPSEi2R7gmJPMfeRr0pA6Bv9CzM0_lV4rWuieKTPV7RaH59RUW2KIiMzFxLpy0X58F3RDeo63HgNbUsVTN8'
-const E2E_DATABASE_URL = `sqlite:////${path.join(BACKEND_ROOT, 'var', 'data_e2e.db').replace(/\\/g, '/')}`
+const E2E_DATABASE_URL = `sqlite:///${path.join(BACKEND_ROOT, 'var', 'data_e2e.db').replace(/\\/g, '/')}`
 const E2E_JWT_PRIVATE_KEY = path.join(BACKEND_ROOT, 'var', 'jwt_e2e', 'private.pem')
 const E2E_JWT_PUBLIC_KEY = path.join(BACKEND_ROOT, 'var', 'jwt_e2e', 'public.pem')
 const E2E_FIXED_NOW = process.env.APP_FIXED_NOW || '2026-04-06T09:00:00+02:00'
@@ -73,7 +73,7 @@ export default defineConfig({
         {
           command: `${backendEnv} php bin/console app:e2e:reset && ${backendEnv} php -S 127.0.0.1:9080 -t public public/e2e-router.php`,
           cwd: BACKEND_ROOT,
-          url: `${API_BASE_URL}/api/customer/me`,
+          url: `${API_BASE_URL}/_e2e/health`,
           reuseExistingServer: !process.env.CI,
           timeout: 180_000,
         },

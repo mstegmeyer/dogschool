@@ -7,6 +7,14 @@ use Symfony\Component\HttpKernel\TerminableInterface;
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $staticTarget = __DIR__.$requestPath;
 
+if ($requestPath === '/_e2e/health') {
+    http_response_code(200);
+    header('Content-Type: application/json');
+    echo '{"status":"ok"}';
+
+    return true;
+}
+
 if ($requestPath !== '/' && is_file($staticTarget)) {
     return false;
 }

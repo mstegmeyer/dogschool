@@ -1,3 +1,4 @@
+import { promises as fs } from 'node:fs'
 import { expect, test as base } from '@playwright/test'
 import { createAdminStorageState, createCustomerStorageState, primePageWithStorageState } from '../helpers/auth'
 import { freezeBrowserClock, installClipboardStub, installPushStub, waitForFontsAndNetwork } from '../helpers/browser'
@@ -24,6 +25,8 @@ export const test = base.extend<Fixtures>({
   },
 
   loginAsCustomer: async ({ page, manifest, baseURL }, use) => {
+    const createdStatePaths = new Set<string>()
+
     await use(async (persona: CustomerPersona) => {
       const statePath = await createCustomerStorageState(
         manifest,
@@ -32,12 +35,19 @@ export const test = base.extend<Fixtures>({
         process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:9080',
       )
 
+      createdStatePaths.add(statePath)
       await primePageWithStorageState(page, statePath, baseURL!)
       return statePath
     })
+
+    await Promise.all([...createdStatePaths].map(async statePath => {
+      await fs.rm(statePath, { force: true })
+    }))
   },
 
   loginAsAdmin: async ({ page, manifest, baseURL }, use) => {
+    const createdStatePaths = new Set<string>()
+
     await use(async () => {
       const statePath = await createAdminStorageState(
         manifest,
@@ -45,9 +55,14 @@ export const test = base.extend<Fixtures>({
         process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:9080',
       )
 
+      createdStatePaths.add(statePath)
       await primePageWithStorageState(page, statePath, baseURL!)
       return statePath
     })
+
+    await Promise.all([...createdStatePaths].map(async statePath => {
+      await fs.rm(statePath, { force: true })
+    }))
   },
 
   expectToast: async ({ page }, use) => {

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { request, type Page } from '@playwright/test'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -33,7 +34,8 @@ async function writeStorageState(fileName: string, origin: string, entries: Stor
     origins: [{ origin, localStorage: entries }],
   }
 
-  const targetPath = path.join(AUTH_ROOT, fileName)
+  const uniqueFileName = `${path.parse(fileName).name}-${randomUUID()}.json`
+  const targetPath = path.join(AUTH_ROOT, uniqueFileName)
   await fs.writeFile(targetPath, JSON.stringify(payload, null, 2))
 
   return targetPath

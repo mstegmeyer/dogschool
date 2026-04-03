@@ -13,6 +13,7 @@ const E2E_DATABASE_URL = `sqlite:////${path.join(BACKEND_ROOT, 'var', 'data_e2e.
 const E2E_JWT_PRIVATE_KEY = path.join(BACKEND_ROOT, 'var', 'jwt_e2e', 'private.pem')
 const E2E_JWT_PUBLIC_KEY = path.join(BACKEND_ROOT, 'var', 'jwt_e2e', 'public.pem')
 const E2E_FIXED_NOW = process.env.APP_FIXED_NOW || '2026-04-06T09:00:00+02:00'
+const USE_MANAGED_WEBSERVERS = process.env.PLAYWRIGHT_EXTERNAL_SERVERS !== '1'
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`
@@ -38,7 +39,7 @@ export default defineConfig({
   reporter: process.env.CI
     ? [['github'], ['html', { open: 'never', outputFolder: path.join(TESTS_ROOT, 'playwright-report') }]]
     : [['list'], ['html', { open: 'never', outputFolder: path.join(TESTS_ROOT, 'playwright-report') }]],
-  snapshotPathTemplate: path.join(TESTS_ROOT, 'snapshots', '{projectName}', '{arg}{ext}'),
+  snapshotPathTemplate: path.join(TESTS_ROOT, 'snapshots', '{projectName}', '{arg}{-snapshotSuffix}{ext}'),
   use: {
     ...devices['Desktop Chrome'],
     baseURL: FRONTEND_BASE_URL,
@@ -67,32 +68,34 @@ export default defineConfig({
       },
     },
   ],
-  webServer: [
-    {
-      command: `${backendEnv} php bin/console app:e2e:reset && ${backendEnv} php -S 127.0.0.1:9080 -t public public/e2e-router.php`,
-      cwd: BACKEND_ROOT,
-      url: `${API_BASE_URL}/api/customer/me`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
-    },
-    {
-      command: [
-        'NUXT_TELEMETRY_DISABLED=1',
-        `API_PROXY_TARGET=${API_BASE_URL}`,
-        `NUXT_PUBLIC_API_BASE_URL=${API_BASE_URL}`,
-        `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=${WEB_PUSH_VAPID_PUBLIC_KEY}`,
-        'npm run build',
-        '&&',
-        'NUXT_TELEMETRY_DISABLED=1',
-        `API_PROXY_TARGET=${API_BASE_URL}`,
-        `NUXT_PUBLIC_API_BASE_URL=${API_BASE_URL}`,
-        `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=${WEB_PUSH_VAPID_PUBLIC_KEY}`,
-        'npm run preview -- --host=127.0.0.1 --port=4174',
-      ].join(' '),
-      cwd: FRONTEND_ROOT,
-      url: `${FRONTEND_BASE_URL}/login`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 240_000,
-    },
-  ],
+  webServer: USE_MANAGED_WEBSERVERS
+    ? [
+        {
+          command: `${backendEnv} php bin/console app:e2e:reset && ${backendEnv} php -S 127.0.0.1:9080 -t public public/e2e-router.php`,
+          cwd: BACKEND_ROOT,
+          url: `${API_BASE_URL}/api/customer/me`,
+          reuseExistingServer: !process.env.CI,
+          timeout: 180_000,
+        },
+        {
+          command: [
+            'NUXT_TELEMETRY_DISABLED=1',
+            `API_PROXY_TARGET=${API_BASE_URL}`,
+            `NUXT_PUBLIC_API_BASE_URL=${API_BASE_URL}`,
+            `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=${WEB_PUSH_VAPID_PUBLIC_KEY}`,
+            'npm run build',
+            '&&',
+            'NUXT_TELEMETRY_DISABLED=1',
+            `API_PROXY_TARGET=${API_BASE_URL}`,
+            `NUXT_PUBLIC_API_BASE_URL=${API_BASE_URL}`,
+            `NUXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=${WEB_PUSH_VAPID_PUBLIC_KEY}`,
+            'npm run preview -- --host=127.0.0.1 --port=4174',
+          ].join(' '),
+          cwd: FRONTEND_ROOT,
+          url: `${FRONTEND_BASE_URL}/login`,
+          reuseExistingServer: !process.env.CI,
+          timeout: 240_000,
+        },
+      ]
+    : undefined,
 })

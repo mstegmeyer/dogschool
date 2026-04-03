@@ -77,6 +77,30 @@ class NotificationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Course-specific notification history for a single course, newest first.
+     *
+     * @return array<int, Notification>
+     */
+    public function findRecentHistoryByCourse(string $courseId, \DateTimeImmutable $since): array
+    {
+        /** @var list<Notification> $result */
+        $result = $this->createQueryBuilder('n')
+            ->innerJoin('n.courses', 'c')
+            ->addSelect('c')
+            ->leftJoin('c.courseType', 'ct')
+            ->addSelect('ct')
+            ->where('c.id = :id')
+            ->andWhere('n.createdAt >= :since')
+            ->setParameter('id', $courseId)
+            ->setParameter('since', $since)
+            ->orderBy('n.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
      * @return array<int, Notification>
      */
     public function findRecent(int $limit = 100): array

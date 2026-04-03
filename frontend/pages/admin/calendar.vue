@@ -31,64 +31,77 @@
       :columns-class="viewMode === 'week' ? 'grid grid-cols-1 gap-3 lg:grid-cols-7' : 'grid grid-cols-1 gap-3'"
       :day-class="viewMode === 'week' ? 'min-h-[200px]' : ''"
     />
-    <div v-else :class="viewMode === 'week' ? 'grid grid-cols-7 gap-3' : ''">
-      <div v-for="day in visibleDays" :key="day.date" :class="viewMode === 'week' ? 'min-h-[200px]' : ''">
-        <div class="text-center mb-2">
-          <p class="text-xs font-semibold text-slate-500 uppercase">{{ day.label }}</p>
-          <p class="text-sm font-medium" :class="day.isToday ? 'text-komm-600' : 'text-slate-700'">
-            {{ day.dateShort }}
-          </p>
-        </div>
-        <div class="space-y-2">
-          <div
-            v-for="cd in day.courseDates"
-            :key="cd.id"
-            class="rounded-lg border p-2 text-xs cursor-pointer transition-colors"
-            :class="cd.cancelled
-              ? 'bg-red-50 border-red-200 opacity-60'
-              : 'bg-white border-slate-200 hover:border-komm-300'"
-            @click="openDetail(cd)"
-          >
-            <p class="font-semibold truncate" :class="cd.cancelled ? 'text-red-600 line-through' : 'text-slate-700'">
-              {{ cd.courseType?.name || 'Kurs' }}
+    <AppCalendarTimeline
+      v-else
+      :days="visibleDays"
+      :view-mode="viewMode"
+      empty-label="Keine Termine"
+      selectable
+      :event-class="calendarCardClass"
+      @select="openDetail"
+    >
+      <template #event="{ courseDate: cd, condensed }">
+        <div class="flex h-full min-w-0 flex-col gap-1">
+          <div class="flex items-start justify-between gap-2">
+            <p class="min-w-0 font-semibold leading-4" :class="cd.cancelled ? 'text-red-600 line-through' : 'text-slate-700'">
+              <span
+                class="block truncate"
+                :class="condensed ? 'text-[11px]' : 'text-[13px] sm:text-sm'"
+                :title="formatCourseTitleWithLevel(cd.courseType?.name, cd.level)"
+              >
+                {{ formatCourseTitleWithLevel(cd.courseType?.name, cd.level) }}
+              </span>
             </p>
-            <p class="text-slate-400 mt-0.5">{{ cd.startTime }} – {{ cd.endTime }}</p>
-            <p class="mt-1 truncate text-slate-500">
+            <UBadge v-if="cd.cancelled" color="red" variant="soft" size="xs">Abgesagt</UBadge>
+          </div>
+
+          <template v-if="condensed">
+            <div class="space-y-0.5 text-[10px] leading-4 text-slate-500">
+              <p>{{ cd.startTime }} – {{ cd.endTime }}</p>
+              <p class="break-words">{{ cd.trainer?.fullName || 'Kein Trainer' }}</p>
+            </div>
+          </template>
+          <template v-else>
+            <p class="text-[11px] font-medium text-slate-500">{{ cd.startTime }} – {{ cd.endTime }}</p>
+            <p class="text-[11px] leading-4 text-slate-500">
               Trainer: {{ cd.trainer?.fullName || 'Nicht zugewiesen' }}
             </p>
-            <div class="flex items-center gap-1 mt-1">
-              <UTooltip
-                v-if="cd.bookingCount"
-                :text="cd.bookings?.map(b => `${b.dogName} (${b.customerName})`).join(', ') || ''"
-              >
-                <div class="flex items-center gap-1">
-                  <UIcon name="i-heroicons-user-group" class="w-3 h-3 text-slate-400" />
-                  <span class="text-slate-500">{{ cd.bookingCount }}</span>
-                </div>
-              </UTooltip>
-              <template v-else>
-                <UIcon name="i-heroicons-user-group" class="w-3 h-3 text-slate-400" />
-                <span class="text-slate-500">0</span>
-              </template>
-              <div v-if="cd.subscriberCount" class="flex items-center gap-0.5 ml-auto">
-                <UIcon name="i-heroicons-heart" class="w-3 h-3 text-komm-500" />
-                <span class="text-komm-600 font-medium">{{ cd.subscriberCount }}</span>
+          </template>
+
+          <div class="mt-auto flex items-center gap-1" :class="condensed ? 'text-[10px] leading-4' : 'text-[11px]'">
+            <UTooltip
+              v-if="!condensed && cd.bookingCount"
+              :text="cd.bookings?.map(b => `${b.dogName} (${b.customerName})`).join(', ') || ''"
+            >
+              <div class="flex items-center gap-1 text-slate-500">
+                <UIcon name="i-heroicons-user-group" class="text-slate-400" :class="condensed ? 'h-2.5 w-2.5' : 'h-3 w-3'" />
+                <span>{{ cd.bookingCount }}</span>
               </div>
-              <UBadge v-if="cd.cancelled" color="red" variant="soft" size="xs" class="ml-auto">Abgesagt</UBadge>
+            </UTooltip>
+            <div v-else class="flex items-center gap-1 text-slate-500">
+              <UIcon name="i-heroicons-user-group" class="text-slate-400" :class="condensed ? 'h-2.5 w-2.5' : 'h-3 w-3'" />
+              <span>{{ cd.bookingCount }}</span>
+            </div>
+
+            <div class="ml-auto flex items-center gap-1" :class="cd.subscriberCount ? 'text-komm-600' : 'text-slate-400'">
+              <UIcon
+                name="i-heroicons-heart"
+                :class="[condensed ? 'h-2.5 w-2.5' : 'h-3 w-3', cd.subscriberCount ? 'text-komm-500' : 'text-slate-300']"
+              />
+              <span class="font-medium">{{ cd.subscriberCount ?? 0 }}</span>
             </div>
           </div>
-          <div v-if="day.courseDates.length === 0" class="text-center py-6">
-            <p class="text-xs text-slate-300">Keine Termine</p>
-          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppCalendarTimeline>
 
     <UModal v-model="showDetail">
       <UCard v-if="selectedDate">
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold text-slate-800">{{ selectedDate.courseType?.name }}</h3>
+            <h3 class="font-semibold text-slate-800">
+              {{ formatCourseTitleWithLevel(selectedDate.courseType?.name, selectedDate.level) }}
+            </h3>
             <UBadge v-if="selectedDate.cancelled" color="red" variant="soft">Abgesagt</UBadge>
           </div>
         </template>
@@ -218,7 +231,7 @@ definePageMeta({ layout: 'admin' })
 
 const api = useApi()
 const toast = useToast()
-const { addDaysToIso, dayNameShort, formatDate, formatDateShort, getIsoDayOfWeek, getWeekMonday, todayIso } = useHelpers()
+const { addDaysToIso, dayNameShort, formatCourseTitleWithLevel, formatDate, formatDateShort, getIsoDayOfWeek, getWeekMonday, todayIso } = useHelpers()
 
 const isMobile = ref(false)
 onMounted(() => {
@@ -285,6 +298,12 @@ const singleDay = computed(() => {
 
 const visibleDays = computed(() => viewMode.value === 'week' ? weekDays.value : [singleDay.value])
 
+function calendarCardClass(cd: CourseDate) {
+  return cd.cancelled
+    ? 'border-red-200 bg-red-50/90 opacity-70'
+    : 'border-slate-200 bg-white/95 hover:border-komm-300 hover:bg-komm-50/30'
+}
+
 function prev() {
   if (viewMode.value === 'week') {
     currentMonday.value = addDaysToIso(currentMonday.value, -7)
@@ -319,7 +338,7 @@ function openDetail(cd: CourseDate) {
   selectedDate.value = cd
   selectedTrainerId.value = cd.trainer?.id || ''
   cancelNotify.value = false
-  cancelNotifyTitle.value = `Kursausfall: ${cd.courseType?.name || 'Kurs'} am ${formatDate(cd.date)}`
+  cancelNotifyTitle.value = `Kursausfall: ${formatCourseTitleWithLevel(cd.courseType?.name, cd.level)} am ${formatDate(cd.date)}`
   cancelNotifyMessage.value = ''
   showDetail.value = true
 }

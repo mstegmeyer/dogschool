@@ -22,6 +22,7 @@ describe('useHelpers', () => {
     levelLabel,
     getWeekMonday,
     formatContractMonthlyPrice,
+    formatCourseTitleWithLevel,
     formatNotificationCourse,
     formatNotificationCourses,
   } = useHelpers()
@@ -238,6 +239,11 @@ describe('useHelpers', () => {
   })
 
   describe('formatNotificationCourse', () => {
+    it('formats a course title with its numeric level', () => {
+      expect(formatCourseTitleWithLevel('Junghund', 3)).toBe('Junghund (3)')
+      expect(formatCourseTitleWithLevel(null, 0)).toBe('Kurs (0)')
+    })
+
     it('formats course with type name and schedule', () => {
       const result = formatNotificationCourse({
         typeName: 'Agility',

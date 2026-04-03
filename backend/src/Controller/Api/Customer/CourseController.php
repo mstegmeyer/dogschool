@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Controller\Api\Customer;
 
 use App\Entity\Course;
+use App\Entity\CourseDate;
 use App\Entity\Customer;
+use App\Entity\Notification;
 use App\Repository\CourseRepository;
+use App\Repository\CourseDateRepository;
 use App\Repository\CustomerRepository;
+use App\Repository\NotificationRepository;
 use App\Service\ApiNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,6 +25,8 @@ final class CourseController extends AbstractController
 {
     public function __construct(
         private readonly CourseRepository $courseRepository,
+        private readonly CourseDateRepository $courseDateRepository,
+        private readonly NotificationRepository $notificationRepository,
         private readonly CustomerRepository $customerRepository,
         private readonly ApiNormalizer $normalizer,
     ) {
@@ -43,6 +49,34 @@ final class CourseController extends AbstractController
         );
 
         return $this->json(['items' => $items]);
+    }
+
+    #[Route('/{id}/detail', name: 'detail', methods: ['GET'])]
+    public function detail(string $id): JsonResponse
+    {
+        $course = $this->courseRepository->find($id);
+        if ($course === null) {
+            return $this->json(['error' => 'Course not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $now = new \DateTimeImmutable('now', new \DateTimeZone(CourseDate::TIMEZONE));
+        $upcomingUntil = $now->modify('+1 month');
+        $notificationSince = $now->modify('-6 months');
+
+        $upcomingDates = $this->courseDateRepository->findUpcomingForCourse($course, $now, $upcomingUntil);
+        $notifications = $this->notificationRepository->findRecentHistoryByCourse($course->getId(), $notificationSince);
+
+        return $this->json([
+            'course' => $this->normalizer->normalizeCourse($course),
+            'upcomingDates' => array_map(
+                fn (CourseDate $courseDate) => $this->normalizer->normalizeCourseDate($courseDate),
+                $upcomingDates
+            ),
+            'notifications' => array_map(
+                fn (Notification $notification) => $this->normalizer->normalizeNotification($notification),
+                $notifications
+            ),
+        ]);
     }
 
     #[Route('/{id}/subscribe', name: 'subscribe', methods: ['POST'])]

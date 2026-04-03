@@ -47,7 +47,12 @@
                 <div
                   v-for="course in group.courses"
                   :key="course.id"
-                  class="space-y-3 p-3"
+                  class="space-y-3 p-3 cursor-pointer transition hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-komm-300"
+                  role="button"
+                  tabindex="0"
+                  @click="openCourseDetail(course)"
+                  @keydown.enter.prevent="openCourseDetail(course)"
+                  @keydown.space.prevent="openCourseDetail(course)"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
@@ -78,13 +83,13 @@
                     variant="soft"
                     block
                     label="Abbestellen"
-                    @click="unsubscribe(course)"
+                    @click.stop="unsubscribe(course)"
                   />
                   <UButton
                     v-else
                     block
                     label="Abonnieren"
-                    @click="subscribe(course)"
+                    @click.stop="subscribe(course)"
                   />
                 </div>
               </div>
@@ -102,7 +107,11 @@
                     <tr
                       v-for="course in group.courses"
                       :key="course.id"
-                      class="border-b border-slate-50 last:border-0 hover:bg-slate-50/80"
+                      class="border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50/80 focus-within:bg-slate-50/80"
+                      tabindex="0"
+                      @click="openCourseDetail(course)"
+                      @keydown.enter.prevent="openCourseDetail(course)"
+                      @keydown.space.prevent="openCourseDetail(course)"
                     >
                       <td class="px-3 py-1.5">
                         <div class="font-medium text-slate-800 leading-tight">
@@ -128,13 +137,13 @@
                           variant="soft"
                           size="xs"
                           label="Abbestellen"
-                          @click="unsubscribe(course)"
+                          @click.stop="unsubscribe(course)"
                         />
                         <UButton
                           v-else
                           size="xs"
                           label="Abonnieren"
-                          @click="subscribe(course)"
+                          @click.stop="subscribe(course)"
                         />
                       </td>
                     </tr>
@@ -166,7 +175,12 @@
                 <div
                   v-for="course in group.courses"
                   :key="course.id"
-                  class="space-y-3 p-3"
+                  class="space-y-3 p-3 cursor-pointer transition hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-komm-300"
+                  role="button"
+                  tabindex="0"
+                  @click="openCourseDetail(course)"
+                  @keydown.enter.prevent="openCourseDetail(course)"
+                  @keydown.space.prevent="openCourseDetail(course)"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
@@ -196,7 +210,7 @@
                     variant="soft"
                     block
                     label="Abbestellen"
-                    @click="unsubscribe(course)"
+                    @click.stop="unsubscribe(course)"
                   />
                 </div>
               </div>
@@ -214,7 +228,11 @@
                       <tr
                         v-for="course in group.courses"
                         :key="course.id"
-                        class="border-b border-slate-50 last:border-0 hover:bg-slate-50/80"
+                        class="border-b border-slate-50 last:border-0 cursor-pointer hover:bg-slate-50/80 focus-within:bg-slate-50/80"
+                        tabindex="0"
+                        @click="openCourseDetail(course)"
+                        @keydown.enter.prevent="openCourseDetail(course)"
+                        @keydown.space.prevent="openCourseDetail(course)"
                       >
                         <td class="px-3 py-1.5 font-medium text-slate-800">
                           {{ course.type?.name }}
@@ -234,7 +252,7 @@
                             variant="soft"
                             size="xs"
                             label="Abbestellen"
-                            @click="unsubscribe(course)"
+                            @click.stop="unsubscribe(course)"
                           />
                         </td>
                       </tr>
@@ -247,21 +265,133 @@
         </div>
       </template>
     </UTabs>
+
+    <UModal
+      v-model="showCourseDetailModal"
+      :ui="{ width: 'w-full sm:max-w-6xl' }"
+    >
+      <UCard class="w-full">
+        <template #header>
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <p class="text-lg font-semibold text-slate-800">
+                {{ selectedCourse?.type?.name || 'Kursdetails' }}
+              </p>
+              <div v-if="selectedCourse" class="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                <span>{{ dayName(selectedCourse.dayOfWeek) }}</span>
+                <span>{{ selectedCourse.startTime }}–{{ selectedCourse.endTime }}</span>
+                <span>{{ levelLabel(selectedCourse.level) }}</span>
+                <UBadge v-if="selectedCourse.type?.code" variant="soft" color="gray" size="xs">
+                  {{ selectedCourse.type.code }}
+                </UBadge>
+              </div>
+              <p v-if="selectedCourse?.comment" class="mt-2 text-sm text-slate-500">
+                {{ selectedCourse.comment }}
+              </p>
+            </div>
+            <UButton
+              icon="i-heroicons-x-mark"
+              color="gray"
+              variant="ghost"
+              size="sm"
+              aria-label="Schließen"
+              @click="closeCourseDetail"
+            />
+          </div>
+        </template>
+
+        <div v-if="courseDetailLoading" class="space-y-6">
+          <div>
+            <USkeleton class="h-4 w-40 rounded-md" />
+            <div class="mt-3 space-y-2">
+              <USkeleton class="h-14 w-full rounded-lg" />
+              <USkeleton class="h-14 w-full rounded-lg" />
+              <USkeleton class="h-14 w-full rounded-lg" />
+            </div>
+          </div>
+          <div>
+            <USkeleton class="h-4 w-44 rounded-md" />
+            <div class="mt-3 space-y-3">
+              <USkeleton class="h-24 w-full rounded-lg" />
+              <USkeleton class="h-24 w-full rounded-lg" />
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="selectedCourseDetail" class="space-y-6">
+          <section>
+            <div class="flex items-center gap-3">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Nächste Termine
+              </h2>
+            </div>
+            <div v-if="selectedCourseDetail.upcomingDates.length === 0" class="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+              Für diesen Kurs sind aktuell keine Termine im nächsten Monat geplant.
+            </div>
+            <div v-else class="mt-3 space-y-2">
+              <div
+                v-for="courseDate in selectedCourseDetail.upcomingDates"
+                :key="courseDate.id"
+                class="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
+              >
+                <div class="min-w-0">
+                  <p class="font-medium text-slate-800">
+                    {{ dayName(courseDate.dayOfWeek) }}, {{ formatDate(courseDate.date) }}
+                  </p>
+                  <p class="mt-1 text-sm text-slate-500">
+                    {{ courseDate.startTime }}–{{ courseDate.endTime }}
+                    <span v-if="courseDate.trainer?.fullName">· {{ courseDate.trainer.fullName }}</span>
+                  </p>
+                </div>
+                <UBadge v-if="courseDate.cancelled" color="red" variant="soft" size="sm">
+                  Abgesagt
+                </UBadge>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Mitteilungsverlauf
+              </h2>
+            </div>
+            <div v-if="selectedCourseDetail.notifications.length === 0" class="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+              Für diesen Kurs gibt es in den letzten sechs Monaten keine Mitteilungen.
+            </div>
+            <div v-else class="mt-3 space-y-3">
+              <div
+                v-for="notification in selectedCourseDetail.notifications"
+                :key="notification.id"
+                class="rounded-lg border border-slate-200 bg-white p-4"
+              >
+                <AppNotificationDetail :notification="notification" :max-visible-courses="1" />
+              </div>
+            </div>
+          </section>
+        </div>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, Course } from '~/types'
+import type { ApiListResponse, Course, CustomerCourseDetailResponse } from '~/types'
 
 definePageMeta({ layout: 'customer' })
 
 const api = useApi()
 const toast = useToast()
-const { dayName, levelLabel } = useHelpers()
+const { dayName, formatDate, levelLabel } = useHelpers()
 
 const availableCourses = ref<Course[]>([])
 const subscribedCourses = ref<Course[]>([])
 const loading = ref(true)
+const showCourseDetailModal = ref(false)
+const selectedCourse = ref<Course | null>(null)
+const selectedCourseDetail = ref<CustomerCourseDetailResponse | null>(null)
+const courseDetailLoading = ref(false)
+let detailRequestId = 0
 
 const tabs = [
   { key: 'available', label: 'Verfügbare Kurse' },
@@ -296,6 +426,37 @@ function isSubscribed(courseId: string) {
   return subscribedIds.value.has(courseId)
 }
 
+async function openCourseDetail(course: Course) {
+  selectedCourse.value = course
+  showCourseDetailModal.value = true
+  selectedCourseDetail.value = null
+  courseDetailLoading.value = true
+
+  const requestId = ++detailRequestId
+
+  try {
+    const detail = await api.get<CustomerCourseDetailResponse>(`/api/customer/courses/${course.id}/detail`)
+    if (requestId !== detailRequestId) return
+    selectedCourseDetail.value = detail
+  } catch {
+    if (requestId !== detailRequestId) return
+    toast.add({
+      title: 'Kursdetails konnten nicht geladen werden',
+      description: 'Bitte versuche es gleich noch einmal.',
+      color: 'red',
+    })
+    closeCourseDetail()
+  } finally {
+    if (requestId === detailRequestId) {
+      courseDetailLoading.value = false
+    }
+  }
+}
+
+function closeCourseDetail() {
+  showCourseDetailModal.value = false
+}
+
 async function subscribe(course: Course) {
   await api.post(`/api/customer/courses/${course.id}/subscribe`)
   toast.add({ title: `${course.type?.name} abonniert`, color: 'green' })
@@ -323,4 +484,13 @@ async function loadCourses(): Promise<void> {
 }
 
 onMounted(() => loadCourses())
+
+watch(showCourseDetailModal, (isOpen) => {
+  if (isOpen) return
+
+  detailRequestId += 1
+  courseDetailLoading.value = false
+  selectedCourse.value = null
+  selectedCourseDetail.value = null
+})
 </script>

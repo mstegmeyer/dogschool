@@ -142,6 +142,14 @@ export const useHelpers = () => {
     return `${name} · ${dayName(course.dayOfWeek)} ${course.startTime}`
   }
 
+  function formatCourseTitleWithLevel(
+    name: string | null | undefined,
+    level: CourseLevel | number | null | undefined,
+  ): string {
+    const title = name || 'Kurs'
+    return `${title} (${level ?? '?'})`
+  }
+
   /** Summarise the courses array for a notification, with optional "(+ N weitere)" overflow. */
   function formatNotificationCourses(
     courses: Pick<NotificationCourseRef, 'typeName' | 'typeCode' | 'dayOfWeek' | 'startTime'>[],
@@ -162,6 +170,7 @@ export const useHelpers = () => {
     creditTypeLabel, levelLabel,
     getWeekMonday,
     formatContractMonthlyPrice,
+    formatCourseTitleWithLevel,
     formatNotificationCourse,
     formatNotificationCourses,
   }

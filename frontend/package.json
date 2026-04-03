@@ -9,7 +9,10 @@
     "postinstall": "nuxt prepare",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:headed": "npm run build && playwright test --headed",
+    "playwright:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@nuxt/ui": "^2",
@@ -17,6 +20,7 @@
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.0.0",
+    "@playwright/test": "^1.58.2",
     "@vitest/coverage-v8": "^4.1.0",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^20.8.4",

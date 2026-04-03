@@ -82,6 +82,38 @@ class CourseDateRepository extends ServiceEntityRepository
     /**
      * @return array<int, CourseDate>
      */
+    public function findUpcomingForCourse(Course $course, \DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        $rows = $this->createQueryBuilder('cd')
+            ->andWhere('cd.course = :course')
+            ->andWhere('(cd.date > :fromDate OR (cd.date = :fromDate AND cd.startTime >= :fromTime))')
+            ->andWhere('cd.date <= :toDate')
+            ->setParameter('course', $course)
+            ->setParameter('fromDate', $from->setTime(0, 0, 0))
+            ->setParameter('fromTime', $from->format('H:i'))
+            ->setParameter('toDate', $to->setTime(23, 59, 59))
+            ->addOrderBy('cd.date', 'ASC')
+            ->addOrderBy('cd.startTime', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        if (!is_iterable($rows)) {
+            return [];
+        }
+
+        $dates = [];
+        foreach ($rows as $row) {
+            if ($row instanceof CourseDate) {
+                $dates[] = $row;
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * @return array<int, CourseDate>
+     */
     public function findFromDate(\DateTimeImmutable $from, int $days = 14): array
     {
         $to = $from->modify(sprintf('+%d days', $days))->setTime(23, 59, 59);

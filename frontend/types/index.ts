@@ -232,6 +232,12 @@ export interface CalendarSubscriptionResponse {
   path: string
 }
 
+export interface CustomerCourseDetailResponse {
+  course: Course
+  upcomingDates: CourseDate[]
+  notifications: Notification[]
+}
+
 export interface ProfileUpdatePayload {
   name?: string
   email?: string

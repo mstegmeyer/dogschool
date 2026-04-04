@@ -1,6 +1,10 @@
 import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
+
+const configDir = dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
     {
@@ -28,7 +32,7 @@ export default tseslint.config(
             parserOptions: {
                 parser: tseslint.parser,
                 projectService: true,
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: configDir,
             },
         },
 

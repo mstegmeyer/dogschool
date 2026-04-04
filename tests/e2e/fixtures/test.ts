@@ -15,7 +15,9 @@ type Fixtures = {
 };
 
 export const test = base.extend<Fixtures>({
-    manifest: async (_args, use) => {
+    // Playwright fixtures require the first parameter to stay as an object pattern.
+    // eslint-disable-next-line no-empty-pattern
+    manifest: async ({}, use) => {
         await use(await readManifest());
     },
 

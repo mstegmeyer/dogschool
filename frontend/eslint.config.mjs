@@ -1,8 +1,12 @@
 import eslint from '@eslint/js';
 import stylistic from '@stylistic/eslint-plugin';
 import vitest from '@vitest/eslint-plugin';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
 import vue from 'eslint-plugin-vue';
+
+const configDir = dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
     {
@@ -112,7 +116,7 @@ export default tseslint.config(
             'vue/html-quotes': ['error', 'single', { avoidEscape: true }],
             'vue/html-closing-bracket-newline': ['error', { singleline: 'never', multiline: 'always' }],
             'vue/block-order': ['error', {
-                order: [['script[setup]', 'template', 'script:not([setup])', 'style']],
+                order: [['template', 'script[setup]', 'script:not([setup])', 'style']],
             }],
         },
     },
@@ -126,7 +130,7 @@ export default tseslint.config(
             parserOptions: {
                 parser: tseslint.parser,
                 projectService: true,
-                tsconfigRootDir: import.meta.dirname,
+                tsconfigRootDir: configDir,
             },
         },
 

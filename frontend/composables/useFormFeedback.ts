@@ -8,7 +8,9 @@ interface ApiErrorData {
 }
 
 function normalizeFieldErrors(input: ApiErrorData['errors']): Record<string, string> {
-    if (!input) {return {};}
+    if (!input) {
+        return {};
+    }
 
     return Object.fromEntries(
         Object.entries(input)
@@ -65,7 +67,9 @@ export const useFormFeedback = () => {
     }
 
     function clearFieldError(path: string): void {
-        if (!fieldErrors.value[path]) {return;}
+        if (!fieldErrors.value[path]) {
+            return;
+        }
 
         const next = { ...fieldErrors.value };
         delete next[path];

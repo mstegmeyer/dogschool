@@ -99,15 +99,23 @@ const emit = defineEmits<{
 const { dayName, formatDate } = useHelpers();
 
 function dogIdForBooking(courseDate: CourseDate): string {
-    if (props.dogs.length === 0) {return '';}
-    if (props.dogs.length === 1) {return props.dogs[0]?.id ?? '';}
+    if (props.dogs.length === 0) {
+        return '';
+    }
+    if (props.dogs.length === 1) {
+        return props.dogs[0]?.id ?? '';
+    }
     return props.dogIdByCourseDate[courseDate.id] || '';
 }
 
 function bookedDogLabel(courseDate: CourseDate): string {
     const booking = courseDate.bookings?.[0];
-    if (!booking) {return '–';}
-    if (booking.dogName) {return booking.dogName;}
+    if (!booking) {
+        return '–';
+    }
+    if (booking.dogName) {
+        return booking.dogName;
+    }
 
     const dog = props.dogs.find(candidate => candidate.id === booking.dogId);
     return dog?.name ?? '–';

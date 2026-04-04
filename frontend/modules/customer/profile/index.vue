@@ -153,8 +153,12 @@ const canDisableNotifications = computed(() => pushStatus.value === 'enabled');
 
 async function saveProfile(): Promise<void> {
     clearFormErrors();
-    if (!form.name.trim()) {setFieldError('name', 'Bitte einen Namen angeben.');}
-    if (!form.email.trim()) {setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');}
+    if (!form.name.trim()) {
+        setFieldError('name', 'Bitte einen Namen angeben.');
+    }
+    if (!form.email.trim()) {
+        setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');
+    }
     if (Object.keys(fieldErrors.value).length > 0) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;
@@ -168,7 +172,9 @@ async function saveProfile(): Promise<void> {
             address: form.address,
             bankAccount: form.bankAccount,
         };
-        if (form.password) {payload.password = form.password;}
+        if (form.password) {
+            payload.password = form.password;
+        }
         await api.put('/api/customer/me', payload);
         await fetchProfile();
         toast.add({ title: 'Profil gespeichert', color: 'green' });

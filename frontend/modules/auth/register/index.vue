@@ -90,10 +90,18 @@ const loading = ref(false);
 async function handleRegister() {
     clearFormErrors();
 
-    if (!form.name.trim()) {setFieldError('name', 'Bitte einen Namen angeben.');}
-    if (!form.email.trim()) {setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');}
-    if (!form.password) {setFieldError('password', 'Bitte ein Passwort angeben.');}
-    if (!confirmPassword.value) {setFieldError('confirmPassword', 'Bitte das Passwort bestätigen.');}
+    if (!form.name.trim()) {
+        setFieldError('name', 'Bitte einen Namen angeben.');
+    }
+    if (!form.email.trim()) {
+        setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');
+    }
+    if (!form.password) {
+        setFieldError('password', 'Bitte ein Passwort angeben.');
+    }
+    if (!confirmPassword.value) {
+        setFieldError('confirmPassword', 'Bitte das Passwort bestätigen.');
+    }
 
     if (form.password !== confirmPassword.value) {
         setFieldError('confirmPassword', 'Passwörter stimmen nicht überein.');

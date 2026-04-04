@@ -42,6 +42,7 @@ export default tseslint.config(
             'no-unused-vars': 'off',
             'no-useless-escape': ['error'],
 
+            '@stylistic/brace-style': ['error', '1tbs'],
             '@stylistic/semi': ['error', 'always'],
             '@stylistic/indent': ['error', 4],
             '@stylistic/member-delimiter-style': ['error', {

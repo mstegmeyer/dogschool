@@ -91,7 +91,9 @@ function buildDayLayout(courseDates: CourseDate[], startMinute: number, pixelsPe
     let clusterEnd = -1;
 
     function flushCluster(): void {
-        if (cluster.length === 0) {return;}
+        if (cluster.length === 0) {
+            return;
+        }
 
         const columnsEndMinutes: number[] = [];
         const clusterItems: CalendarTimelineItem[] = [];

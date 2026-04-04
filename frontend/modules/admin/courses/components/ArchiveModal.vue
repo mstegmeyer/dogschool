@@ -77,7 +77,9 @@ const emit = defineEmits<{
 const { dayName, formatDate } = useHelpers();
 
 const courseLabel = computed(() => {
-    if (!props.course) {return '';}
+    if (!props.course) {
+        return '';
+    }
     return `${props.course.type?.name || 'Kurs'} · ${dayName(props.course.dayOfWeek)} · ${props.course.startTime} – ${props.course.endTime}`;
 });
 </script>

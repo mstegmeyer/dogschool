@@ -117,7 +117,9 @@ function openDetail(courseDate: CourseDate): void {
 }
 
 async function saveTrainerOverride(): Promise<void> {
-    if (!selectedDate.value) {return;}
+    if (!selectedDate.value) {
+        return;
+    }
 
     savingTrainer.value = true;
     try {

@@ -116,7 +116,9 @@ export const useHelpers = () => {
     }
 
     function levelLabel(level: CourseLevel | number): string {
-        if (level === 0) {return 'Einsteiger';}
+        if (level === 0) {
+            return 'Einsteiger';
+        }
         return `Stufe ${level}`;
     }
 
@@ -137,7 +139,9 @@ export const useHelpers = () => {
     }
 
     function formatNotificationCourse(course: Pick<NotificationCourseRef, 'typeName' | 'typeCode' | 'dayOfWeek' | 'startTime'> | null | undefined): string {
-        if (!course) {return '–';}
+        if (!course) {
+            return '–';
+        }
         const name = course.typeName || course.typeCode || 'Kurs';
         return `${name} · ${dayName(course.dayOfWeek)} ${course.startTime}`;
     }
@@ -155,9 +159,13 @@ export const useHelpers = () => {
         courses: Pick<NotificationCourseRef, 'typeName' | 'typeCode' | 'dayOfWeek' | 'startTime'>[],
         maxVisible = 1,
     ): string {
-        if (courses.length === 0) {return 'Alle Kurse';}
+        if (courses.length === 0) {
+            return 'Alle Kurse';
+        }
         const labels = courses.map(c => formatNotificationCourse(c));
-        if (labels.length <= maxVisible) {return labels.join(', ');}
+        if (labels.length <= maxVisible) {
+            return labels.join(', ');
+        }
         const rest = labels.length - maxVisible;
         return `${labels.slice(0, maxVisible).join(', ')} (+\u00A0${rest} weitere)`;
     }

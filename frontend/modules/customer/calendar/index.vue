@@ -110,10 +110,14 @@ const calendarRangeLabel = computed(() => (
 ));
 
 const calendarSubscriptionUrl = computed(() => {
-    if (!calendarSubscriptionPath.value) {return '';}
+    if (!calendarSubscriptionPath.value) {
+        return '';
+    }
 
     const baseUrl = runtimeConfig.public.apiBaseUrl || (import.meta.client ? window.location.origin : '');
-    if (!baseUrl) {return calendarSubscriptionPath.value;}
+    if (!baseUrl) {
+        return calendarSubscriptionPath.value;
+    }
 
     try {
         return new URL(calendarSubscriptionPath.value, baseUrl).toString();
@@ -127,8 +131,12 @@ const calendarSubscriptionWebcalUrl = computed(() => (
 ));
 
 const selectedBookingDogId = computed(() => {
-    if (dogs.value.length === 0) {return '';}
-    if (dogs.value.length === 1) {return dogs.value[0]?.id ?? '';}
+    if (dogs.value.length === 0) {
+        return '';
+    }
+    if (dogs.value.length === 1) {
+        return dogs.value[0]?.id ?? '';
+    }
     return bookingDogId.value;
 });
 
@@ -145,13 +153,19 @@ const bookingModalOpen = computed({
 });
 
 function calendarCardClass(courseDate: CourseDate): string {
-    if (courseDate.cancelled) {return 'bg-red-50 border-red-200 opacity-60';}
-    if (courseDate.booked) {return 'bg-komm-50/90 border-komm-200';}
+    if (courseDate.cancelled) {
+        return 'bg-red-50 border-red-200 opacity-60';
+    }
+    if (courseDate.booked) {
+        return 'bg-komm-50/90 border-komm-200';
+    }
     return 'bg-white/95 border-slate-200';
 }
 
 function openBookingModal(courseDate: CourseDate): void {
-    if (dogs.value.length === 0 || courseDate.cancelled || courseDate.booked || courseDate.bookingWindowClosed) {return;}
+    if (dogs.value.length === 0 || courseDate.cancelled || courseDate.booked || courseDate.bookingWindowClosed) {
+        return;
+    }
 
     bookingCourseDate.value = courseDate;
     bookingDogId.value = dogs.value.length === 1 ? (dogs.value[0]?.id ?? '') : '';
@@ -159,7 +173,9 @@ function openBookingModal(courseDate: CourseDate): void {
 }
 
 function closeBookingModal(): void {
-    if (bookingInFlight.value) {return;}
+    if (bookingInFlight.value) {
+        return;
+    }
 
     showBookingModal.value = false;
     bookingCourseDate.value = null;
@@ -184,7 +200,9 @@ async function bookDate(courseDate: CourseDate, dogId = selectedBookingDogId.val
 }
 
 async function confirmBooking(): Promise<void> {
-    if (!bookingCourseDate.value || !selectedBookingDogId.value) {return;}
+    if (!bookingCourseDate.value || !selectedBookingDogId.value) {
+        return;
+    }
 
     bookingInFlight.value = true;
     try {
@@ -200,10 +218,14 @@ async function confirmBooking(): Promise<void> {
 }
 
 async function cancelBooking(courseDate: CourseDate): Promise<void> {
-    if (!courseDate.bookings?.length) {return;}
+    if (!courseDate.bookings?.length) {
+        return;
+    }
 
     const dogId = courseDate.bookings[0]?.dogId;
-    if (!dogId) {return;}
+    if (!dogId) {
+        return;
+    }
 
     try {
         await api.del(`/api/customer/calendar/course-dates/${courseDate.id}/book?dogId=${dogId}`);
@@ -230,7 +252,9 @@ async function loadCalendarSubscription(): Promise<void> {
 }
 
 async function copyCalendarUrl(): Promise<void> {
-    if (!calendarSubscriptionUrl.value || !navigator.clipboard) {return;}
+    if (!calendarSubscriptionUrl.value || !navigator.clipboard) {
+        return;
+    }
 
     try {
         await navigator.clipboard.writeText(calendarSubscriptionUrl.value);
@@ -241,7 +265,9 @@ async function copyCalendarUrl(): Promise<void> {
 }
 
 function openCalendarUrl(): void {
-    if (!calendarSubscriptionWebcalUrl.value) {return;}
+    if (!calendarSubscriptionWebcalUrl.value) {
+        return;
+    }
     window.location.href = calendarSubscriptionWebcalUrl.value;
 }
 
@@ -250,7 +276,9 @@ watch(currentMonday, () => {
 });
 
 watch(showBookingModal, (open) => {
-    if (open || bookingInFlight.value) {return;}
+    if (open || bookingInFlight.value) {
+        return;
+    }
 
     bookingCourseDate.value = null;
     bookingDogId.value = '';

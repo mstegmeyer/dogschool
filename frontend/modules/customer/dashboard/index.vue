@@ -63,8 +63,12 @@ const dogIdByCourseDate = reactive<Record<string, string>>({});
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })));
 
 function dogIdForBooking(cd: CourseDate): string {
-    if (dogs.value.length === 0) {return '';}
-    if (dogs.value.length === 1) {return dogs.value[0]?.id ?? '';}
+    if (dogs.value.length === 0) {
+        return '';
+    }
+    if (dogs.value.length === 1) {
+        return dogs.value[0]?.id ?? '';
+    }
     return dogIdByCourseDate[cd.id] || '';
 }
 
@@ -116,8 +120,11 @@ async function reloadCalendar(): Promise<void> {
 }
 
 async function safeGet<T>(url: string, fallback: T): Promise<T> {
-    try { return await api.get<T>(url); }
-    catch { return fallback; }
+    try {
+        return await api.get<T>(url); 
+    } catch {
+        return fallback; 
+    }
 }
 
 onMounted(async () => {

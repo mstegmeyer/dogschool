@@ -132,7 +132,9 @@ const timeline = computed(() => buildCalendarTimeline(props.days, { viewMode: pr
 
 const gridTemplateColumns = computed(() => {
     const dayColumns = timeline.value.days.map((day) => {
-        if (props.viewMode === 'day') {return 'minmax(0, 1fr)';}
+        if (props.viewMode === 'day') {
+            return 'minmax(0, 1fr)';
+        }
 
         const minWidthRem = 12 + (Math.max(1, day.maxColumns) - 1) * 4;
         return `minmax(${minWidthRem}rem, 1fr)`;
@@ -142,7 +144,9 @@ const gridTemplateColumns = computed(() => {
 });
 
 const containerMinWidth = computed(() => {
-    if (props.viewMode === 'day') {return '100%';}
+    if (props.viewMode === 'day') {
+        return '100%';
+    }
 
     const dayWidths = timeline.value.days.map(day => 12 + (Math.max(1, day.maxColumns) - 1) * 4);
     const totalWidthRem = 4.5 + dayWidths.reduce((sum, width) => sum + width, 0);
@@ -178,7 +182,9 @@ function isCondensed(item: CalendarTimelineItem): boolean {
 }
 
 function handleSelect(courseDate: CourseDate): void {
-    if (!props.selectable) {return;}
+    if (!props.selectable) {
+        return;
+    }
     emit('select', courseDate);
 }
 </script>

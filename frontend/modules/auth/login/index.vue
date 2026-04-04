@@ -125,11 +125,17 @@ function resolveLoginError(cause: unknown): string {
 async function handleLogin() {
     clearFormErrors();
     if (activeTab.value === 'admin') {
-        if (!username.value.trim()) {setFieldError('username', 'Bitte einen Benutzernamen angeben.');}
+        if (!username.value.trim()) {
+            setFieldError('username', 'Bitte einen Benutzernamen angeben.');
+        }
     } else {
-        if (!email.value.trim()) {setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');}
+        if (!email.value.trim()) {
+            setFieldError('email', 'Bitte eine E-Mail-Adresse angeben.');
+        }
     }
-    if (!password.value) {setFieldError('password', 'Bitte ein Passwort angeben.');}
+    if (!password.value) {
+        setFieldError('password', 'Bitte ein Passwort angeben.');
+    }
     if (errorFor('email') || errorFor('username') || errorFor('password')) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;

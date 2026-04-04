@@ -89,8 +89,12 @@ async function loadCredits(): Promise<void> {
 
 async function adjustCredits(): Promise<void> {
     clearFormErrors();
-    if (adjustAmount.value === null || adjustAmount.value === 0) {setFieldError('amount', 'Bitte eine Korrektur ungleich 0 angeben.');}
-    if (!adjustDescription.value.trim()) {setFieldError('description', 'Bitte eine Beschreibung angeben.');}
+    if (adjustAmount.value === null || adjustAmount.value === 0) {
+        setFieldError('amount', 'Bitte eine Korrektur ungleich 0 angeben.');
+    }
+    if (!adjustDescription.value.trim()) {
+        setFieldError('description', 'Bitte eine Beschreibung angeben.');
+    }
     if (Object.keys(fieldErrors.value).length > 0) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;

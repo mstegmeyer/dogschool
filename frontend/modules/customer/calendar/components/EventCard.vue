@@ -106,16 +106,24 @@ const { formatCourseTitleWithLevel } = useHelpers();
 
 const bookedDogLabel = computed(() => {
     const booking = props.courseDate.bookings?.[0];
-    if (!booking) {return '–';}
-    if (booking.dogName) {return booking.dogName;}
+    if (!booking) {
+        return '–';
+    }
+    if (booking.dogName) {
+        return booking.dogName;
+    }
 
     const dog = props.dogs.find(candidate => candidate.id === booking.dogId);
     return dog?.name ?? '–';
 });
 
 const bookingSummaryLabel = computed(() => {
-    if (props.dogs.length === 1) {return `für ${props.dogs[0]?.name ?? 'Hund'}`;}
-    if (props.condensed) {return `${props.dogs.length} Hunde`;}
+    if (props.dogs.length === 1) {
+        return `für ${props.dogs[0]?.name ?? 'Hund'}`;
+    }
+    if (props.condensed) {
+        return `${props.dogs.length} Hunde`;
+    }
     return `${props.dogs.length} Hunde verfügbar`;
 });
 

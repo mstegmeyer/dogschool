@@ -62,7 +62,9 @@ export const useAuth = () => {
     }
 
     async function fetchProfile() {
-        if (!token.value || role.value !== 'customer') {return;}
+        if (!token.value || role.value !== 'customer') {
+            return;
+        }
         try {
             user.value = await $fetch<Customer>('/api/customer/me', {
                 headers: { Authorization: `Bearer ${token.value}` },

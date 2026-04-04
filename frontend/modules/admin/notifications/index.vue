@@ -87,14 +87,20 @@ const showPagination = computed(() => totalNotifications.value > pageSize);
 const pageStart = computed(() => (totalNotifications.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1));
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalNotifications.value));
 const resultSummary = computed(() => {
-    if (totalNotifications.value === 0) {return '0 Mitteilungen';}
-    if (totalPages.value <= 1) {return `${totalNotifications.value} Mitteilungen`;}
+    if (totalNotifications.value === 0) {
+        return '0 Mitteilungen';
+    }
+    if (totalPages.value <= 1) {
+        return `${totalNotifications.value} Mitteilungen`;
+    }
 
     return `${pageStart.value}–${pageEnd.value} von ${totalNotifications.value} Mitteilungen`;
 });
 
 function pinnedUntilToDateInput(iso: string | null): string {
-    if (!iso) {return '';}
+    if (!iso) {
+        return '';
+    }
     return iso.slice(0, 10);
 }
 
@@ -127,9 +133,15 @@ function closeModal(): void {
 
 async function saveNotification(): Promise<void> {
     clearFormErrors();
-    if (!form.isGlobal && form.courseIds.length === 0) {setFieldError('courseIds', 'Bitte mindestens einen Kurs auswählen.');}
-    if (!form.title.trim()) {setFieldError('title', 'Bitte einen Titel angeben.');}
-    if (!form.message.trim()) {setFieldError('message', 'Bitte eine Nachricht eingeben.');}
+    if (!form.isGlobal && form.courseIds.length === 0) {
+        setFieldError('courseIds', 'Bitte mindestens einen Kurs auswählen.');
+    }
+    if (!form.title.trim()) {
+        setFieldError('title', 'Bitte einen Titel angeben.');
+    }
+    if (!form.message.trim()) {
+        setFieldError('message', 'Bitte eine Nachricht eingeben.');
+    }
     if (Object.keys(fieldErrors.value).length > 0) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;

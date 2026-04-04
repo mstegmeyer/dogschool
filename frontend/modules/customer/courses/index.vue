@@ -80,7 +80,9 @@ const tabs = [
 
 function sortByDayThenTime(courses: Course[]): Course[] {
     return [...courses].sort((left, right) => {
-        if (left.dayOfWeek !== right.dayOfWeek) {return left.dayOfWeek - right.dayOfWeek;}
+        if (left.dayOfWeek !== right.dayOfWeek) {
+            return left.dayOfWeek - right.dayOfWeek;
+        }
         return left.startTime.localeCompare(right.startTime);
     });
 }
@@ -114,10 +116,14 @@ async function openCourseDetail(course: Course): Promise<void> {
 
     try {
         const detail = await api.get<CustomerCourseDetailResponse>(`/api/customer/courses/${course.id}/detail`);
-        if (requestId !== detailRequestId) {return;}
+        if (requestId !== detailRequestId) {
+            return;
+        }
         selectedCourseDetail.value = detail;
     } catch {
-        if (requestId !== detailRequestId) {return;}
+        if (requestId !== detailRequestId) {
+            return;
+        }
 
         toast.add({
             title: 'Kursdetails konnten nicht geladen werden',
@@ -164,7 +170,9 @@ onMounted(() => {
 });
 
 watch(showCourseDetailModal, (isOpen) => {
-    if (isOpen) {return;}
+    if (isOpen) {
+        return;
+    }
 
     detailRequestId += 1;
     courseDetailLoading.value = false;

@@ -174,7 +174,9 @@ const showScheduleHint = computed(() => editingCourse.value !== null && (
 ));
 
 const scheduleHintText = computed(() => {
-    if (editingCourse.value === null) {return '';}
+    if (editingCourse.value === null) {
+        return '';
+    }
 
     const dayChanged = form.dayOfWeek !== editingCourse.value.dayOfWeek;
     const timeChanged = form.startTime !== editingCourse.value.startTime || form.endTime !== editingCourse.value.endTime;
@@ -194,8 +196,12 @@ const showPagination = computed(() => totalCourses.value > pageSize);
 const pageStart = computed(() => (totalCourses.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1));
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalCourses.value));
 const resultSummary = computed(() => {
-    if (totalCourses.value === 0) {return '0 Kurse';}
-    if (totalPages.value <= 1) {return `${totalCourses.value} Kurse`;}
+    if (totalCourses.value === 0) {
+        return '0 Kurse';
+    }
+    if (totalPages.value <= 1) {
+        return `${totalCourses.value} Kurse`;
+    }
     return `${pageStart.value}–${pageEnd.value} von ${totalCourses.value} Kursen`;
 });
 
@@ -266,7 +272,9 @@ function openArchiveModal(course: Course): void {
 }
 
 function closeArchiveModal(force = false): void {
-    if (archiving.value && !force) {return;}
+    if (archiving.value && !force) {
+        return;
+    }
 
     showArchiveModal.value = false;
     archiveCourse.value = null;
@@ -281,11 +289,21 @@ function resolveArchiveError(cause: unknown): string {
 
 async function saveCourse(): Promise<void> {
     clearFormErrors();
-    if (!form.typeCode.trim()) {setFieldError('typeCode', 'Bitte einen Kurstyp angeben.');}
-    if (!form.dayOfWeek) {setFieldError('dayOfWeek', 'Bitte einen Wochentag wählen.');}
-    if (form.level < 0 || form.level > 4) {setFieldError('level', 'Bitte eine Stufe zwischen 0 und 4 angeben.');}
-    if (!form.startTime) {setFieldError('startTime', 'Bitte eine Startzeit angeben.');}
-    if (!form.endTime) {setFieldError('endTime', 'Bitte eine Endzeit angeben.');}
+    if (!form.typeCode.trim()) {
+        setFieldError('typeCode', 'Bitte einen Kurstyp angeben.');
+    }
+    if (!form.dayOfWeek) {
+        setFieldError('dayOfWeek', 'Bitte einen Wochentag wählen.');
+    }
+    if (form.level < 0 || form.level > 4) {
+        setFieldError('level', 'Bitte eine Stufe zwischen 0 und 4 angeben.');
+    }
+    if (!form.startTime) {
+        setFieldError('startTime', 'Bitte eine Startzeit angeben.');
+    }
+    if (!form.endTime) {
+        setFieldError('endTime', 'Bitte eine Endzeit angeben.');
+    }
 
     if (Object.keys(fieldErrors.value).length > 0) {
         setFormError('Bitte prüfe die markierten Felder.');
@@ -337,7 +355,9 @@ async function toggleArchive(course: Course): Promise<void> {
 }
 
 async function confirmArchive(): Promise<void> {
-    if (!archiveCourse.value) {return;}
+    if (!archiveCourse.value) {
+        return;
+    }
 
     archiveError.value = '';
     if (!archiveForm.removeFromDate) {

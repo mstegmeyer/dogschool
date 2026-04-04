@@ -92,9 +92,15 @@ function closeModal() {
 
 async function saveCourseType() {
     clearFormErrors();
-    if (!form.code.trim()) {setFieldError('code', 'Bitte ein Kürzel angeben.');}
-    if (!form.name.trim()) {setFieldError('name', 'Bitte einen Namen angeben.');}
-    if (!form.recurrenceKind) {setFieldError('recurrenceKind', 'Bitte eine Wiederholungsart wählen.');}
+    if (!form.code.trim()) {
+        setFieldError('code', 'Bitte ein Kürzel angeben.');
+    }
+    if (!form.name.trim()) {
+        setFieldError('name', 'Bitte einen Namen angeben.');
+    }
+    if (!form.recurrenceKind) {
+        setFieldError('recurrenceKind', 'Bitte eine Wiederholungsart wählen.');
+    }
     if (errorFor('code') || errorFor('name') || errorFor('recurrenceKind')) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;

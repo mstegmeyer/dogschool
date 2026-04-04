@@ -59,7 +59,9 @@ function closeRequestModal() {
 async function requestContract() {
     clearFormErrors();
 
-    if (!requestForm.dogId) {setFieldError('dogId', 'Bitte einen Hund auswählen.');}
+    if (!requestForm.dogId) {
+        setFieldError('dogId', 'Bitte einen Hund auswählen.');
+    }
     if (!requestForm.coursesPerWeek || requestForm.coursesPerWeek < 1 || requestForm.coursesPerWeek > 7) {
         setFieldError('coursesPerWeek', 'Bitte 1 bis 7 Kurse pro Woche angeben.');
     }

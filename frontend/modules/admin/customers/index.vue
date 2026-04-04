@@ -65,8 +65,12 @@ const showPagination = computed(() => totalCustomers.value > pageSize);
 const pageStart = computed(() => (totalCustomers.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1));
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalCustomers.value));
 const resultSummary = computed(() => {
-    if (totalCustomers.value === 0) {return '0 Kunden';}
-    if (totalPages.value <= 1) {return `${totalCustomers.value} Kunden`;}
+    if (totalCustomers.value === 0) {
+        return '0 Kunden';
+    }
+    if (totalPages.value <= 1) {
+        return `${totalCustomers.value} Kunden`;
+    }
 
     return `${pageStart.value}–${pageEnd.value} von ${totalCustomers.value} Kunden`;
 });
@@ -92,7 +96,9 @@ async function loadCustomers(): Promise<void> {
     }
 
     const res = await api.get<ApiListResponse<Customer>>(`/api/admin/customers?${params.toString()}`);
-    if (loadId !== latestLoadId) {return;}
+    if (loadId !== latestLoadId) {
+        return;
+    }
 
     customers.value = res.items;
     totalCustomers.value = res.pagination?.total ?? res.items.length;

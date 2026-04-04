@@ -20,8 +20,12 @@ function toRouteSegments(filePath: string): string[] {
 
     const [namespace, ...segments] = directory;
 
-    if (!namespace) {return [];}
-    if (namespace === 'public' || namespace === 'auth') {return segments;}
+    if (!namespace) {
+        return [];
+    }
+    if (namespace === 'public' || namespace === 'auth') {
+        return segments;
+    }
     if ((namespace === 'admin' || namespace === 'customer') && segments[0] === 'dashboard') {
         return [namespace, ...segments.slice(1)];
     }

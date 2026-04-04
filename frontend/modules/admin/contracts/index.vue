@@ -97,8 +97,12 @@ const showPagination = computed(() => totalContracts.value > pageSize);
 const pageStart = computed(() => (totalContracts.value === 0 ? 0 : ((currentPage.value - 1) * pageSize) + 1));
 const pageEnd = computed(() => Math.min(currentPage.value * pageSize, totalContracts.value));
 const resultSummary = computed(() => {
-    if (totalContracts.value === 0) {return '0 Verträge';}
-    if (totalPages.value <= 1) {return `${totalContracts.value} Verträge`;}
+    if (totalContracts.value === 0) {
+        return '0 Verträge';
+    }
+    if (totalPages.value <= 1) {
+        return `${totalContracts.value} Verträge`;
+    }
 
     return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`;
 });
@@ -124,7 +128,9 @@ function normalizeCancelEndDate() {
 }
 
 async function confirmCancel() {
-    if (!contractToCancel.value) {return;}
+    if (!contractToCancel.value) {
+        return;
+    }
     clearFormErrors();
     if (!cancelForm.endDate) {
         setFieldError('endDate', 'Bitte ein Enddatum wählen.');

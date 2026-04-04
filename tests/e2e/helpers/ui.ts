@@ -3,7 +3,9 @@ import { expect, type Locator, type Page } from '@playwright/test';
 async function clickFirstVisible(candidates: Locator[]): Promise<void> {
     for (const candidate of candidates) {
         const visible = await candidate.first().isVisible().catch(() => false);
-        if (!visible) {continue;}
+        if (!visible) {
+            continue;
+        }
 
         await candidate.first().click();
         return;

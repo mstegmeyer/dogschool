@@ -26,7 +26,7 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'cobertura', 'lcov'],
             reportsDirectory: 'coverage',
-            include: ['components/**/*.{vue,ts}', 'modules/**/*.{vue,ts}', 'composables/**', 'middleware/**'],
+            include: ['app.vue', 'layouts/**/*.{vue,ts}', 'components/**/*.{vue,ts}', 'modules/**/*.{vue,ts}', 'composables/**', 'middleware/**'],
             exclude: ['tests/**'],
         },
     },

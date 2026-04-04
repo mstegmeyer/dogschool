@@ -1,0 +1,9 @@
+{
+  "name": "komm",
+  "private": true,
+  "scripts": {
+    "lint": "npm --prefix frontend run lint && npm --prefix tests run lint",
+    "lint:fix": "npm --prefix frontend run lint:fix && npm --prefix tests run lint:fix",
+    "format": "npm run lint:fix"
+  }
+}

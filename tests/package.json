@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "npm run test:functional",
     "test:functional": "playwright test --project=functional",
     "test:visual": "playwright test --project=visual",
@@ -10,8 +12,12 @@
     "playwright:install": "playwright install --with-deps chromium"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^24.0.0",
-    "typescript": "^5.8.3"
+    "eslint": "^10.2.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.58.0"
   }
 }

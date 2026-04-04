@@ -56,6 +56,14 @@ final class CustomerCalendarFeedBuilderTest extends TestCase
             ->setCancelled($cancelled);
     }
 
+    private function setBookingId(Booking $booking, string $id): Booking
+    {
+        $ref = new \ReflectionProperty($booking, 'id');
+        $ref->setValue($booking, $id);
+
+        return $booking;
+    }
+
     private function makeBooking(Customer $customer, ?CourseDate $courseDate, ?string $dogName = 'Luna'): Booking
     {
         $booking = (new Booking())
@@ -80,13 +88,14 @@ final class CustomerCalendarFeedBuilderTest extends TestCase
     {
         $customer = $this->makeCustomer('Max, Muster');
         $courseDate = $this->makeCourseDate('Basis;Hund');
-        $booking = $this->makeBooking($customer, $courseDate, 'Luna,Alpha');
+        $bookingId = '00000000-0000-0000-0000-000000000001';
+        $booking = $this->setBookingId($this->makeBooking($customer, $courseDate, 'Luna,Alpha'), $bookingId);
 
         $calendar = $this->builder->build($customer, [$booking]);
 
         self::assertStringContainsString('BEGIN:VCALENDAR', $calendar);
         self::assertStringContainsString('X-WR-CALNAME:Komm! Kurse - Max\, Muster', $calendar);
-        self::assertStringContainsString('UID:booking-'.$booking->getId().'@komm-hundeschule', $calendar);
+        self::assertStringContainsString('UID:booking-'.$bookingId.'@komm-hundeschule', $calendar);
         self::assertStringContainsString('DTSTART;TZID=Europe/Berlin:20260404T090000', $calendar);
         self::assertStringContainsString('DTEND;TZID=Europe/Berlin:20260404T101500', $calendar);
         self::assertStringContainsString('SUMMARY:Basis\;Hund (Luna\,Alpha)', $calendar);

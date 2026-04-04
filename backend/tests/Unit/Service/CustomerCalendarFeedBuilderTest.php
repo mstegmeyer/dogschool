@@ -59,6 +59,7 @@ final class CustomerCalendarFeedBuilderTest extends TestCase
     private function setBookingId(Booking $booking, string $id): Booking
     {
         $ref = new \ReflectionProperty($booking, 'id');
+        $ref->setAccessible(true);
         $ref->setValue($booking, $id);
 
         return $booking;

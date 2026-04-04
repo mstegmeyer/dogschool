@@ -10,15 +10,7 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 overflow-y-auto">
-        <UVerticalNavigation
-          :links="navLinks"
-          :ui="{
-            base: 'group relative flex items-center gap-1.5 focus:outline-none focus-visible:outline-none dark:focus-visible:outline-none before:absolute before:inset-px before:rounded-md disabled:cursor-not-allowed disabled:opacity-75',
-            active: 'text-white before:bg-komm-800',
-            inactive: 'text-komm-200 hover:text-white hover:before:bg-komm-800/60',
-            icon: { active: 'text-sand-200', inactive: 'text-komm-400 group-hover:text-sand-200' },
-          }"
-        />
+        <AdminNavigationMenu />
       </nav>
 
       <div class="p-3 border-t border-komm-800">
@@ -56,15 +48,7 @@
         </div>
 
         <nav class="flex-1 px-3 py-4 overflow-y-auto">
-          <UVerticalNavigation
-            :links="navLinks"
-            :ui="{
-              active: 'text-white before:bg-komm-800',
-              inactive: 'text-komm-200 hover:text-white hover:before:bg-komm-800/60',
-              icon: { active: 'text-sand-200', inactive: 'text-komm-400 group-hover:text-sand-200' },
-            }"
-            @click="mobileMenuOpen = false"
-          />
+          <AdminNavigationMenu variant="mobile" close-on-navigate @navigate="mobileMenuOpen = false" />
         </nav>
 
         <div class="p-3 border-t border-komm-800">
@@ -108,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import type { NavLink } from '~/types'
+import AdminNavigationMenu from '~/modules/admin/AdminNavigationMenu.vue'
 
 const { logout } = useAuth()
 const mobileMenuOpen = ref(false)
@@ -117,16 +101,6 @@ const route = useRoute()
 watch(() => route.fullPath, () => {
   mobileMenuOpen.value = false
 })
-
-const navLinks: NavLink[][] = [[
-  { label: 'Dashboard', icon: 'i-heroicons-home', to: '/admin' },
-  { label: 'Kunden', icon: 'i-heroicons-users', to: '/admin/customers' },
-  { label: 'Kurse', icon: 'i-heroicons-academic-cap', to: '/admin/courses' },
-  { label: 'Kursarten', icon: 'i-heroicons-tag', to: '/admin/course-types' },
-  { label: 'Kalender', icon: 'i-heroicons-calendar-days', to: '/admin/calendar' },
-  { label: 'Verträge', icon: 'i-heroicons-document-text', to: '/admin/contracts' },
-  { label: 'Mitteilungen', icon: 'i-heroicons-bell', to: '/admin/notifications' },
-]]
 
 function handleLogout(): void {
   logout()

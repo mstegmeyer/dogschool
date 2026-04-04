@@ -1,0 +1,36 @@
+---
+description: Vue/Nuxt component and TypeScript conventions
+globs: frontend/**/*.vue, frontend/**/*.ts
+alwaysApply: false
+---
+
+# Frontend conventions
+
+## Vue SFC
+
+- `<script setup lang="ts">` only. Block order: template → script → style.
+- Single quotes in templates and scripts. 4-space indent. Semicolons required.
+- `defineProps<{...}>()` and `defineEmits<{...}>()` with TS interfaces.
+- Explicit function return types everywhere (ESLint enforced).
+- Type imports: `import type { Foo } from '~/types'` (separate type imports).
+- Add `data-testid` to interactive elements for E2E targeting.
+
+## Routing
+
+Routes live in `frontend/modules/`, NOT `pages/`. Each route is an `index.vue`. Colocation folders (`components/`, `composables/`, `types/`, `utils/`) next to pages are ignored by the router.
+
+## State
+
+Use `useState` in composables (e.g. `useAuth`, `useApi`). No Pinia.
+
+## Shared components
+
+Place in `frontend/components/` (auto-imported, `pathPrefix: false`). Page-scoped components go in `components/` next to the page's `index.vue`.
+
+## Styling
+
+Tailwind utility classes via Nuxt UI. Custom palettes: `komm`, `sand`. Font: Poppins. Avoid custom CSS unless for safe-area/mobile-shell layouts.
+
+## Lint
+
+Run `npm run lint` from `frontend/` or root. ESLint flat config enforces all style rules.

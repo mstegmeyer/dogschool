@@ -1,0 +1,25 @@
+---
+description: Core project conventions — git, structure, CI, and what to avoid
+alwaysApply: true
+---
+
+# Project conventions
+
+Full-stack monorepo: `backend/` (Symfony 8, PHP 8.4), `frontend/` (Nuxt 3, Vue 3, TS), `tests/` (Playwright E2E). See `AGENTS.md` at the repo root for full guidelines.
+
+## Git
+
+- Commits: Conventional Commits — `feat:`, `fix:`, `refactor:`, `test:`, `ci:`, `chore:`. Lowercase, imperative, no period.
+- Branches: `<type>/<kebab-description>` (e.g. `feat/course-cancellation`). Default branch: `master`.
+
+## CI checks (all must pass)
+
+- ESLint (frontend + tests), PHP CS Fixer, PHPStan level 9, Vitest, PHPUnit, Playwright functional + visual.
+
+## Hard rules
+
+- No Prettier (ESLint `@stylistic` handles formatting).
+- No Pinia (use `useState` composables).
+- No `pages/` directory for routes (use `modules/`).
+- No Doctrine migrations (schema managed via `doctrine:schema:create`).
+- New behavior needs tests. Visual changes need snapshot updates noted in PR.

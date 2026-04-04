@@ -1,0 +1,46 @@
+---
+description: Playwright E2E test conventions for functional and visual tests
+globs: tests/**/*.ts
+alwaysApply: false
+---
+
+# E2E test conventions
+
+## Imports
+
+Always import from `../fixtures/test`, never directly from `@playwright/test`:
+
+```typescript
+import { expect, test } from '../fixtures/test';
+```
+
+## Custom fixtures
+
+- `manifest` — deterministic IDs/credentials from `E2eSeedService`. Never hardcode IDs.
+- `loginAsCustomer(persona)` — authenticates as a customer persona via API + localStorage.
+- `loginAsAdmin()` — authenticates as admin.
+- `expectToast(title)` — asserts a toast notification appears.
+- `waitForVisualReady()` — waits for network idle + fonts. Use before screenshots.
+
+## Functional tests (`tests/e2e/functional/`)
+
+- Use Page Objects from `page-objects/` for repeated UI flows.
+- Prefer accessible locators: `getByRole`, `getByText`, `getByLabel`, `getByTestId`.
+- Name files after features: `customer-dashboard.spec.ts`, `admin-course-management.spec.ts`.
+
+## Visual tests (`tests/e2e/visual/`)
+
+- Call `waitForVisualReady()` before every screenshot.
+- Use: `await expect(page).toHaveScreenshot('area/name.png', { fullPage: true })`.
+- Snapshots committed in `tests/snapshots/`. Update with `npm run test:visual:update`.
+- CI runs on Ubuntu — baselines generated on macOS will fail. Note snapshot updates in PRs.
+
+## Adding test data
+
+1. Add persona/entity in `backend/src/E2e/E2eSeedService.php`.
+2. Extend `E2eManifest` type in `tests/e2e/fixtures/manifest.ts`.
+3. Reference manifest values — never hardcode.
+
+## ESLint
+
+Same style as frontend: 4-space indent, single quotes, semicolons, explicit return types. Run `npm run lint` from `tests/`.

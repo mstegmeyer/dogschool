@@ -1,0 +1,40 @@
+---
+description: Symfony/PHP conventions for the backend
+globs: backend/**/*.php
+alwaysApply: false
+---
+
+# Backend conventions
+
+## Code style
+
+- `declare(strict_types=1)` in every file.
+- PHP CS Fixer `@Symfony` ruleset. No Yoda comparisons (`$x === null`, not `null === $x`).
+- Final classes for controllers and services. Constructor property promotion with `private readonly`.
+- PHPStan level 9 — all code must pass. Use `@phpstan-type` / `@phpstan-param` for generics.
+
+## Controllers
+
+- Namespace: `App\Controller\Api\Admin\` or `App\Controller\Api\Customer\`.
+- Extend `AbstractController`. Route attributes on class and methods.
+- Constructor DI with repositories/services. Return `$this->json()`. Use `ApiNormalizer`.
+- Type-hint `Customer` or `User` as action parameter — resolved automatically.
+
+## Entities
+
+- Doctrine PHP 8 attributes. UUID string IDs (`GeneratedValue(strategy: 'NONE')`).
+- Embeddable VOs in `Entity\Embeddable\`.
+
+## Testing
+
+- PHPUnit: `tests/Unit/` and `tests/Integration/`. Files named `*Test.php`, methods `test<Behavior>`.
+- Integration tests use `WebTestCase::createClient()` + `ApiTestHelper`.
+- Bootstrap recreates schema from scratch — no migration dependency.
+
+## Commands
+
+```bash
+vendor/bin/php-cs-fixer fix --dry-run --diff   # style check
+vendor/bin/phpstan analyse                       # static analysis (after cache:warmup)
+php bin/phpunit                                  # tests
+```

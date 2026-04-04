@@ -9,12 +9,15 @@ use App\Entity\Contract;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use App\Entity\CourseType;
+use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\Notification;
+use App\Entity\PushDevice;
 use App\Entity\User;
 use App\Enum\ContractState;
 use App\Enum\ContractType;
+use App\Enum\CreditTransactionType;
 use App\Service\ApiNormalizer;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -224,6 +227,27 @@ final class ApiNormalizerTest extends TestCase
     }
 
     #[Test]
+    public function normalizePushDeviceReturnsExpectedKeys(): void
+    {
+        $device = (new PushDevice())
+            ->setToken('device-token')
+            ->setPlatform('web')
+            ->setProvider('webpush')
+            ->setDeviceName('Safari on Mac');
+
+        $data = $this->normalizer->normalizePushDevice($device);
+
+        self::assertSame($device->getId(), $data['id']);
+        self::assertSame('device-token', $data['token']);
+        self::assertSame('web', $data['platform']);
+        self::assertSame('webpush', $data['provider']);
+        self::assertSame('Safari on Mac', $data['deviceName']);
+        self::assertSame($device->getCreatedAt()->format(\DateTimeInterface::ATOM), $data['createdAt']);
+        self::assertSame($device->getUpdatedAt()->format(\DateTimeInterface::ATOM), $data['updatedAt']);
+        self::assertSame($device->getLastSeenAt()->format(\DateTimeInterface::ATOM), $data['lastSeenAt']);
+    }
+
+    #[Test]
     public function normalizeCourseDateForAdminIncludesBookings(): void
     {
         $courseType = new CourseType();
@@ -270,6 +294,130 @@ final class ApiNormalizerTest extends TestCase
         self::assertSame('Caro', $data['trainer']['fullName']);
         self::assertSame('Manuela', $data['courseTrainer']['fullName']);
         self::assertTrue($data['trainerOverridden']);
+    }
+
+    #[Test]
+    public function normalizeCourseDateForCustomerIncludesOwnBookingsAndSubscriptionState(): void
+    {
+        $courseType = (new CourseType())
+            ->setCode('AGI')
+            ->setName('Agility');
+
+        $course = (new Course())
+            ->setDayOfWeek(6)
+            ->setStartTime('09:00')
+            ->setEndTime('10:00')
+            ->setCourseType($courseType);
+
+        $courseDate = (new CourseDate())
+            ->setCourse($course)
+            ->setDate(new \DateTimeImmutable('+2 days', new \DateTimeZone('Europe/Berlin')))
+            ->setStartTime('09:00')
+            ->setEndTime('10:00');
+
+        $customer = (new Customer())
+            ->setName('Anna')
+            ->setEmail('anna@example.com')
+            ->setPassword('x')
+            ->addSubscribedCourse($course);
+        $otherCustomer = (new Customer())
+            ->setName('Bob')
+            ->setEmail('bob@example.com')
+            ->setPassword('x');
+
+        $dog = (new Dog())
+            ->setName('Bella')
+            ->setCustomer($customer);
+        $otherDog = (new Dog())
+            ->setName('Rex')
+            ->setCustomer($otherCustomer);
+
+        $myBooking = (new Booking())
+            ->setCustomer($customer)
+            ->setDog($dog)
+            ->setCourseDate($courseDate);
+        $otherBooking = (new Booking())
+            ->setCustomer($otherCustomer)
+            ->setDog($otherDog)
+            ->setCourseDate($courseDate);
+
+        $courseDate->getBookings()->add($myBooking);
+        $courseDate->getBookings()->add($otherBooking);
+
+        $data = $this->normalizer->normalizeCourseDateForCustomer($courseDate, $customer);
+
+        self::assertTrue($data['booked']);
+        self::assertTrue($data['subscribed']);
+        self::assertFalse($data['bookingWindowClosed']);
+        self::assertCount(1, $data['bookings']);
+        self::assertSame($myBooking->getId(), $data['bookings'][0]['id']);
+        self::assertSame('Bella', $data['bookings'][0]['dogName']);
+    }
+
+    #[Test]
+    public function normalizeCreditTransactionReturnsExpectedKeys(): void
+    {
+        $courseDate = new CourseDate();
+        $contract = new Contract();
+        $transaction = (new CreditTransaction())
+            ->setAmount(3)
+            ->setType(CreditTransactionType::WEEKLY_GRANT)
+            ->setDescription('Weekly grant')
+            ->setCourseDate($courseDate)
+            ->setContract($contract)
+            ->setWeekRef('2026-W14');
+
+        $data = $this->normalizer->normalizeCreditTransaction($transaction);
+
+        self::assertSame($transaction->getId(), $data['id']);
+        self::assertSame(3, $data['amount']);
+        self::assertSame('WEEKLY_GRANT', $data['type']);
+        self::assertSame('Weekly grant', $data['description']);
+        self::assertSame($courseDate->getId(), $data['courseDateId']);
+        self::assertSame($contract->getId(), $data['contractId']);
+        self::assertSame('2026-W14', $data['weekRef']);
+        self::assertSame($transaction->getCreatedAt()->format(\DateTimeInterface::ATOM), $data['createdAt']);
+    }
+
+    #[Test]
+    public function normalizeBookingIncludesNestedCourseDateAndCancellationState(): void
+    {
+        $courseType = (new CourseType())
+            ->setCode('MH')
+            ->setName('Mensch-Hund');
+        $course = (new Course())
+            ->setDayOfWeek(3)
+            ->setStartTime('18:00')
+            ->setEndTime('19:00')
+            ->setCourseType($courseType);
+        $courseDate = (new CourseDate())
+            ->setCourse($course)
+            ->setDate(new \DateTimeImmutable('2026-04-15'))
+            ->setStartTime('18:00')
+            ->setEndTime('19:00');
+        $customer = (new Customer())
+            ->setName('Anna')
+            ->setEmail('anna@example.com')
+            ->setPassword('x');
+        $dog = (new Dog())
+            ->setName('Bella')
+            ->setCustomer($customer);
+
+        $booking = (new Booking())
+            ->setCustomer($customer)
+            ->setDog($dog)
+            ->setCourseDate($courseDate)
+            ->setCancelledAt(new \DateTimeImmutable('2026-04-14T10:00:00+02:00'));
+
+        $data = $this->normalizer->normalizeBooking($booking);
+
+        self::assertSame($booking->getId(), $data['id']);
+        self::assertSame($customer->getId(), $data['customerId']);
+        self::assertSame($dog->getId(), $data['dogId']);
+        self::assertSame($courseDate->getId(), $data['courseDateId']);
+        self::assertFalse($data['active']);
+        self::assertSame('MH', $data['courseDate']['courseType']['code']);
+        self::assertSame($booking->getCancelledAt()?->format(\DateTimeInterface::ATOM), $data['cancelledAt']);
     }
 
     #[Test]

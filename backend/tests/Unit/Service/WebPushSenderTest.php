@@ -14,6 +14,15 @@ use Psr\Log\NullLogger;
 final class WebPushSenderTest extends TestCase
 {
     #[Test]
+    public function itOnlySupportsWebpushProvider(): void
+    {
+        $sender = new WebPushSender(new NullLogger());
+
+        self::assertTrue($sender->supports('webpush'));
+        self::assertFalse($sender->supports('apns'));
+    }
+
+    #[Test]
     public function itSkipsWhenVapidConfigurationIsMissing(): void
     {
         $device = (new PushDevice())

@@ -1,0 +1,265 @@
+import { mount } from '@vue/test-utils';
+import { vi } from 'vitest';
+import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
+import { flushPromises, installNuxtGlobals, namedStub } from '../nuxt/page-test-utils';
+
+export const apiGetMock = vi.fn();
+export const apiPostMock = vi.fn();
+export const apiPutMock = vi.fn();
+export const apiDelMock = vi.fn();
+export const toastAddMock = vi.fn();
+export const navigateToMock = vi.fn();
+
+export const recurrenceCourseType = {
+    id: 'course-type-1',
+    code: 'AGI',
+    name: 'Agility',
+    recurrenceKind: 'RECURRING',
+};
+
+export const trainer = {
+    id: 'trainer-1',
+    username: 'lea',
+    fullName: 'Lea',
+    phone: null,
+};
+
+export const course = {
+    id: 'course-1',
+    dayOfWeek: 2,
+    startTime: '10:00',
+    endTime: '11:00',
+    durationMinutes: 60,
+    type: recurrenceCourseType,
+    level: 1,
+    trainer,
+    comment: 'Bring treats',
+    archived: false,
+    subscriberCount: 2,
+    subscribers: [{ id: 'customer-1', name: 'Max' }],
+};
+
+export const archivedCourse = {
+    ...course,
+    id: 'course-archived',
+    archived: true,
+};
+
+export const notification = {
+    id: 'notification-1',
+    title: 'Hinweis',
+    message: 'Bitte pünktlich sein.',
+    authorName: 'Lea',
+    authorId: 'trainer-1',
+    isGlobal: false,
+    courses: [],
+    courseIds: ['course-1'],
+    pinnedUntil: '2026-04-10T23:59:59',
+    isPinned: true,
+    createdAt: '2026-04-01T10:00:00+02:00',
+};
+
+export const activeContract = {
+    id: 'contract-1',
+    contractGroupId: 'group-1',
+    version: 1,
+    dogId: 'dog-1',
+    dogName: 'Rex',
+    customerId: 'customer-1',
+    customerName: 'Max',
+    startDate: '2026-04-01',
+    endDate: null,
+    price: '89.00',
+    priceMonthly: '89.00',
+    type: 'PERPETUAL',
+    coursesPerWeek: 1,
+    state: 'ACTIVE',
+    createdAt: '2026-03-01T10:00:00+02:00',
+};
+
+export const pendingContract = {
+    ...activeContract,
+    id: 'contract-2',
+    state: 'REQUESTED',
+    price: '79.00',
+    priceMonthly: '79.00',
+};
+
+export const customerRecord = {
+    id: 'customer-1',
+    name: 'Max',
+    email: 'max@example.com',
+    createdAt: '2026-04-01T10:00:00+02:00',
+    address: { street: null, postalCode: '12345', city: 'Berlin', country: null },
+    bankAccount: { iban: null, bic: null, accountHolder: null },
+};
+
+export const todayCourseDate = {
+    id: 'course-date-1',
+    courseId: 'course-1',
+    courseType: { code: 'AGI', name: 'Agility', recurrenceKind: 'RECURRING' },
+    level: 1,
+    date: '2026-04-04',
+    dayOfWeek: 6,
+    startTime: '09:00',
+    endTime: '10:00',
+    trainer: trainer,
+    cancelled: false,
+    bookingCount: 1,
+    createdAt: '2026-04-01T10:00:00+02:00',
+    booked: false,
+    bookings: [],
+    subscriberCount: 2,
+    subscribers: [{ id: 'customer-1', name: 'Max' }],
+};
+
+export function installAdminGlobals() {
+    installNuxtGlobals();
+    vi.stubGlobal('useApi', () => ({
+        get: apiGetMock,
+        post: apiPostMock,
+        put: apiPutMock,
+        del: apiDelMock,
+    }));
+    vi.stubGlobal('useToast', () => ({
+        add: toastAddMock,
+    }));
+    vi.stubGlobal('navigateTo', navigateToMock);
+    vi.stubGlobal('useHelpers', () => ({
+        dayName: (dayOfWeek: number) => ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][dayOfWeek] || '',
+        todayIso: () => '2026-04-04',
+        formatDate: (value: string) => `formatted:${value}`,
+        toMonthEndIso: (value: string) => value.slice(0, 8) + '30',
+        isLastOfMonth: (value: string) => value.endsWith('-30'),
+        getWeekMonday: () => '2026-03-30',
+    }));
+    vi.stubGlobal('useFormFeedback', () => createFormFeedbackState());
+    vi.stubGlobal('extractApiErrorMessage', (cause: unknown, fallback: string) =>
+        cause instanceof Error ? cause.message : fallback,
+    );
+}
+
+export async function mountCourseTypesPage() {
+    const Page = (await import('~/modules/admin/course-types/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                CourseTypesList: namedStub('CourseTypesList', ['loading', 'courseTypes', 'columns'], ['edit', 'delete']),
+                CourseTypeFormModal: namedStub(
+                    'CourseTypeFormModal',
+                    ['modelValue', 'editing', 'form', 'recurrenceOptions', 'fieldErrors', 'formError', 'saving'],
+                    ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountNotificationsPage() {
+    const Page = (await import('~/modules/admin/notifications/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                NotificationsList: namedStub(
+                    'NotificationsList',
+                    ['loading', 'notifications', 'columns', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalNotifications'],
+                    ['edit', 'delete', 'update:current-page'],
+                ),
+                NotificationFormModal: namedStub(
+                    'NotificationFormModal',
+                    ['modelValue', 'editing', 'form', 'courseOptions', 'fieldErrors', 'formError', 'saving'],
+                    ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountContractsPage() {
+    const Page = (await import('~/modules/admin/contracts/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                ContractsTable: namedStub(
+                    'ContractsTable',
+                    ['loading', 'contracts', 'sort', 'columns', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalContracts'],
+                    ['approve', 'decline', 'cancel', 'update:sort', 'update:current-page'],
+                ),
+                CancelModal: namedStub(
+                    'CancelModal',
+                    ['modelValue', 'contract', 'endDate', 'endDateError', 'formError', 'saving'],
+                    ['cancel', 'submit', 'normalize-end-date', 'clear-end-date-error', 'update:end-date', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountCoursesPage() {
+    const Page = (await import('~/modules/admin/courses/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                AdminCourseTable: namedStub('AdminCourseTable', ['courses', 'sort'], ['edit', 'toggle-archive', 'update:sort']),
+                AdminCourseListMobile: namedStub('AdminCourseListMobile', ['courses'], ['edit', 'toggle-archive']),
+                AdminCourseFormModal: namedStub(
+                    'AdminCourseFormModal',
+                    ['modelValue', 'editingCourse', 'form', 'dayOptions', 'trainerOptions', 'showScheduleHint', 'scheduleHintText', 'formError', 'fieldErrors', 'saving'],
+                    ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
+                ),
+                AdminCourseArchiveModal: namedStub(
+                    'AdminCourseArchiveModal',
+                    ['modelValue', 'course', 'removeFromDate', 'minDate', 'error', 'archiving'],
+                    ['cancel', 'confirm', 'update:remove-from-date', 'update:modelValue'],
+                ),
+                AppSkeletonCollection: namedStub('AppSkeletonCollection'),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountCustomersPage() {
+    const Page = (await import('~/modules/admin/customers/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                CustomersList: namedStub(
+                    'CustomersList',
+                    ['loading', 'customers', 'sort', 'columns', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalCustomers'],
+                    ['select', 'update:sort', 'update:current-page'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountDashboardPage() {
+    const Page = (await import('~/modules/admin/dashboard/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                StatsGrid: namedStub('StatsGrid', ['loading', 'stats']),
+                PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts']),
+                TodayScheduleCard: namedStub('TodayScheduleCard', ['loading', 'courseDates']),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}

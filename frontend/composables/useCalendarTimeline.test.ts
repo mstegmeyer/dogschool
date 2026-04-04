@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CourseDate } from '~/types';
-import { buildCalendarTimeline, parseTimeToMinutes, type CalendarTimelineDay } from '~/composables/useCalendarTimeline';
+import { buildCalendarTimeline, parseTimeToMinutes, type CalendarTimelineDay } from './useCalendarTimeline';
 
 function makeCourseDate(overrides: Partial<CourseDate> = {}): CourseDate {
     return {

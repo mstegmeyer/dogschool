@@ -17,7 +17,7 @@ function createSubscription(endpoint: string, keyBytes: number[]): PushSubscript
 }
 
 async function loadComposable() {
-    const mod = await import('../../composables/usePushNotifications');
+    const mod = await import('./usePushNotifications');
     return mod.usePushNotifications();
 }
 

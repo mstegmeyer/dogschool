@@ -13,6 +13,7 @@ use App\Repository\CourseRepository;
 use App\Repository\CourseTypeRepository;
 use App\Repository\UserRepository;
 use App\Service\ApiNormalizer;
+use App\Support\AppClock;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -185,7 +186,7 @@ final class CourseController extends AbstractController
             return $this->json(['error' => 'removeFromDate must be a valid date in YYYY-MM-DD format.'], Response::HTTP_BAD_REQUEST);
         }
 
-        $today = new \DateTimeImmutable('today', $timezone);
+        $today = AppClock::today($timezone);
         if ($removeFromDate < $today) {
             return $this->json(['error' => 'removeFromDate cannot be in the past.'], Response::HTTP_BAD_REQUEST);
         }

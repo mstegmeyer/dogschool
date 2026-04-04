@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard v-if="selectedDate">
+    <UCard v-if="selectedDate" data-testid="calendar-detail-modal">
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-slate-800">
@@ -57,6 +57,7 @@
           <UFormGroup label="Trainer für diesen Termin">
             <div class="flex flex-col gap-2 sm:flex-row">
               <USelectMenu
+                data-testid="calendar-detail-trainer"
                 :model-value="selectedTrainerId"
                 :options="trainerOptions"
                 value-attribute="value"
@@ -64,6 +65,7 @@
                 @update:model-value="emit('update:selectedTrainerId', $event)"
               />
               <UButton
+                data-testid="save-calendar-trainer"
                 label="Trainer speichern"
                 :loading="savingTrainer"
                 :disabled="selectedTrainerId === (selectedDate.trainer?.id || '')"
@@ -93,12 +95,13 @@
 
       <div v-if="!selectedDate.cancelled" class="mt-4 space-y-3 border-t border-slate-100 pt-4">
         <div class="flex items-center gap-3">
-          <UToggle :model-value="cancelNotify" @update:model-value="emit('update:cancelNotify', $event)" />
+          <UToggle data-testid="calendar-cancel-notify" :model-value="cancelNotify" @update:model-value="emit('update:cancelNotify', $event)" />
           <span class="text-sm text-slate-600">Mitteilung an Kursteilnehmer senden</span>
         </div>
         <template v-if="cancelNotify">
           <UFormGroup label="Titel">
             <UInput
+              data-testid="calendar-cancel-title"
               :model-value="cancelNotifyTitle"
               placeholder="Betreff"
               @update:model-value="emit('update:cancelNotifyTitle', $event)"
@@ -106,6 +109,7 @@
           </UFormGroup>
           <UFormGroup label="Nachricht">
             <UTextarea
+              data-testid="calendar-cancel-message"
               :model-value="cancelNotifyMessage"
               placeholder="Grund für die Absage…"
               :rows="3"
@@ -119,6 +123,7 @@
         <div class="flex justify-end gap-2">
           <UButton
             v-if="!selectedDate.cancelled"
+            data-testid="cancel-calendar-date"
             color="red"
             variant="soft"
             label="Absagen"
@@ -127,6 +132,7 @@
           />
           <UButton
             v-else
+            data-testid="reactivate-calendar-date"
             color="primary"
             variant="soft"
             label="Reaktivieren"

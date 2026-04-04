@@ -14,7 +14,7 @@
       </div>
     </UCard>
   </div>
-  <div v-else-if="dogs.length === 0" class="py-12 text-center">
+  <div v-else-if="dogs.length === 0" data-testid="dogs-empty-state" class="py-12 text-center">
     <UIcon name="i-heroicons-heart" class="mx-auto mb-3 h-12 w-12 text-slate-300" />
     <p class="text-slate-500">Du hast noch keinen Hund registriert.</p>
     <UButton class="mt-4" label="Jetzt hinzufügen" @click="emit('add')" />

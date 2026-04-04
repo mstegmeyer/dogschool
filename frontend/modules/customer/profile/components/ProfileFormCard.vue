@@ -8,7 +8,7 @@
       <USkeleton class="h-10 w-28 rounded-md" />
     </div>
   </UCard>
-  <UCard v-else>
+  <UCard v-else data-testid="profile-form-card">
     <form class="space-y-4" @submit.prevent="emit('submit')">
       <UFormGroup label="Name" :error="fieldErrors.name">
         <UInput v-model="form.name" @update:model-value="emit('clear-field-error', 'name')" />
@@ -52,7 +52,7 @@
       </UFormGroup>
 
       <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
-      <UButton type="submit" :loading="saving" label="Speichern" />
+      <UButton data-testid="save-profile" type="submit" :loading="saving" label="Speichern" />
     </form>
   </UCard>
 </template>

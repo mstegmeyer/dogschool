@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Support\AppClock;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -56,7 +57,7 @@ class CourseDate
     public function __construct()
     {
         $this->id = Uuid::v7()->toRfc4122();
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = AppClock::now();
         $this->bookings = new ArrayCollection();
     }
 
@@ -176,6 +177,6 @@ class CourseDate
     {
         $tz = new \DateTimeZone(self::TIMEZONE);
 
-        return new \DateTimeImmutable('now', $tz) > $this->startsAt()->modify('+24 hours');
+        return AppClock::now($tz) > $this->startsAt()->modify('+24 hours');
     }
 }

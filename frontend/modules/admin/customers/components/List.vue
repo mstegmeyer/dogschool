@@ -15,6 +15,7 @@
           v-for="customer in customers"
           :key="customer.id"
           type="button"
+          :data-testid="`customer-row-${customer.id}`"
           class="w-full rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300"
           @click="emit('select', customer)"
         >
@@ -39,6 +40,9 @@
           @select="emit('select', $event)"
           @update:sort="emit('update:sort', $event)"
         >
+          <template #name-data="{ row }">
+            <span :data-testid="`customer-name-${row.id}`" class="font-medium text-slate-800">{{ row.name }}</span>
+          </template>
           <template #createdAt-data="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>

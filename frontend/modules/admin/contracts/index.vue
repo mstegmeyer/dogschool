@@ -2,7 +2,7 @@
   <div>
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Verträge</h1>
-      <USelectMenu v-model="stateFilter" :options="stateOptions" value-attribute="value" class="w-full sm:w-44" />
+      <USelectMenu data-testid="contract-state-filter" v-model="stateFilter" :options="stateOptions" value-attribute="value" class="w-full sm:w-44" />
     </div>
 
     <ContractsTable

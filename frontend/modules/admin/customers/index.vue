@@ -2,7 +2,7 @@
   <div>
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Kunden</h1>
-      <UInput v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Suchen…" class="w-full sm:w-64" />
+      <UInput data-testid="customer-search" v-model="search" icon="i-heroicons-magnifying-glass" placeholder="Suchen…" class="w-full sm:w-64" />
     </div>
 
     <CustomersList

@@ -1,0 +1,17 @@
+{
+  "name": "komm-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:functional",
+    "test:functional": "playwright test --project=functional",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:update": "playwright test --project=visual --update-snapshots",
+    "playwright:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
+}

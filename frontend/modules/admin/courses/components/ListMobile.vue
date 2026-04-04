@@ -3,6 +3,7 @@
     <div
       v-for="course in courses"
       :key="course.id"
+      :data-testid="`course-card-${course.id}`"
       class="rounded-lg border border-slate-200 bg-white p-4"
     >
       <div class="flex items-start justify-between gap-3">
@@ -33,8 +34,9 @@
       </div>
       <p v-if="course.comment" class="mt-3 text-sm text-slate-600">{{ course.comment }}</p>
       <div class="mt-4 grid grid-cols-2 gap-2">
-        <UButton size="sm" variant="soft" label="Bearbeiten" @click="emit('edit', course)" />
+        <UButton :data-testid="`edit-course-${course.id}`" size="sm" variant="soft" label="Bearbeiten" @click="emit('edit', course)" />
         <UButton
+          :data-testid="`toggle-archive-course-${course.id}`"
           size="sm"
           :color="course.archived ? 'primary' : 'gray'"
           variant="ghost"

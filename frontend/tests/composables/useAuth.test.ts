@@ -69,6 +69,10 @@ describe('useAuth', () => {
     const { loginCustomer, token, role, isCustomer, user } = useAuth()
     await loginCustomer('max@example.com', 'secret')
 
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/customer/login', {
+      method: 'POST',
+      body: { email: 'max@example.com', username: 'max@example.com', password: 'secret' },
+    })
     expect(token.value).toBe('customer-jwt')
     expect(role.value).toBe('customer')
     expect(isCustomer.value).toBe(true)
@@ -132,6 +136,10 @@ describe('useAuth', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/customer/register', {
       method: 'POST',
       body: { email: 'new@example.com', password: 'pass', name: 'New' },
+    })
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/customer/login', {
+      method: 'POST',
+      body: { email: 'new@example.com', username: 'new@example.com', password: 'pass' },
     })
     expect(token.value).toBe('new-user-jwt')
     expect(isCustomer.value).toBe(true)

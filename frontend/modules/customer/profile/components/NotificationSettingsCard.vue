@@ -14,7 +14,7 @@
       </div>
     </div>
   </UCard>
-  <UCard v-else>
+  <UCard v-else data-testid="notification-settings-card">
     <div class="space-y-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -39,12 +39,14 @@
 
       <div class="flex flex-wrap gap-3">
         <UButton
+          data-testid="enable-notifications"
           v-if="canEnable"
           label="Benachrichtigungen aktivieren"
           :loading="saving"
           @click="emit('enable')"
         />
         <UButton
+          data-testid="disable-notifications"
           v-if="canDisable"
           label="Benachrichtigungen deaktivieren"
           color="gray"

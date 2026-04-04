@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-sand-50 overflow-x-hidden">
     <!-- Desktop sidebar -->
-    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-sand-100 border-r border-sand-200 flex-col z-10">
+    <aside data-testid="customer-desktop-sidebar" class="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-sand-100 border-r border-sand-200 flex-col z-10">
       <div class="px-6 py-5 border-b border-sand-200">
         <NuxtLink to="/customer" class="block">
           <AppLogo tone="on-light" />
@@ -26,6 +26,7 @@
           <p class="text-xs text-sand-500 truncate">{{ user?.email }}</p>
         </div>
         <UButton
+          data-testid="customer-logout"
           color="gray"
           variant="ghost"
           block
@@ -39,13 +40,14 @@
 
     <!-- Mobile slideover -->
     <USlideover v-model="mobileMenuOpen" side="left" :ui="{ width: 'w-[min(16rem,calc(100vw-2rem))]' }">
-      <div class="mobile-shell-drawer flex flex-col h-full bg-sand-100">
+      <div data-testid="customer-mobile-menu" class="mobile-shell-drawer flex flex-col h-full bg-sand-100">
         <div class="flex items-start justify-between gap-3 px-6 py-5 border-b border-sand-200">
           <NuxtLink to="/customer" class="block min-w-0" @click="mobileMenuOpen = false">
             <AppLogo tone="on-light" />
             <span class="block text-xs text-sand-500 mt-1.5">Mein Bereich</span>
           </NuxtLink>
           <UButton
+            data-testid="customer-logout"
             color="gray"
             variant="ghost"
             icon="i-heroicons-x-mark"
@@ -89,10 +91,12 @@
     <!-- Mobile top bar -->
     <header class="mobile-shell-header lg:hidden fixed top-0 inset-x-0 bg-sand-100 border-b border-sand-200 flex items-center z-10">
       <UButton
+        data-testid="customer-mobile-menu-toggle"
         color="gray"
         variant="ghost"
         icon="i-heroicons-bars-3"
         class="shrink-0"
+        aria-label="Menü öffnen"
         @click="mobileMenuOpen = true"
       />
       <AppLogo tone="on-light" size="sm" class="ml-3 h-6 max-w-[7.5rem] shrink min-w-0" />

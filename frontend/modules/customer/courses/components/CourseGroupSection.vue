@@ -19,6 +19,7 @@
       <div
         v-for="course in group.courses"
         :key="course.id"
+        :data-testid="`course-${variant}-card-${course.id}`"
         class="space-y-3 p-3 transition hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-komm-300"
         role="button"
         tabindex="0"
@@ -50,6 +51,7 @@
           </div>
         </div>
         <UButton
+          :data-testid="`course-${variant}-subscription-action-${course.id}`"
           :color="isSubscribed(course.id) ? 'red' : undefined"
           :variant="isSubscribed(course.id) ? 'soft' : 'solid'"
           block
@@ -73,6 +75,7 @@
           <tr
             v-for="course in group.courses"
             :key="course.id"
+            :data-testid="`course-${variant}-row-${course.id}`"
             class="border-b border-slate-50 last:border-0 hover:bg-slate-50/80 focus-within:bg-slate-50/80"
             tabindex="0"
             @click="emit('select', course)"
@@ -98,6 +101,7 @@
             </td>
             <td class="whitespace-nowrap px-2 py-1 text-right">
               <UButton
+                :data-testid="`course-${variant}-subscription-action-${course.id}`"
                 :color="isSubscribed(course.id) ? 'red' : undefined"
                 :variant="isSubscribed(course.id) ? 'soft' : 'solid'"
                 size="xs"

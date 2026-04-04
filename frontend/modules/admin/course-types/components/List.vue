@@ -18,6 +18,7 @@
         <div
           v-for="courseType in courseTypes"
           :key="courseType.id"
+          :data-testid="`course-type-card-${courseType.id}`"
           class="rounded-lg border border-slate-200 bg-white p-4"
         >
           <div class="flex items-start justify-between gap-3">
@@ -36,8 +37,8 @@
               </div>
             </div>
             <div class="flex gap-1">
-              <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', courseType)" />
-              <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', courseType)" />
+              <UButton :data-testid="`edit-course-type-mobile-${courseType.id}`" icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', courseType)" />
+              <UButton :data-testid="`delete-course-type-mobile-${courseType.id}`" icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', courseType)" />
             </div>
           </div>
         </div>
@@ -58,7 +59,7 @@
             </span>
           </template>
           <template #name-data="{ row }">
-            <span class="font-medium text-slate-800">{{ row.name }}</span>
+            <span :data-testid="`course-type-row-${row.id}`" class="font-medium text-slate-800">{{ row.name }}</span>
           </template>
           <template #recurrenceKind-data="{ row }">
             <span
@@ -70,8 +71,8 @@
           </template>
           <template #actions-data="{ row }">
             <div class="flex shrink-0 justify-end gap-0.5">
-              <UButton icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', row)" />
-              <UButton icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', row)" />
+              <UButton :data-testid="`edit-course-type-${row.id}`" icon="i-heroicons-pencil" size="xs" variant="ghost" @click="emit('edit', row)" />
+              <UButton :data-testid="`delete-course-type-${row.id}`" icon="i-heroicons-trash" size="xs" variant="ghost" color="red" @click="emit('delete', row)" />
             </div>
           </template>
         </UTable>

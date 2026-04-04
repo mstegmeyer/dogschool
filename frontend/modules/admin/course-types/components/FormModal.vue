@@ -1,6 +1,6 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="course-type-form-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">
           {{ editing ? 'Kursart bearbeiten' : 'Neue Kursart' }}

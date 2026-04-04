@@ -3,7 +3,7 @@
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-2xl font-bold text-slate-800">Kurse</h1>
       <div class="flex flex-col gap-2 sm:flex-row">
-        <USelectMenu v-model="archiveFilter" :options="filterOptions" value-attribute="value" class="w-full sm:w-40" />
+        <USelectMenu data-testid="course-archive-filter" v-model="archiveFilter" :options="filterOptions" value-attribute="value" class="w-full sm:w-40" />
         <UButton icon="i-heroicons-plus" label="Neuer Kurs" class="justify-center" @click="openCreateModal" />
       </div>
     </div>
@@ -248,8 +248,8 @@ function openArchiveModal(course: Course): void {
   showArchiveModal.value = true
 }
 
-function closeArchiveModal(): void {
-  if (archiving.value) return
+function closeArchiveModal(force = false): void {
+  if (archiving.value && !force) return
 
   showArchiveModal.value = false
   archiveCourse.value = null
@@ -345,7 +345,7 @@ async function confirmArchive(): Promise<void> {
       color: 'green',
     })
 
-    closeArchiveModal()
+    closeArchiveModal(true)
     await loadCourses()
   } catch (error) {
     archiveError.value = resolveArchiveError(error)

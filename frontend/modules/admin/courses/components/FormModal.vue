@@ -1,12 +1,13 @@
 <template>
   <UModal :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)">
-    <UCard>
+    <UCard data-testid="course-form-modal">
       <template #header>
         <h3 class="font-semibold text-slate-800">{{ editingCourse ? 'Kurs bearbeiten' : 'Neuer Kurs' }}</h3>
       </template>
       <form class="space-y-4" @submit.prevent="emit('submit')">
         <UFormGroup label="Kurstyp (Code)" :error="fieldErrors.typeCode">
           <UInput
+            data-testid="course-form-type-code"
             v-model="form.typeCode"
             placeholder="z.B. MH, JUHU, AGI"
             required
@@ -16,6 +17,7 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <UFormGroup label="Wochentag" :error="fieldErrors.dayOfWeek">
             <USelectMenu
+              data-testid="course-form-day-of-week"
               v-model="form.dayOfWeek"
               :options="dayOptions"
               value-attribute="value"
@@ -24,6 +26,7 @@
           </UFormGroup>
           <UFormGroup label="Stufe (0-4)" :error="fieldErrors.level">
             <UInput
+              data-testid="course-form-level"
               v-model.number="form.level"
               type="number"
               min="0"
@@ -35,6 +38,7 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <UFormGroup label="Startzeit" :error="fieldErrors.startTime">
             <UInput
+              data-testid="course-form-start-time"
               v-model="form.startTime"
               type="time"
               required
@@ -43,6 +47,7 @@
           </UFormGroup>
           <UFormGroup label="Endzeit" :error="fieldErrors.endTime">
             <UInput
+              data-testid="course-form-end-time"
               v-model="form.endTime"
               type="time"
               required
@@ -52,6 +57,7 @@
         </div>
         <UFormGroup label="Trainer" :error="fieldErrors.trainerId">
           <USelectMenu
+            data-testid="course-form-trainer"
             v-model="form.trainerId"
             :options="trainerOptions"
             value-attribute="value"
@@ -67,6 +73,7 @@
         </div>
         <UFormGroup label="Kommentar" :error="fieldErrors.comment">
           <UTextarea
+            data-testid="course-form-comment"
             v-model="form.comment"
             placeholder="Optionaler Kommentar"
             @update:model-value="emit('clear-field-error', 'comment')"
@@ -75,7 +82,7 @@
         <UAlert v-if="formError" color="red" variant="soft" :title="formError" icon="i-heroicons-exclamation-triangle" />
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" label="Abbrechen" @click="emit('cancel')" />
-          <UButton type="submit" :loading="saving" label="Speichern" />
+          <UButton data-testid="save-course" type="submit" :loading="saving" label="Speichern" />
         </div>
       </form>
     </UCard>

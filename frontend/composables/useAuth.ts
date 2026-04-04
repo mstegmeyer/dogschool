@@ -45,7 +45,7 @@ export const useAuth = () => {
   async function loginCustomer(email: string, password: string) {
     const data = await $fetch<{ token: string }>('/api/customer/login', {
       method: 'POST',
-      body: { email, password },
+      body: { email, username: email, password },
     })
     token.value = data.token
     role.value = 'customer'

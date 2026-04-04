@@ -14,6 +14,7 @@
         <div
           v-for="contract in contracts"
           :key="contract.id"
+          :data-testid="`contract-card-${contract.id}`"
           class="rounded-lg border border-slate-200 bg-white p-4"
         >
           <div class="flex items-start justify-between gap-3">
@@ -47,10 +48,11 @@
           </div>
           <div class="mt-4 flex flex-wrap gap-2">
             <template v-if="contract.state === 'REQUESTED'">
-              <UButton size="sm" color="primary" variant="soft" label="Genehmigen" @click="emit('approve', contract)" />
-              <UButton size="sm" color="red" variant="soft" label="Ablehnen" @click="emit('decline', contract)" />
+              <UButton :data-testid="`approve-contract-mobile-${contract.id}`" size="sm" color="primary" variant="soft" label="Genehmigen" @click="emit('approve', contract)" />
+              <UButton :data-testid="`decline-contract-mobile-${contract.id}`" size="sm" color="red" variant="soft" label="Ablehnen" @click="emit('decline', contract)" />
             </template>
             <UButton
+              :data-testid="`cancel-contract-mobile-${contract.id}`"
               v-else-if="contract.state === 'ACTIVE'"
               size="sm"
               color="red"
@@ -71,7 +73,7 @@
           @update:sort="emit('update:sort', $event)"
         >
           <template #participant-data="{ row }">
-            <div class="min-w-[8rem] max-w-[14rem] py-0.5">
+            <div :data-testid="`contract-row-${row.id}`" class="min-w-[8rem] max-w-[14rem] py-0.5">
               <p class="truncate font-medium text-slate-800" :title="row.dogName || ''">
                 {{ row.dogName || '–' }}
               </p>
@@ -103,10 +105,11 @@
           <template #actions-data="{ row }">
             <div class="flex min-w-[9rem] flex-wrap justify-end gap-1 whitespace-nowrap">
               <template v-if="row.state === 'REQUESTED'">
-                <UButton size="xs" color="primary" variant="soft" label="Genehmigen" @click="emit('approve', row)" />
-                <UButton size="xs" color="red" variant="soft" label="Ablehnen" @click="emit('decline', row)" />
+                <UButton :data-testid="`approve-contract-${row.id}`" size="xs" color="primary" variant="soft" label="Genehmigen" @click="emit('approve', row)" />
+                <UButton :data-testid="`decline-contract-${row.id}`" size="xs" color="red" variant="soft" label="Ablehnen" @click="emit('decline', row)" />
               </template>
               <UButton
+                :data-testid="`cancel-contract-${row.id}`"
                 v-else-if="row.state === 'ACTIVE'"
                 size="xs"
                 color="red"

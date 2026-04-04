@@ -7,6 +7,7 @@ namespace App\Repository;
 use App\Entity\Course;
 use App\Entity\CourseDate;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -27,8 +28,8 @@ class CourseDateRepository extends ServiceEntityRepository
         $rows = $this->createQueryBuilder('cd')
             ->andWhere('cd.date >= :from')
             ->andWhere('cd.date <= :to')
-            ->setParameter('from', $from)
-            ->setParameter('to', $to)
+            ->setParameter('from', $from, Types::DATE_IMMUTABLE)
+            ->setParameter('to', $to, Types::DATE_IMMUTABLE)
             ->addOrderBy('cd.date', 'ASC')
             ->addOrderBy('cd.startTime', 'ASC')
             ->getQuery()
@@ -57,8 +58,8 @@ class CourseDateRepository extends ServiceEntityRepository
             ->andWhere('cd.date >= :from')
             ->andWhere('cd.date <= :to')
             ->andWhere('cd.course = :course')
-            ->setParameter('from', $from)
-            ->setParameter('to', $to)
+            ->setParameter('from', $from, Types::DATE_IMMUTABLE)
+            ->setParameter('to', $to, Types::DATE_IMMUTABLE)
             ->setParameter('course', $course)
             ->addOrderBy('cd.date', 'ASC')
             ->addOrderBy('cd.startTime', 'ASC')
@@ -89,9 +90,9 @@ class CourseDateRepository extends ServiceEntityRepository
             ->andWhere('(cd.date > :fromDate OR (cd.date = :fromDate AND cd.startTime >= :fromTime))')
             ->andWhere('cd.date <= :toDate')
             ->setParameter('course', $course)
-            ->setParameter('fromDate', $from->setTime(0, 0, 0))
+            ->setParameter('fromDate', $from->setTime(0, 0, 0), Types::DATE_IMMUTABLE)
             ->setParameter('fromTime', $from->format('H:i'))
-            ->setParameter('toDate', $to->setTime(23, 59, 59))
+            ->setParameter('toDate', $to->setTime(23, 59, 59), Types::DATE_IMMUTABLE)
             ->addOrderBy('cd.date', 'ASC')
             ->addOrderBy('cd.startTime', 'ASC')
             ->getQuery()
@@ -128,7 +129,7 @@ class CourseDateRepository extends ServiceEntityRepository
             ->andWhere('cd.course = :course')
             ->andWhere('cd.date = :date')
             ->setParameter('course', $course)
-            ->setParameter('date', $date)
+            ->setParameter('date', $date, Types::DATE_IMMUTABLE)
             ->getQuery()
             ->getSingleScalarResult() > 0;
     }

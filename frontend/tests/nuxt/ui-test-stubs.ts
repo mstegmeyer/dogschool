@@ -8,6 +8,7 @@ export function createFormFeedbackState() {
 
     return {
         formError,
+        fieldErrors,
         clearFormErrors() {
             fieldErrors.value = {};
             formError.value = '';
@@ -190,6 +191,34 @@ export const UIconStub = defineComponent({
     },
 });
 
+export const UButtonGroupStub = defineComponent({
+    name: 'u-button-group-stub',
+    setup(_, { slots }) {
+        return () => h('div', slots.default?.());
+    },
+});
+
+export const UPaginationStub = defineComponent({
+    name: 'u-pagination-stub',
+    emits: ['update:modelValue'],
+    props: {
+        modelValue: { type: Number, default: 1 },
+    },
+    setup(props, { emit }) {
+        return () => h('button', {
+            type: 'button',
+            onClick: () => emit('update:modelValue', props.modelValue + 1),
+        }, 'Next page');
+    },
+});
+
+export const USkeletonStub = defineComponent({
+    name: 'u-skeleton-stub',
+    setup() {
+        return () => h('div', 'skeleton');
+    },
+});
+
 export const NuxtLinkStub = defineComponent({
     name: 'nuxt-link-stub',
     props: {
@@ -227,11 +256,14 @@ export const uiPageStubs = {
     UAlert: UAlertStub,
     UBadge: UBadgeStub,
     UButton: UButtonStub,
+    UButtonGroup: UButtonGroupStub,
     UCard: UCardStub,
     UFormGroup: UFormGroupStub,
     UIcon: UIconStub,
     UInput: UInputStub,
     UModal: UModalStub,
+    UPagination: UPaginationStub,
     USelectMenu: USelectMenuStub,
+    USkeleton: USkeletonStub,
     UTabs: UTabsStub,
 };

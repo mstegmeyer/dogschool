@@ -4,7 +4,7 @@ import {
     installCustomerGlobals,
     mountNotificationsPage,
     notification,
-} from './customer-page-helpers';
+} from '~/tests/modules/customer-page-helpers';
 
 describe('customer notifications page', () => {
     beforeEach(() => {

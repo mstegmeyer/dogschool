@@ -8,8 +8,8 @@ import {
     installAdminGlobals,
     mountNotificationsPage,
     notification,
-} from './admin-page-helpers';
-import { flushPromises } from '../nuxt/page-test-utils';
+} from '~/tests/modules/admin-page-helpers';
+import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
 describe('admin notifications page', () => {
     beforeEach(() => {

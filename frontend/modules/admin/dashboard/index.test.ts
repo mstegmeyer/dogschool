@@ -8,7 +8,7 @@ import {
     mountDashboardPage,
     pendingContract,
     todayCourseDate,
-} from './admin-page-helpers';
+} from '~/tests/modules/admin-page-helpers';
 
 describe('admin dashboard page', () => {
     beforeEach(() => {

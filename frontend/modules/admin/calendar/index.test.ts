@@ -1,13 +1,13 @@
 import { computed, ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { namedStub, createCalendarTimelineStub, flushPromises } from '../nuxt/page-test-utils';
+import { namedStub, createCalendarTimelineStub, flushPromises } from '~/tests/nuxt/page-test-utils';
 import {
     apiGetMock,
     baseTrainer,
     installComponentGlobals,
     makeCourseDate,
     mountComponent,
-} from '../components/component-test-helpers';
+} from '~/tests/components/component-test-helpers';
 
 describe('admin calendar page', () => {
     beforeEach(() => {

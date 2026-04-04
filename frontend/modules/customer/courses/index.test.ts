@@ -8,8 +8,8 @@ import {
     installCustomerGlobals,
     mountCoursesPage,
     notification,
-} from './customer-page-helpers';
-import { flushPromises } from '../nuxt/page-test-utils';
+} from '~/tests/modules/customer-page-helpers';
+import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
 describe('customer courses page', () => {
     beforeEach(() => {

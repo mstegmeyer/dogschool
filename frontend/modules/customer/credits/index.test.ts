@@ -4,7 +4,7 @@ import {
     creditTransaction,
     installCustomerGlobals,
     mountCreditsPage,
-} from './customer-page-helpers';
+} from '~/tests/modules/customer-page-helpers';
 
 describe('customer credits page', () => {
     beforeEach(() => {

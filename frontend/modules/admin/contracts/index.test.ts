@@ -5,8 +5,8 @@ import {
     apiPostMock,
     installAdminGlobals,
     mountContractsPage,
-} from './admin-page-helpers';
-import { flushPromises } from '../nuxt/page-test-utils';
+} from '~/tests/modules/admin-page-helpers';
+import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
 describe('admin contracts page', () => {
     beforeEach(() => {

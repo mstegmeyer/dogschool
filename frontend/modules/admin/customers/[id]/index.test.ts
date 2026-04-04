@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { namedStub, flushPromises } from '../nuxt/page-test-utils';
+import { namedStub, flushPromises } from '~/tests/nuxt/page-test-utils';
 import {
     apiGetMock,
     apiPostMock,
@@ -8,7 +8,7 @@ import {
     installComponentGlobals,
     mountComponent,
     toastAddMock,
-} from '../components/component-test-helpers';
+} from '~/tests/components/component-test-helpers';
 
 describe('admin customer detail page', () => {
     beforeEach(() => {

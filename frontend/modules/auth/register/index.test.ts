@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
-import { installNuxtGlobals, flushPromises } from '../nuxt/page-test-utils';
+import { createFormFeedbackState, uiPageStubs } from '~/tests/nuxt/ui-test-stubs';
+import { installNuxtGlobals, flushPromises } from '~/tests/nuxt/page-test-utils';
 
 const registerMock = vi.fn();
 const navigateToMock = vi.fn();

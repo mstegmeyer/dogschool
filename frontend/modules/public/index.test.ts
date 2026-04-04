@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { installComponentGlobals, mountComponent } from '../components/component-test-helpers';
+import { installComponentGlobals, mountComponent } from '~/tests/components/component-test-helpers';
 
 describe('public index page', () => {
     beforeEach(() => {

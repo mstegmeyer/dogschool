@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { computed } from 'vue';
-import { installNuxtGlobals, flushPromises } from '../nuxt/page-test-utils';
-import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
+import { installNuxtGlobals, flushPromises } from '~/tests/nuxt/page-test-utils';
+import { createFormFeedbackState, uiPageStubs } from '~/tests/nuxt/ui-test-stubs';
 
 const loginAdminMock = vi.fn();
 const loginCustomerMock = vi.fn();

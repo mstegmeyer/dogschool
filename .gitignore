@@ -4,6 +4,7 @@ Thumbs.db
 
 # Editors / tooling (repo root)
 .idea/
+.claude
 *.swp
 *.swo
 *~

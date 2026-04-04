@@ -1,6 +1,6 @@
-import { promises as fs } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export type CustomerPersona =
   | 'customer_empty'
@@ -31,45 +31,45 @@ export type CustomerPersona =
   | 'customer_fill_12'
   | 'customer_fill_13'
   | 'customer_fill_14'
-  | 'customer_fill_15'
+  | 'customer_fill_15';
 
 export interface SeedCustomer {
-  id: string
-  name: string
-  email: string
-  password: string
-  dogIds: string[]
-  dogNames: string[]
+    id: string,
+    name: string,
+    email: string,
+    password: string,
+    dogIds: string[],
+    dogNames: string[],
 }
 
 export interface E2eManifest {
-  fixedNow: string
-  week: {
-    monday: string
-    nextMonday: string
-  }
-  admin: {
-    username: string
-    password: string
-  }
-  customers: Record<CustomerPersona, SeedCustomer>
-  trainers: Record<string, { id: string; username: string; fullName: string }>
-  courseTypes: Record<string, { id: string; code: string; name: string }>
-  courses: Record<string, string>
-  courseDates: Record<string, { current: string; next: string }>
-  contracts: Record<string, string>
-  notifications: Record<string, string>
+    fixedNow: string,
+    week: {
+        monday: string,
+        nextMonday: string,
+    },
+    admin: {
+        username: string,
+        password: string,
+    },
+    customers: Record<CustomerPersona, SeedCustomer>,
+    trainers: Record<string, { id: string; username: string; fullName: string }>,
+    courseTypes: Record<string, { id: string; code: string; name: string }>,
+    courses: Record<string, string>,
+    courseDates: Record<string, { current: string; next: string }>,
+    contracts: Record<string, string>,
+    notifications: Record<string, string>,
 }
 
-const FIXTURE_ROOT = path.dirname(fileURLToPath(import.meta.url))
-const TESTS_ROOT = path.resolve(FIXTURE_ROOT, '../..')
-const MANIFEST_PATH = path.join(TESTS_ROOT, '.cache', 'e2e-manifest.json')
+const FIXTURE_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const TESTS_ROOT = path.resolve(FIXTURE_ROOT, '../..');
+const MANIFEST_PATH = path.join(TESTS_ROOT, '.cache', 'e2e-manifest.json');
 
 export async function readManifest(): Promise<E2eManifest> {
-  const payload = await fs.readFile(MANIFEST_PATH, 'utf8')
-  return JSON.parse(payload) as E2eManifest
+    const payload = await fs.readFile(MANIFEST_PATH, 'utf8');
+    return JSON.parse(payload) as E2eManifest;
 }
 
 export function manifestPath(): string {
-  return MANIFEST_PATH
+    return MANIFEST_PATH;
 }

@@ -10,14 +10,7 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 overflow-y-auto">
-        <UVerticalNavigation
-          :links="navLinks"
-          :ui="{
-            active: 'text-komm-900 before:bg-sand-200',
-            inactive: 'text-komm-700 hover:text-komm-900 hover:before:bg-sand-200/60',
-            icon: { active: 'text-komm-700', inactive: 'text-sand-500 group-hover:text-komm-700' },
-          }"
-        />
+        <CustomerNavigationMenu />
       </nav>
 
       <div class="p-3 border-t border-sand-200">
@@ -59,15 +52,7 @@
         </div>
 
         <nav class="flex-1 px-3 py-4 overflow-y-auto">
-          <UVerticalNavigation
-            :links="navLinks"
-            :ui="{
-              active: 'text-komm-900 before:bg-sand-200',
-              inactive: 'text-komm-700 hover:text-komm-900 hover:before:bg-sand-200/60',
-              icon: { active: 'text-komm-700', inactive: 'text-sand-500 group-hover:text-komm-700' },
-            }"
-            @click="mobileMenuOpen = false"
-          />
+          <CustomerNavigationMenu close-on-navigate @navigate="mobileMenuOpen = false" />
         </nav>
 
         <div class="p-3 border-t border-sand-200">
@@ -111,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import type { NavLink } from '~/types'
+import CustomerNavigationMenu from '~/modules/customer/CustomerNavigationMenu.vue'
 
 const { user, logout } = useAuth()
 const mobileMenuOpen = ref(false)
@@ -120,17 +105,6 @@ const route = useRoute()
 watch(() => route.fullPath, () => {
   mobileMenuOpen.value = false
 })
-
-const navLinks: NavLink[][] = [[
-  { label: 'Dashboard', icon: 'i-heroicons-home', to: '/customer' },
-  { label: 'Mein Profil', icon: 'i-heroicons-user', to: '/customer/profile' },
-  { label: 'Meine Hunde', icon: 'i-heroicons-heart', to: '/customer/dogs' },
-  { label: 'Kurse', icon: 'i-heroicons-academic-cap', to: '/customer/courses' },
-  { label: 'Kalender', icon: 'i-heroicons-calendar-days', to: '/customer/calendar' },
-  { label: 'Guthaben', icon: 'i-heroicons-banknotes', to: '/customer/credits' },
-  { label: 'Verträge', icon: 'i-heroicons-document-text', to: '/customer/contracts' },
-  { label: 'Mitteilungen', icon: 'i-heroicons-bell', to: '/customer/notifications' },
-]]
 
 function handleLogout(): void {
   logout()

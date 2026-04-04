@@ -1,0 +1,66 @@
+name: frontend
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  vitest:
+    name: vitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pull request base commit
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Run Vitest with coverage
+        run: npx vitest run --coverage
+        working-directory: frontend
+      - name: Run Vitest for base branch coverage
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_DIR: ${{ runner.temp }}/vitest-base
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          rm -rf "$BASE_DIR"
+          mkdir -p "$BASE_DIR"
+          git archive "$BASE_SHA" | tar -x -C "$BASE_DIR"
+
+          pushd "$BASE_DIR/frontend"
+          npm ci
+          npx vitest run --coverage
+          popd
+      - name: Build frontend coverage PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 .github/scripts/render_coverage_comment.py \
+            --coverage-file frontend/coverage/cobertura-coverage.xml \
+            --base-coverage-file "$RUNNER_TEMP/vitest-base/frontend/coverage/cobertura-coverage.xml" \
+            --base-label "${{ github.base_ref }}" \
+            --diff-base "${{ github.event.pull_request.base.sha }}" \
+            --diff-head "${{ github.sha }}" \
+            --source-root frontend \
+            --title "Frontend Code Coverage" \
+            --output frontend/coverage/comment.md
+      - name: Add Frontend Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: frontend-coverage
+          path: frontend/coverage/comment.md

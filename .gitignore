@@ -24,3 +24,4 @@ Thumbs.db
 /tests/.auth/
 /tests/.cache/
 /frontend/test-results/
+/.github/scripts/__pycache__/

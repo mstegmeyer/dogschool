@@ -1,0 +1,130 @@
+name: php
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  php-cs-fixer:
+    name: cs-fixer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        working-directory: backend
+      - name: Run PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+        working-directory: backend
+
+  phpstan:
+    name: phpstan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        working-directory: backend
+      - name: Create cache directory
+        run: mkdir -p backend/var/cache/dev
+      - name: Warmup cache for PHPStan
+        run: php bin/console cache:warmup --env=dev
+        working-directory: backend
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G
+        working-directory: backend
+
+  phpunit:
+    name: phpunit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pull request base commit
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          tools: composer:v2
+          coverage: pcov
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        working-directory: backend
+      - name: Prepare test env
+        run: |
+          cp .env .env.test.local 2>/dev/null || true
+          echo APP_ENV=test >> .env.test.local
+          echo DATABASE_URL="sqlite:///%kernel.project_dir%/var/data_test.db" >> .env.test.local
+        working-directory: backend
+      - name: Create JWT keys (dummy for tests)
+        run: |
+          mkdir -p config/jwt
+          openssl genpkey -algorithm RSA -out config/jwt/private.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
+          openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem 2>/dev/null
+        working-directory: backend
+      - name: Run PHPUnit with coverage
+        run: |
+          mkdir -p coverage
+          php bin/phpunit --coverage-cobertura coverage/cobertura.xml --coverage-text 2>&1 | tee coverage/summary.txt
+        working-directory: backend
+      - name: Run PHPUnit for base branch coverage
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_DIR: ${{ runner.temp }}/phpunit-base
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          rm -rf "$BASE_DIR"
+          mkdir -p "$BASE_DIR"
+          git archive "$BASE_SHA" | tar -x -C "$BASE_DIR"
+
+          pushd "$BASE_DIR/backend"
+          composer install --no-interaction --prefer-dist
+          cp .env .env.test.local 2>/dev/null || true
+          cat <<'EOF' >> .env.test.local
+          APP_ENV=test
+          DATABASE_URL="sqlite:///%kernel.project_dir%/var/data_test.db"
+          EOF
+          mkdir -p config/jwt coverage
+          openssl genpkey -algorithm RSA -out config/jwt/private.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
+          openssl rsa -pubout -in config/jwt/private.pem -out config/jwt/public.pem 2>/dev/null
+          php bin/phpunit --coverage-cobertura coverage/base-cobertura.xml
+          popd
+      - name: Build PHP coverage PR comment
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 .github/scripts/render_coverage_comment.py \
+            --coverage-file backend/coverage/cobertura.xml \
+            --base-coverage-file "$RUNNER_TEMP/phpunit-base/backend/coverage/base-cobertura.xml" \
+            --base-label "${{ github.base_ref }}" \
+            --diff-base "${{ github.event.pull_request.base.sha }}" \
+            --diff-head "${{ github.sha }}" \
+            --source-root backend/src \
+            --title "Backend Code Coverage" \
+            --output backend/coverage/comment.md
+      - name: Add PHP Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          header: php-coverage
+          path: backend/coverage/comment.md

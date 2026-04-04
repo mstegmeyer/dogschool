@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractApiErrorMessage, extractApiFieldErrors, useFormFeedback } from '../../composables/useFormFeedback';
+import { extractApiErrorMessage, extractApiFieldErrors, useFormFeedback } from './useFormFeedback';
 
 describe('useFormFeedback', () => {
     it('extracts backend field errors', () => {

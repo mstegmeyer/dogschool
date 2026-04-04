@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, nextTick, ref } from 'vue';
 import type { CourseDate } from '~/types';
-import type { UseCalendarViewResult } from '~/composables/useCalendarView';
+import type { UseCalendarViewResult } from './useCalendarView';
 
 const TODAY_ISO = '2026-04-01';
 const DAY_NAMES_SHORT = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -78,7 +78,7 @@ async function mountComposable(courseDates: CourseDate[], width: number): Promis
 
     let result: UseCalendarViewResult | undefined;
 
-    const { useCalendarView } = await import('../../composables/useCalendarView');
+    const { useCalendarView } = await import('./useCalendarView');
     const TestComponent = defineComponent({
         setup() {
             result = useCalendarView(ref(courseDates));

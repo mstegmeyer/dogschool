@@ -14,7 +14,7 @@ vi.stubGlobal('useAuth', () => ({
 }));
 
 async function loadComposable() {
-    const mod = await import('../../composables/useApi');
+    const mod = await import('./useApi');
     return mod.useApi();
 }
 

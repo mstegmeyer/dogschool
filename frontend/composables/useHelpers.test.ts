@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { useHelpers } from '../../composables/useHelpers';
+import { useHelpers } from './useHelpers';
 
 describe('useHelpers', () => {
     const {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mount } from '@vue/test-utils';
-import CalendarToolbar from '~/components/calendar/CalendarToolbar.vue';
-import { uiPageStubs } from '../nuxt/ui-test-stubs';
+import CalendarToolbar from './CalendarToolbar.vue';
+import { uiPageStubs } from '~/tests/nuxt/ui-test-stubs';
 
 describe('CalendarToolbar', () => {
     it('renders the title and emits navigation and view events', async () => {

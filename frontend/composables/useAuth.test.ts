@@ -8,13 +8,13 @@ const store: Record<string, string> = {};
 const mockLocalStorage = {
     getItem: (key: string) => store[key] ?? null,
     setItem: (key: string, value: string) => {
-        store[key] = value; 
+        store[key] = value;
     },
     removeItem: (key: string) => {
-        delete store[key]; 
+        delete store[key];
     },
     clear: () => {
-        Object.keys(store).forEach(k => delete store[k]); 
+        Object.keys(store).forEach(k => delete store[k]);
     },
 };
 
@@ -33,14 +33,14 @@ vi.stubGlobal('$fetch', fetchMock);
 
 Object.defineProperty(import.meta, 'client', { value: true, writable: true });
 
-import { useAuth } from '../../composables/useAuth';
+import { useAuth } from './useAuth';
 
 describe('useAuth', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockLocalStorage.clear();
         Object.keys(stateStore).forEach(k => {
-            stateStore[k].value = null; 
+            stateStore[k].value = null;
         });
     });
 

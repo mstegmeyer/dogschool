@@ -37,7 +37,7 @@ beforeEach(async () => {
     roleRef.value = null;
 
     vi.resetModules();
-    await import('../../middleware/auth.global');
+    await import('./auth.global');
 });
 
 describe('auth middleware', () => {

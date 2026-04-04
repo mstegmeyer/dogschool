@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/Cellar/node/25.9.0_1/bin/**)",
+      "Read(//usr/local/**)",
+      "Bash(eval '$\\(/opt/homebrew/bin/brew shellenv 2>/dev/null\\)')",
+      "Bash(PATH=/opt/homebrew/bin:$PATH node --version)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npx vitest run)",
+      "Bash(ls *.test.ts)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" cd /Users/M.Stegmeyer/Sites/komm/frontend)",
+      "Bash(npx vitest:*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:$PATH\")",
+      "Bash(wc -l /Users/M.Stegmeyer/Sites/komm/frontend/tests/modules/*.test.ts)"
+    ]
+  }
+}

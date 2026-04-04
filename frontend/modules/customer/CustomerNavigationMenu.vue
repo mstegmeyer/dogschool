@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-5">
     <section v-for="section in navSections" :key="section.label" class="space-y-2">
-      <p class="px-3 text-xs font-semibold uppercase tracking-wide text-sand-500">
+      <h2 class="px-3 text-xs font-semibold uppercase tracking-wide text-sand-500">
         {{ section.label }}
-      </p>
+      </h2>
       <UVerticalNavigation
         v-if="section.links.length"
         :links="section.links"

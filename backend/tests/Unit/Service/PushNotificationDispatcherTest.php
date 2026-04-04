@@ -94,4 +94,71 @@ final class PushNotificationDispatcherTest extends TestCase
 
         self::assertSame(0, $dispatcher->dispatchNotificationCreated($notification));
     }
+
+    #[Test]
+    public function itSkipsDevicesWithoutASupportedSender(): void
+    {
+        $device = (new PushDevice())
+            ->setToken('native-token')
+            ->setPlatform('ios')
+            ->setProvider('apns');
+        $notification = (new Notification())
+            ->setTitle('Update')
+            ->setMessage('Body');
+
+        $this->pushDeviceRepository
+            ->expects(self::once())
+            ->method('findCustomerTargetsForNotification')
+            ->willReturn([$device]);
+
+        $this->webPushSender
+            ->expects(self::never())
+            ->method('send');
+
+        $this->pushDeviceRepository
+            ->expects(self::never())
+            ->method('remove');
+
+        $dispatcher = new PushNotificationDispatcher(
+            $this->pushDeviceRepository,
+            [$this->webPushSender],
+            new NullLogger(),
+        );
+
+        self::assertSame(0, $dispatcher->dispatchNotificationCreated($notification));
+    }
+
+    #[Test]
+    public function itContinuesWhenASenderThrows(): void
+    {
+        $device = (new PushDevice())
+            ->setToken('stale-token')
+            ->setPlatform('web')
+            ->setProvider('webpush');
+        $notification = (new Notification())
+            ->setTitle('Update')
+            ->setMessage('Body');
+
+        $this->pushDeviceRepository
+            ->expects(self::once())
+            ->method('findCustomerTargetsForNotification')
+            ->willReturn([$device]);
+
+        $this->webPushSender
+            ->expects(self::once())
+            ->method('send')
+            ->willThrowException(new \RuntimeException('Boom'));
+
+        $this->pushDeviceRepository
+            ->expects(self::never())
+            ->method('remove');
+
+        $dispatcher = new PushNotificationDispatcher(
+            $this->pushDeviceRepository,
+            [$this->webPushSender],
+            new NullLogger(),
+        );
+
+        self::assertSame(0, $dispatcher->dispatchNotificationCreated($notification));
+    }
 }

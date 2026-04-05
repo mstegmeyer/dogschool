@@ -9,8 +9,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class HotelBookingRoomAssignDto
 {
     public function __construct(
-        #[Assert\NotBlank(message: 'roomId is required.')]
-        #[Assert\Uuid(message: 'roomId must be a valid UUID.')]
+        #[Assert\NotBlank(message: 'Bitte einen Raum auswählen.')]
+        #[Assert\Uuid(message: 'Ungültiger Raum.')]
         public ?string $roomId = null,
     ) {
     }

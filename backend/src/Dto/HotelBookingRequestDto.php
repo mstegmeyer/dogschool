@@ -10,12 +10,12 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 final class HotelBookingRequestDto
 {
     public function __construct(
-        #[Assert\NotBlank(message: 'dogId is required.')]
-        #[Assert\Uuid(message: 'dogId must be a valid UUID.')]
+        #[Assert\NotBlank(message: 'Bitte einen Hund auswählen.')]
+        #[Assert\Uuid(message: 'Ungültiger Hund.')]
         public ?string $dogId = null,
-        #[Assert\NotBlank(message: 'startAt is required.')]
+        #[Assert\NotBlank(message: 'Bitte einen Beginn auswählen.')]
         public ?string $startAt = null,
-        #[Assert\NotBlank(message: 'endAt is required.')]
+        #[Assert\NotBlank(message: 'Bitte ein Ende auswählen.')]
         public ?string $endAt = null,
         #[Assert\Range(
             min: 1,

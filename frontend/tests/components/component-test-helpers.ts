@@ -524,6 +524,7 @@ export function installComponentGlobals(options: {
         hotelBookingStateColor: (state: string) => state === 'CONFIRMED' ? 'green' : state === 'REQUESTED' ? 'amber' : 'red',
         formatContractMonthlyPrice: (price: string) => `${price} EUR`,
         formatSquareMeters: (value: number) => `${value} m²`,
+        hotelAreaRequirementForHeight: (heightCm: number) => heightCm <= 50 ? 6 : heightCm <= 65 ? 8 : 10,
         creditTypeLabel: (type: string) => type,
         toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
         futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),

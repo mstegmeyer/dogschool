@@ -22,6 +22,7 @@ describe('useHelpers', () => {
         levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
+        hotelAreaRequirementForHeight,
         formatCourseTitleWithLevel,
         formatNotificationCourse,
         formatNotificationCourses,
@@ -235,6 +236,16 @@ describe('useHelpers', () => {
 
         it('shows plain price for other types', () => {
             expect(formatContractMonthlyPrice('199.00', 'ONE_TIME')).toBe('199.00 €');
+        });
+    });
+
+    describe('hotelAreaRequirementForHeight', () => {
+        it('maps shoulder-height thresholds to legal room sizes', () => {
+            expect(hotelAreaRequirementForHeight(40)).toBe(6);
+            expect(hotelAreaRequirementForHeight(50)).toBe(6);
+            expect(hotelAreaRequirementForHeight(51)).toBe(8);
+            expect(hotelAreaRequirementForHeight(65)).toBe(8);
+            expect(hotelAreaRequirementForHeight(66)).toBe(10);
         });
     });
 

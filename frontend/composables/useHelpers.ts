@@ -160,6 +160,16 @@ export const useHelpers = () => {
         return `${value} m²`;
     }
 
+    function hotelAreaRequirementForHeight(heightCm: number): number {
+        if (heightCm <= 50) {
+            return 6;
+        }
+        if (heightCm <= 65) {
+            return 8;
+        }
+        return 10;
+    }
+
     function toDateTimeLocalValue(value: string | Date): string {
         const date = value instanceof Date
             ? value
@@ -224,6 +234,7 @@ export const useHelpers = () => {
         getWeekMonday,
         formatContractMonthlyPrice,
         formatSquareMeters,
+        hotelAreaRequirementForHeight,
         toDateTimeLocalValue,
         futureDateTimeLocalValue,
         formatCourseTitleWithLevel,

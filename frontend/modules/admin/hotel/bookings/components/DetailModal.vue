@@ -22,7 +22,7 @@
                 color='blue'
                 variant='soft'
                 icon='i-heroicons-information-circle'
-                :title='`Aktueller Platzbedarf: ${booking.dogShoulderHeightCm ? areaRequirementForHeight(booking.dogShoulderHeightCm) : 0} m²`'
+                :title='`Aktueller Platzbedarf: ${booking.dogShoulderHeightCm ? hotelAreaRequirementForHeight(booking.dogShoulderHeightCm) : 0} m²`'
                 :description='booking.roomName ? `Aktuell zugewiesen: ${booking.roomName}` : "Die Buchung braucht vor der Bestätigung eine Raumzuweisung."'
             />
 
@@ -126,15 +126,5 @@ const emit = defineEmits<{
     (event: 'cancel'): void,
 }>();
 
-const { formatDateTime, formatSquareMeters, hotelBookingStateColor, hotelBookingStateLabel } = useHelpers();
-
-function areaRequirementForHeight(heightCm: number): number {
-    if (heightCm <= 50) {
-        return 6;
-    }
-    if (heightCm <= 65) {
-        return 8;
-    }
-    return 10;
-}
+const { formatDateTime, formatSquareMeters, hotelAreaRequirementForHeight, hotelBookingStateColor, hotelBookingStateLabel } = useHelpers();
 </script>

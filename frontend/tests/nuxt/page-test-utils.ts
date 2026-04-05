@@ -35,6 +35,7 @@ export function createCalendarTimelineStub() {
         props: {
             days: { type: Array, default: () => [] },
             viewMode: { type: String, default: 'week' },
+            density: { type: String, default: 'default' },
             emptyLabel: { type: String, default: '' },
             eventClass: { type: Function, default: () => '' },
         },

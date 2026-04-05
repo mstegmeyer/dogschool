@@ -16,8 +16,17 @@ export class CustomerCalendarPage {
         return this.page.getByTestId(`open-booking-${courseDateId}`);
     }
 
+    detailTrigger(courseDateId: string): Locator {
+        return this.page.getByTestId(`open-course-date-details-${courseDateId}`);
+    }
+
     async openBooking(courseDateId: string): Promise<void> {
         await this.bookingTrigger(courseDateId).click();
         await expect(this.page.getByTestId('booking-modal')).toBeVisible();
+    }
+
+    async openDetails(courseDateId: string): Promise<void> {
+        await this.detailTrigger(courseDateId).click();
+        await expect(this.page.getByTestId('customer-calendar-detail-modal')).toBeVisible();
     }
 }

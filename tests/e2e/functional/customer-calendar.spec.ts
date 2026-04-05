@@ -47,8 +47,26 @@ test('books a multi-dog course through the modal flow', async ({
     await page.getByTestId('confirm-booking').click();
 
     await expect(page.getByTestId('booking-modal')).not.toBeVisible();
-    await expect(calendarPage.card(courseDateId)).toContainText('Gebucht');
     await expect(calendarPage.card(courseDateId)).toContainText('Balu');
+});
+
+test('opens the customer detail modal for schedule metadata', async ({
+    page,
+    loginAsCustomer,
+    manifest,
+}) => {
+    const calendarPage = new CustomerCalendarPage(page);
+    const courseDateId = manifest.courseDates.customer_detail_course.current;
+
+    await loginAsCustomer('customer_multi_dog');
+    await calendarPage.goto();
+    await calendarPage.openDetails(courseDateId);
+
+    const detailModal = page.getByTestId('customer-calendar-detail-modal');
+
+    await expect(detailModal).toContainText('Detail modal');
+    await expect(detailModal).toContainText('18:00 – 19:00');
+    await expect(detailModal).toContainText('Manuela');
 });
 
 test('cancels an existing booking from the calendar card', async ({
@@ -62,11 +80,11 @@ test('cancels an existing booking from the calendar card', async ({
     await loginAsCustomer('customer_calendar_booked');
     await calendarPage.goto();
 
-    await expect(calendarPage.card(courseDateId)).toContainText('Gebucht');
+    await expect(calendarPage.card(courseDateId)).toContainText('Rex');
     await calendarPage.card(courseDateId).getByRole('button', { name: /Storno|Stornieren/ }).click();
 
     await expect(calendarPage.card(courseDateId).getByRole('button', { name: 'Buchen' })).toBeVisible();
-    await expect(calendarPage.card(courseDateId)).not.toContainText('Gebucht');
+    await expect(calendarPage.card(courseDateId)).not.toContainText('Rex');
 });
 
 test('copies the ICS subscription link from the subscription modal', async ({

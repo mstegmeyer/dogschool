@@ -33,11 +33,16 @@ describe('customer calendar page', () => {
     it('loads the calendar, books and cancels dates, and handles subscription actions', async () => {
         const wrapper = await mountCalendarPage();
         const bookingModal = wrapper.getComponent({ name: 'CustomerCalendarBookingModal' });
+        const detailModal = wrapper.getComponent({ name: 'CustomerCalendarDetailModal' });
         const subscriptionModal = wrapper.getComponent({ name: 'CustomerCalendarSubscriptionModal' });
         const eventCards = wrapper.findAllComponents({ name: 'CustomerCalendarEventCard' });
 
         expect(eventCards).toHaveLength(2);
         expect(subscriptionModal.props('calendarSubscriptionUrl')).toBe('https://api.example.test/calendar/feed.ics');
+
+        await eventCards[0]!.vm.$emit('open-details', courseDate);
+        await flushPromises();
+        expect(detailModal.props('courseDate')).toEqual(courseDate);
 
         await eventCards[0]!.vm.$emit('open-booking', courseDate);
         await flushPromises();

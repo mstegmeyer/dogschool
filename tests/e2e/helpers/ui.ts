@@ -26,10 +26,13 @@ export async function selectMenuOption(page: Page, trigger: Locator, optionLabel
         page.locator('span').filter({ hasText: optionLabel }),
     ];
 
+    let matchedIndex = -1;
+
     await expect.poll(async () => {
         for (const [index, candidate] of candidates.entries()) {
             const visible = await candidate.first().isVisible().catch(() => false);
             if (visible) {
+                matchedIndex = index;
                 return index;
             }
         }
@@ -39,7 +42,9 @@ export async function selectMenuOption(page: Page, trigger: Locator, optionLabel
         timeout: 5_000,
     }).not.toBe(-1);
 
-    await clickFirstVisible(candidates);
+    const matched = candidates[matchedIndex]!.first();
+    await expect(matched).toBeVisible();
+    await matched.click();
 }
 
 export async function chooseDropdownAction(page: Page, trigger: Locator, actionLabel: string): Promise<void> {

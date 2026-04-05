@@ -94,8 +94,9 @@ class ContractRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<int, Contract>
      * @param list<ContractState>|null $states
+     *
+     * @return array<int, Contract>
      */
     public function findPageForAdminList(
         int $page,

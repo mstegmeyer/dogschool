@@ -43,6 +43,9 @@ final class PricingLineItem
         );
     }
 
+    /**
+     * @return list<self>
+     */
     public static function listFromArray(mixed $data): array
     {
         if (!is_array($data)) {
@@ -52,8 +55,9 @@ final class PricingLineItem
         $items = [];
         foreach ($data as $item) {
             if (is_array($item)) {
-                /* @var array<string, mixed> $item */
-                $items[] = self::fromArray($item);
+                /** @var array<string, mixed> $itemData */
+                $itemData = $item;
+                $items[] = self::fromArray($itemData);
             }
         }
 

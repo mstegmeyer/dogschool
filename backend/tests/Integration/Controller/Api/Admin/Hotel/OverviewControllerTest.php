@@ -114,4 +114,29 @@ final class OverviewControllerTest extends WebTestCase
         self::assertSame('2026-04-05T08:00:00+02:00', $gardenArrivals[0]['startAt']);
         self::assertSame('2026-04-05T18:00:00+02:00', $gardenDepartures[0]['endAt']);
     }
+
+    public function testOccupancyAndMovementsRejectInvalidRangesWithGermanErrors(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/hotel/occupancy?from=2026-04-05T12:00&to=2026-04-05T07:00',
+            $token,
+        );
+        self::assertResponseStatusCodeSame(400);
+        $occupancy = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Ungültiger Belegungszeitraum', $occupancy['error'] ?? null);
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/hotel/movements?from=ungueltig&to=2026-04-05T12:00',
+            $token,
+        );
+        self::assertResponseStatusCodeSame(400);
+        $movements = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Ungültiger Bewegungszeitraum', $movements['error'] ?? null);
+    }
 }

@@ -152,14 +152,16 @@ final class RoomOccupancyService
         array $bookings,
         int $roomSquareMeters,
     ): array {
-        $boundaries = [$from->getTimestamp(), $to->getTimestamp()];
+        $fromTimestamp = LocalDateTime::normalizeWallTime($from)->getTimestamp();
+        $toTimestamp = LocalDateTime::normalizeWallTime($to)->getTimestamp();
+        $boundaries = [$fromTimestamp, $toTimestamp];
         $activeBookings = [];
         $startingBookings = [];
         $endingBookings = [];
 
         foreach ($bookings as $booking) {
-            $start = max($from->getTimestamp(), $booking->getStartAt()->getTimestamp());
-            $end = min($to->getTimestamp(), $booking->getEndAt()->getTimestamp());
+            $start = max($fromTimestamp, LocalDateTime::normalizeWallTime($booking->getStartAt())->getTimestamp());
+            $end = min($toTimestamp, LocalDateTime::normalizeWallTime($booking->getEndAt())->getTimestamp());
 
             if ($start >= $end) {
                 continue;

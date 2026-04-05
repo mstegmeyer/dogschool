@@ -52,7 +52,7 @@ final class DogController extends AbstractController
         $dog->setColor($dto->color);
         $dog->setGender($dto->gender);
         $dog->setRace($dto->race);
-        $dog->setShoulderHeightCm($dto->shoulderHeightCm);
+        $dog->setShoulderHeightCm($dto->shoulderHeightCm ?? throw new \LogicException('Validated shoulder height is required.'));
 
         $errors = $this->validator->validate($dog);
         if (count($errors) > 0) {

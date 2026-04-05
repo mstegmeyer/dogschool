@@ -16,6 +16,24 @@ final class LocalDateTime
      */
     public static function formatWallTime(\DateTimeImmutable $value): string
     {
+        return self::normalizeWallTime($value)->format(\DateTimeInterface::ATOM);
+    }
+
+    public static function parseWallTime(?string $value): ?\DateTimeImmutable
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        try {
+            return self::normalizeWallTime(new \DateTimeImmutable($value));
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    public static function normalizeWallTime(\DateTimeImmutable $value): \DateTimeImmutable
+    {
         $local = \DateTimeImmutable::createFromFormat(
             self::STORAGE_FORMAT,
             $value->format(self::STORAGE_FORMAT),
@@ -23,10 +41,10 @@ final class LocalDateTime
         );
 
         if ($local === false) {
-            throw new \LogicException('Could not format local date time.');
+            throw new \LogicException('Could not normalize local date time.');
         }
 
-        return $local->format(\DateTimeInterface::ATOM);
+        return $local;
     }
 
     public static function fromTimestamp(int $timestamp): \DateTimeImmutable

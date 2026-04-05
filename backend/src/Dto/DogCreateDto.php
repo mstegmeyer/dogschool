@@ -18,9 +18,13 @@ final class DogCreateDto
         public ?string $gender = null,
         #[Assert\Length(max: 100)]
         public ?string $race = null,
-        #[Assert\Positive]
-        #[Assert\LessThanOrEqual(200)]
-        public int $shoulderHeightCm = 0,
+        #[Assert\NotNull(message: 'Die Schulterhöhe ist erforderlich.')]
+        #[Assert\Range(
+            min: 1,
+            max: 200,
+            notInRangeMessage: 'Die Schulterhöhe muss zwischen {{ min }} und {{ max }} cm liegen.',
+        )]
+        public ?int $shoulderHeightCm = null,
     ) {
     }
 }

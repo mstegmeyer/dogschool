@@ -94,6 +94,21 @@ final class RoomControllerTest extends WebTestCase
         self::assertSame(16, $room->getSquareMeters());
     }
 
+    public function testUpdateMissingRoomReturnsGermanError(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/hotel/rooms/missing-room', $token, json_encode([
+            'name' => 'Suite C',
+            'squareMeters' => 12,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Zimmer nicht gefunden', $data['error'] ?? null);
+    }
+
     public function testRoomsRequireAdminAuth(): void
     {
         $client = static::createClient();

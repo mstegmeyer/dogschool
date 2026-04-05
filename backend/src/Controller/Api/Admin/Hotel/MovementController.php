@@ -29,11 +29,11 @@ final class MovementController extends AbstractController
     #[Route('/', name: 'list_slash', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
-        $from = $this->parseDateTime((string) $request->query->get('from', ''));
-        $to = $this->parseDateTime((string) $request->query->get('to', ''));
+        $from = LocalDateTime::parseWallTime((string) $request->query->get('from', ''));
+        $to = LocalDateTime::parseWallTime((string) $request->query->get('to', ''));
 
         if ($from === null || $to === null || $to <= $from) {
-            return $this->json(['error' => 'Invalid movements range'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Ungültiger Bewegungszeitraum'], Response::HTTP_BAD_REQUEST);
         }
 
         $arrivals = $this->hotelBookingRepository->findConfirmedAssignedArrivalsByRange($from, $to);
@@ -45,18 +45,5 @@ final class MovementController extends AbstractController
             'arrivals' => array_map(fn (HotelBooking $booking): array => $this->normalizer->normalizeHotelBooking($booking), $arrivals),
             'departures' => array_map(fn (HotelBooking $booking): array => $this->normalizer->normalizeHotelBooking($booking), $departures),
         ]);
-    }
-
-    private function parseDateTime(string $value): ?\DateTimeImmutable
-    {
-        if ($value === '') {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            return null;
-        }
     }
 }

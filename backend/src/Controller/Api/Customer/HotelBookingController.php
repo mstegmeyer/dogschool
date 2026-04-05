@@ -11,6 +11,7 @@ use App\Enum\HotelBookingState;
 use App\Repository\DogRepository;
 use App\Repository\HotelBookingRepository;
 use App\Service\ApiNormalizer;
+use App\Support\LocalDateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -77,10 +78,7 @@ final class HotelBookingController extends AbstractController
 
     private function parseValidatedDateTime(?string $value): \DateTimeImmutable
     {
-        try {
-            return new \DateTimeImmutable($value ?? throw new \LogicException('Hotel booking datetime is required.'));
-        } catch (\Exception) {
-            throw new \LogicException('Validated hotel booking datetime could not be parsed.');
-        }
+        return LocalDateTime::parseWallTime($value)
+            ?? throw new \LogicException('Validated hotel booking datetime could not be parsed.');
     }
 }

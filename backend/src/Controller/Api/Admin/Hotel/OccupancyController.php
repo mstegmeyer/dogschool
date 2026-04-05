@@ -32,11 +32,11 @@ final class OccupancyController extends AbstractController
     #[Route('/', name: 'list_slash', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
-        $from = $this->parseDateTime((string) $request->query->get('from', ''));
-        $to = $this->parseDateTime((string) $request->query->get('to', ''));
+        $from = LocalDateTime::parseWallTime((string) $request->query->get('from', ''));
+        $to = LocalDateTime::parseWallTime((string) $request->query->get('to', ''));
 
         if ($from === null || $to === null || $to <= $from) {
-            return $this->json(['error' => 'Invalid occupancy range'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Ungültiger Belegungszeitraum'], Response::HTTP_BAD_REQUEST);
         }
 
         $rooms = $this->roomRepository->findAllOrderByName();
@@ -75,18 +75,5 @@ final class OccupancyController extends AbstractController
                 ];
             }, $items),
         ]);
-    }
-
-    private function parseDateTime(string $value): ?\DateTimeImmutable
-    {
-        if ($value === '') {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            return null;
-        }
     }
 }

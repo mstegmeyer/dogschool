@@ -11,6 +11,7 @@ use App\Repository\HotelBookingRepository;
 use App\Repository\RoomRepository;
 use App\Service\ApiNormalizer;
 use App\Service\RoomOccupancyService;
+use App\Support\LocalDateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,15 +42,15 @@ final class BookingController extends AbstractController
             : null;
         $fromRaw = (string) $request->query->get('from', '');
         $toRaw = (string) $request->query->get('to', '');
-        $from = $this->parseDateTime($fromRaw);
-        $to = $this->parseDateTime($toRaw);
+        $from = LocalDateTime::parseWallTime($fromRaw);
+        $to = LocalDateTime::parseWallTime($toRaw);
 
         if (($fromRaw !== '' && $from === null) || ($toRaw !== '' && $to === null)) {
-            return $this->json(['error' => 'Invalid booking range'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Ungültiger Buchungszeitraum'], Response::HTTP_BAD_REQUEST);
         }
 
         if ($from !== null && $to !== null && $to <= $from) {
-            return $this->json(['error' => 'Invalid booking range'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Ungültiger Buchungszeitraum'], Response::HTTP_BAD_REQUEST);
         }
 
         $page = max(1, $request->query->getInt('page', 1));
@@ -81,7 +82,7 @@ final class BookingController extends AbstractController
     {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
-            return $this->json(['error' => 'Hotel booking not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Hotelbuchung nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($this->buildDetailResponse($booking));
@@ -94,11 +95,11 @@ final class BookingController extends AbstractController
     ): JsonResponse {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
-            return $this->json(['error' => 'Hotel booking not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Hotelbuchung nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($booking->getState() === HotelBookingState::DECLINED) {
-            return $this->json(['error' => 'Declined bookings cannot be assigned to a room'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['errors' => ['roomId' => 'Abgelehnte Buchungen können keinem Zimmer zugewiesen werden.']], Response::HTTP_BAD_REQUEST);
         }
 
         $room = $this->roomRepository->find($dto->roomId);
@@ -122,7 +123,7 @@ final class BookingController extends AbstractController
     {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
-            return $this->json(['error' => 'Hotel booking not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Hotelbuchung nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($booking->getRoom() === null) {
@@ -145,7 +146,7 @@ final class BookingController extends AbstractController
     {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
-            return $this->json(['error' => 'Hotel booking not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Hotelbuchung nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         $booking->setState(HotelBookingState::DECLINED);
@@ -181,18 +182,5 @@ final class BookingController extends AbstractController
                 ];
             }, $availableRooms),
         ];
-    }
-
-    private function parseDateTime(string $value): ?\DateTimeImmutable
-    {
-        if ($value === '') {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            return null;
-        }
     }
 }

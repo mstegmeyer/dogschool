@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use App\Support\LocalDateTime;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -29,7 +30,7 @@ final class HotelBookingRequestDto
     #[Assert\Callback]
     public function validate(ExecutionContextInterface $context): void
     {
-        $startAt = $this->parseDateTime($this->startAt);
+        $startAt = LocalDateTime::parseWallTime($this->startAt);
         if ($this->startAt !== null && $this->startAt !== '' && $startAt === null) {
             $context
                 ->buildViolation('Ungültiger Startzeitpunkt.')
@@ -37,7 +38,7 @@ final class HotelBookingRequestDto
                 ->addViolation();
         }
 
-        $endAt = $this->parseDateTime($this->endAt);
+        $endAt = LocalDateTime::parseWallTime($this->endAt);
         if ($this->endAt !== null && $this->endAt !== '' && $endAt === null) {
             $context
                 ->buildViolation('Ungültiger Endzeitpunkt.')
@@ -72,19 +73,6 @@ final class HotelBookingRequestDto
                 ->buildViolation($message)
                 ->atPath($path)
                 ->addViolation();
-        }
-    }
-
-    private function parseDateTime(?string $value): ?\DateTimeImmutable
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            return null;
         }
     }
 }

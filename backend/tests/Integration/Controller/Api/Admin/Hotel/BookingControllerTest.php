@@ -183,4 +183,70 @@ final class BookingControllerTest extends WebTestCase
         $helper->adminRequest(Request::METHOD_POST, '/api/admin/hotel/bookings/'.$booking->getId().'/confirm', $token);
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
     }
+
+    public function testListRejectsInvalidRangeWithGermanError(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/hotel/bookings?from=ungueltig&to=2026-05-07T00:00',
+            $token,
+        );
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Ungültiger Buchungszeitraum', $data['error'] ?? null);
+    }
+
+    public function testDeclinedBookingCannotBeAssignedToRoom(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-declined-assign-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Declined Assign Dog')
+            ->setShoulderHeightCm(44);
+        $dogRepository->save($dog);
+
+        $room = (new Room())
+            ->setName('Declined Room')
+            ->setSquareMeters(14);
+        $roomRepository->save($room);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setStartAt(new \DateTimeImmutable('2026-05-12 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-13 09:00'))
+            ->setState(HotelBookingState::DECLINED);
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/hotel/bookings/'.$booking->getId().'/room', $token, json_encode([
+            'roomId' => $room->getId(),
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame(
+            'Abgelehnte Buchungen können keinem Zimmer zugewiesen werden.',
+            $data['errors']['roomId'] ?? null,
+        );
+    }
 }

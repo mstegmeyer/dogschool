@@ -85,5 +85,27 @@ final class DogControllerTest extends WebTestCase
             'color' => 'black',
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        self::assertStringContainsString(
+            'Die Schulterhöhe ist erforderlich.',
+            $client->getResponse()->getContent() ?: '',
+        );
+    }
+
+    public function testCreateDogFailsWithOutOfRangeShoulderHeight(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createCustomerAndLogin();
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/dogs', $token, json_encode([
+            'name' => 'Rex',
+            'color' => 'black',
+            'shoulderHeightCm' => 250,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        self::assertStringContainsString(
+            'Die Schulterhöhe muss zwischen 1 und 200 cm liegen.',
+            $client->getResponse()->getContent() ?: '',
+        );
     }
 }

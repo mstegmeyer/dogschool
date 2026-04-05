@@ -64,7 +64,7 @@ final class RoomController extends AbstractController
     ): JsonResponse {
         $room = $this->roomRepository->find($id);
         if (!$room instanceof Room) {
-            return $this->json(['error' => 'Room not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Zimmer nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         $room->setName($dto->name);

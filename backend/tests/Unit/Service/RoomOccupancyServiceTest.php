@@ -76,13 +76,13 @@ final class RoomOccupancyServiceTest extends TestCase
         self::assertSame(['Mila', 'Bruno'], $overview[0]['segments'][2]['dogNames']);
     }
 
-    public function testBuildOccupancyOverviewKeepsWallTimeWhenPhpDefaultTimezoneDiffers(): void
+    public function testBuildOccupancyOverviewKeepsWallTimeWhenStoredTimezoneDiffers(): void
     {
         $room = (new Room())
             ->setName('Wald')
             ->setSquareMeters(12);
 
-        $booking = $this->createBooking('Mila', 48, '2026-04-05 08:00', '2026-04-05 10:00');
+        $booking = $this->createBooking('Mila', 48, '2026-04-05 08:00', '2026-04-05 10:00', 'UTC');
         $booking->setState(HotelBookingState::CONFIRMED);
         $booking->setRoom($room);
 
@@ -99,8 +99,8 @@ final class RoomOccupancyServiceTest extends TestCase
             $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
             $overview = $service->buildOccupancyOverview(
                 [$room],
-                new \DateTimeImmutable('2026-04-05 07:00', new \DateTimeZone('Europe/Berlin')),
-                new \DateTimeImmutable('2026-04-05 11:00', new \DateTimeZone('Europe/Berlin')),
+                new \DateTimeImmutable('2026-04-05 07:00', new \DateTimeZone('UTC')),
+                new \DateTimeImmutable('2026-04-05 11:00', new \DateTimeZone('UTC')),
             );
 
             self::assertSame('2026-04-05T08:00:00+02:00', $overview[0]['segments'][1]['startAt']);
@@ -115,8 +115,9 @@ final class RoomOccupancyServiceTest extends TestCase
         int $heightCm,
         string $startAt,
         string $endAt,
+        string $timezone = 'Europe/Berlin',
     ): HotelBooking {
-        $timezone = new \DateTimeZone('Europe/Berlin');
+        $timezone = new \DateTimeZone($timezone);
         $customer = (new Customer())
             ->setName('Customer')
             ->setEmail(sprintf('%s@example.com', strtolower($dogName)))

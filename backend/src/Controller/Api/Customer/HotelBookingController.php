@@ -48,20 +48,20 @@ final class HotelBookingController extends AbstractController
     ): JsonResponse {
         $dog = $this->dogRepository->findOneByIdAndCustomer($dto->dogId ?? '', $customer);
         if ($dog === null) {
-            return $this->json(['errors' => ['dogId' => 'Invalid or not your dog']], Response::HTTP_BAD_REQUEST);
+            return $this->json(['errors' => ['dogId' => 'Ungültiger Hund oder nicht Ihr Hund.']], Response::HTTP_BAD_REQUEST);
         }
 
         $startAt = $this->parseValidatedDateTime($dto->startAt);
         $endAt = $this->parseValidatedDateTime($dto->endAt);
 
-        if ($dto->currentShoulderHeightCm !== null) {
-            $dog->setShoulderHeightCm($dto->currentShoulderHeightCm);
-            $this->dogRepository->save($dog, false);
-        }
-
         $overlap = $this->hotelBookingRepository->findOverlappingActiveByDog($dog, $startAt, $endAt);
         if ($overlap !== null) {
             return $this->json(['errors' => ['startAt' => 'Für diesen Hund existiert bereits eine überlappende Hotelbuchung.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($dto->currentShoulderHeightCm !== null) {
+            $dog->setShoulderHeightCm($dto->currentShoulderHeightCm);
+            $this->dogRepository->save($dog, false);
         }
 
         $booking = new HotelBooking();

@@ -22,6 +22,7 @@ import {
     createFormFeedbackState,
     uiPageStubs,
 } from '../nuxt/ui-test-stubs';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 
 type ComponentMountOptions = Omit<MountingOptions<any>, 'global'> & {
     global?: MountingOptions<any>['global'],
@@ -70,27 +71,6 @@ export const adminNotificationForm = {
     isGlobal: false,
     pinnedUntil: '2026-04-10',
 };
-
-function toDateTimeLocalStubValue(value: string | Date): string {
-    const date = value instanceof Date
-        ? value
-        : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return date.toISOString().slice(0, 16);
-}
-
-function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
-    const date = new Date('2026-04-04T08:00:00Z');
-    if (roundToHour) {
-        date.setUTCMinutes(0, 0, 0);
-    }
-    date.setUTCHours(date.getUTCHours() + offsetHours);
-
-    return toDateTimeLocalStubValue(date);
-}
 
 export const courseForm = {
     typeCode: 'AGI',

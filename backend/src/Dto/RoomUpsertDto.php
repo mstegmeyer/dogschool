@@ -12,6 +12,7 @@ final class RoomUpsertDto
         #[Assert\NotBlank]
         #[Assert\Length(max: 255)]
         public string $name = '',
+        #[Assert\NotNull(message: 'Bitte eine gültige Raumgröße angeben.')]
         #[Assert\Positive]
         public ?int $squareMeters = null,
     ) {

@@ -45,7 +45,7 @@ final class RoomController extends AbstractController
     ): JsonResponse {
         $room = new Room();
         $room->setName($dto->name);
-        $room->setSquareMeters($dto->squareMeters ?? 1);
+        $room->setSquareMeters($dto->squareMeters ?? throw new \LogicException('Validated room size is required.'));
 
         $errors = $this->validator->validate($room);
         if (count($errors) > 0) {
@@ -68,7 +68,7 @@ final class RoomController extends AbstractController
         }
 
         $room->setName($dto->name);
-        $room->setSquareMeters($dto->squareMeters ?? 1);
+        $room->setSquareMeters($dto->squareMeters ?? throw new \LogicException('Validated room size is required.'));
 
         $errors = $this->validator->validate($room);
         if (count($errors) > 0) {

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { computed, ref } from 'vue';
 import { vi } from 'vitest';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
 import { createCalendarTimelineStub, flushPromises, installNuxtGlobals, namedStub } from '../nuxt/page-test-utils';
 
@@ -127,27 +128,6 @@ export const creditTransaction = {
     weekRef: '2026-W14',
     createdAt: '2026-04-01T10:00:00+02:00',
 };
-
-function toDateTimeLocalStubValue(value: string | Date): string {
-    const date = value instanceof Date
-        ? value
-        : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return date.toISOString().slice(0, 16);
-}
-
-function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
-    const date = new Date('2026-04-04T08:00:00Z');
-    if (roundToHour) {
-        date.setUTCMinutes(0, 0, 0);
-    }
-    date.setUTCHours(date.getUTCHours() + offsetHours);
-
-    return toDateTimeLocalStubValue(date);
-}
 
 export function installCustomerGlobals() {
     installNuxtGlobals();

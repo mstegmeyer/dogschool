@@ -158,4 +158,46 @@ final class HotelBookingControllerTest extends WebTestCase
         );
         self::assertSame(42, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
     }
+
+    public function testCreateHotelBookingDoesNotPersistHeightWhenOverlapRejectsRequest(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $dog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Overlap')
+            ->setShoulderHeightCm(41);
+        $dogRepository->save($dog);
+
+        $existingBooking = (new HotelBooking())
+            ->setCustomer($customer)
+            ->setDog($dog)
+            ->setStartAt(new \DateTimeImmutable('2026-04-05T08:00:00+02:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-06T10:00:00+02:00'))
+            ->setState(\App\Enum\HotelBookingState::REQUESTED);
+        $hotelBookingRepository->save($existingBooking);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/hotel-bookings', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startAt' => '2026-04-05T09:00',
+            'endAt' => '2026-04-06T11:00',
+            'currentShoulderHeightCm' => 55,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame(
+            'Für diesen Hund existiert bereits eine überlappende Hotelbuchung.',
+            $data['errors']['startAt'] ?? null,
+        );
+        self::assertSame(41, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
+    }
 }

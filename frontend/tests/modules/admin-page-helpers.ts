@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { vi } from 'vitest';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
 import { flushPromises, installNuxtGlobals, namedStub } from '../nuxt/page-test-utils';
 
@@ -170,27 +171,6 @@ export const customerRecord = {
     address: { street: null, postalCode: '12345', city: 'Berlin', country: null },
     bankAccount: { iban: null, bic: null, accountHolder: null },
 };
-
-function toDateTimeLocalStubValue(value: string | Date): string {
-    const date = value instanceof Date
-        ? value
-        : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return date.toISOString().slice(0, 16);
-}
-
-function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
-    const date = new Date('2026-04-04T08:00:00Z');
-    if (roundToHour) {
-        date.setUTCMinutes(0, 0, 0);
-    }
-    date.setUTCHours(date.getUTCHours() + offsetHours);
-
-    return toDateTimeLocalStubValue(date);
-}
 
 export const todayCourseDate = {
     id: 'course-date-1',

@@ -9,7 +9,7 @@ Full-stack dog school management app. Monorepo with three workspaces:
 | Directory | Stack | Purpose |
 |-----------|-------|---------|
 | `backend/` | Symfony 8, PHP 8.4, Doctrine ORM 3, MariaDB | REST API with JWT auth |
-| `frontend/` | Nuxt 3, Vue 3, TypeScript, Nuxt UI v2, Tailwind | SPA (SSR disabled) |
+| `frontend/` | Nuxt 3, Vue 3, TypeScript, Pinia, Nuxt UI v2, Tailwind | SPA (SSR disabled) |
 | `tests/` | Playwright | E2E functional + visual regression |
 
 Docker Compose orchestrates all services (`docker-compose.yml`). The root `package.json` wires lint commands across workspaces.
@@ -92,7 +92,15 @@ Segments named `components`, `composables`, `types`, `utils` are skipped by the 
 
 ### State management
 
-No Pinia. Use Nuxt `useState` in composables for cross-route state (see `composables/useAuth.ts` pattern). Page-local state uses `ref`/`reactive`/`computed`.
+Use Pinia for shared frontend state. Page-local state uses `ref`/`reactive`/`computed`.
+
+### Stores
+
+- Place shared stores in `frontend/stores/`.
+- Use setup-style stores with `defineStore(...)`.
+- Put cross-route or cross-layout state in Pinia stores.
+- Keep page-local form, modal, search, filter, and loading state local unless it is genuinely shared.
+- Composables may wrap stores to expose app-facing APIs such as `useAuth`.
 
 ### Composables
 
@@ -123,7 +131,8 @@ Run: `npm run lint` (from `frontend/`) or `npm run lint` (from root, runs both f
 - Config: `frontend/vitest.config.ts`. DOM: `happy-dom`.
 - Test files: `*.test.ts`, colocated next to source or in `frontend/tests/`.
 - Use `@vue/test-utils` for component mounting.
-- Coverage scope: `app.vue`, `layouts/`, `components/`, `modules/`, `composables/`, `middleware/`.
+- Initialize a fresh Pinia instance in unit tests that exercise stores or Pinia-backed composables.
+- Coverage scope: `app.vue`, `layouts/`, `components/`, `modules/`, `composables/`, `stores/`, `middleware/`.
 
 Run: `npm run test` (from `frontend/`).
 
@@ -276,7 +285,7 @@ Checklist for every change:
 ## What NOT to do
 
 - Do not use `pages/` directory for routes — use `modules/`.
-- Do not install Pinia — state management uses `useState` composables.
+- Do not move simple page-local state into Pinia without a real shared-state need.
 - Do not add Prettier — ESLint handles all formatting via `@stylistic`.
 - Do not use Yoda comparisons in PHP (`$value === null`, not `null === $value`).
 - Do not create Doctrine migrations — schema is managed directly.

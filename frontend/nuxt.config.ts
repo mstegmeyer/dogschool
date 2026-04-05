@@ -127,7 +127,7 @@ function collectModuleRoutes(directory: string = MODULE_ROOT): ModuleRoute[] {
 }
 
 export default defineNuxtConfig({
-    modules: ['@nuxt/ui'],
+    modules: ['@nuxt/ui', '@pinia/nuxt'],
     css: ['~/assets/app.css'],
     pages: true,
     routeRules: process.env.API_PROXY_TARGET

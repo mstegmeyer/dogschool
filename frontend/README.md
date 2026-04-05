@@ -9,6 +9,7 @@ Customer and admin portal for the **Komm! Hundeschule & Hundehotel** dog school 
 | Framework | Nuxt 3 (SPA mode, `ssr: false`) |
 | UI | Nuxt UI v2 (Tailwind CSS, Heroicons) |
 | Language | TypeScript (strict mode) |
+| State | Pinia |
 | Testing | Vitest + Vue Test Utils + happy-dom |
 | Dev server | Vite on port 5173 |
 
@@ -21,8 +22,11 @@ frontend/
 ├── tsconfig.json            # Extends Nuxt-generated config
 ├── composables/
 │   ├── useApi.ts            # Typed $fetch wrapper with JWT + 401 handling
-│   ├── useAuth.ts           # Auth state (token, role, user), login/logout
+│   ├── useAuth.ts           # Pinia-backed auth facade used by pages/layouts
 │   └── useHelpers.ts        # Date formatting, labels, domain helpers
+├── stores/
+│   ├── auth.ts              # Auth store (token, role, user), login/logout
+│   └── pushNotifications.ts # Web push registration state and actions
 ├── middleware/
 │   └── auth.global.ts       # Route guards (public vs admin vs customer)
 ├── types/
@@ -32,11 +36,11 @@ frontend/
 │   ├── auth.vue             # Centered card layout for login/register
 │   ├── admin.vue            # Sidebar navigation for admin area
 │   └── customer.vue         # Sidebar navigation for customer area
-├── pages/
-│   ├── login.vue            # Tabbed login (customer / admin)
-│   ├── register.vue         # Customer registration
+├── modules/
+│   ├── auth/                # Login and registration routes
 │   ├── admin/               # Admin pages (dashboard, customers, courses, calendar, contracts, notifications)
-│   └── customer/            # Customer pages (dashboard, profile, dogs, courses, calendar, credits, contracts, notifications)
+│   ├── customer/            # Customer pages (dashboard, profile, dogs, courses, calendar, credits, contracts, notifications)
+│   └── public/              # Public-facing routes
 └── tests/                   # Vitest unit tests
 ```
 
@@ -108,6 +112,6 @@ Key types:
 
 | Composable | Purpose |
 |------------|---------|
-| `useAuth()` | Manages JWT token, role, user profile; provides login/logout/register |
+| `useAuth()` | Pinia-backed auth facade with login/logout/register/profile actions |
 | `useApi()` | Typed HTTP client (`get`, `post`, `put`, `del`) with auto-auth and 401 redirect |
 | `useHelpers()` | German date/time formatting, contract state labels/colors, credit type labels |

@@ -856,6 +856,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-08T09:00:00+02:00',
                 'endAt' => '2026-04-09T10:00:00+02:00',
                 'includesTravelProtection' => false,
+                'includesSingleRoom' => true,
                 'extraPriceCents' => 0,
             ],
             'declined' => [
@@ -866,6 +867,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-09T08:00:00+02:00',
                 'endAt' => '2026-04-09T18:00:00+02:00',
                 'includesTravelProtection' => false,
+                'includesSingleRoom' => false,
                 'extraPriceCents' => 0,
             ],
             'small_future' => [
@@ -876,6 +878,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-07T08:00:00+02:00',
                 'endAt' => '2026-04-07T18:00:00+02:00',
                 'includesTravelProtection' => false,
+                'includesSingleRoom' => true,
                 'extraPriceCents' => 0,
             ],
             'medium_first' => [
@@ -886,6 +889,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-06T10:00:00+02:00',
                 'endAt' => '2026-04-06T18:00:00+02:00',
                 'includesTravelProtection' => false,
+                'includesSingleRoom' => false,
                 'extraPriceCents' => 0,
             ],
             'medium_second' => [
@@ -896,6 +900,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-06T12:00:00+02:00',
                 'endAt' => '2026-04-06T20:00:00+02:00',
                 'includesTravelProtection' => false,
+                'includesSingleRoom' => false,
                 'extraPriceCents' => 0,
             ],
             'large_stay' => [
@@ -906,6 +911,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-06T11:00:00+02:00',
                 'endAt' => '2026-04-07T07:00:00+02:00',
                 'includesTravelProtection' => true,
+                'includesSingleRoom' => false,
                 'extraPriceCents' => 0,
             ],
             'pending_customer_review' => [
@@ -916,6 +922,7 @@ final class E2eSeedService
                 'startAt' => '2026-04-10T09:00:00+02:00',
                 'endAt' => '2026-04-12T10:00:00+02:00',
                 'includesTravelProtection' => true,
+                'includesSingleRoom' => true,
                 'extraPriceCents' => 25_00,
             ],
         ] as $key => $definition) {
@@ -928,6 +935,7 @@ final class E2eSeedService
             $booking->setStartAt(new \DateTimeImmutable($definition['startAt']));
             $booking->setEndAt(new \DateTimeImmutable($definition['endAt']));
             $booking->setIncludesTravelProtection($definition['includesTravelProtection']);
+            $booking->setIncludesSingleRoom($definition['includesSingleRoom']);
             $booking->setCustomerComment('Bitte moeglichst ruhige Unterbringung.');
             $this->applyHotelPricing($booking, $definition['extraPriceCents']);
             if ($definition['state'] === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
@@ -975,20 +983,34 @@ final class E2eSeedService
 
     private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
     {
+        $pricingConfig = new PricingConfig();
         $pricingKind = $booking->getStartAt()->format('Y-m-d') === $booking->getEndAt()->format('Y-m-d')
             ? HotelBookingPricingKind::DAYCARE
             : HotelBookingPricingKind::HOTEL;
         $billableDays = PricingEngine::billableCalendarDays($booking->getStartAt(), $booking->getEndAt());
         $baseDailyPriceCents = match ($pricingKind) {
-            HotelBookingPricingKind::DAYCARE => $this->isPeakSeasonDate($booking->getStartAt()) ? 46_00 : 39_00,
-            HotelBookingPricingKind::HOTEL => 58_00,
+            HotelBookingPricingKind::DAYCARE => PricingEngine::amountToCents(
+                $this->isPeakSeasonDate($booking->getStartAt())
+                    ? $pricingConfig->getDaycarePeakSeasonDailyPrice()
+                    : $pricingConfig->getDaycareOffSeasonDailyPrice(),
+            ),
+            HotelBookingPricingKind::HOTEL => PricingEngine::amountToCents($pricingConfig->getHotelDailyPrice()),
         };
         $baseAmountCents = $baseDailyPriceCents * $billableDays;
-        $serviceFeeCents = 7_50;
+        $serviceFeeCents = PricingEngine::amountToCents($pricingConfig->getHotelServiceFee());
         $travelProtectionCents = $booking->includesTravelProtection()
-            ? 49_00 + (max(0, $billableDays - 7) * 11_00)
+            ? PricingEngine::amountToCents($pricingConfig->getHotelTravelProtectionBaseFee())
+                + (max(0, $billableDays - 7)
+                    * PricingEngine::amountToCents($pricingConfig->getHotelTravelProtectionAdditionalDailyFee()))
             : 0;
-        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents;
+        $singleRoomDailyPriceCents = match ($pricingKind) {
+            HotelBookingPricingKind::DAYCARE => PricingEngine::amountToCents($pricingConfig->getHotelSingleRoomDaycareDailyPrice()),
+            HotelBookingPricingKind::HOTEL => PricingEngine::amountToCents($pricingConfig->getHotelSingleRoomHotelDailyPrice()),
+        };
+        $singleRoomCents = $booking->includesSingleRoom()
+            ? $singleRoomDailyPriceCents * $billableDays
+            : 0;
+        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents + $singleRoomCents;
 
         $booking->setPricingKind($pricingKind);
         $booking->setBillableDays($billableDays);
@@ -996,6 +1018,7 @@ final class E2eSeedService
         $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
         $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
         $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
+        $booking->setSingleRoomPrice(PricingEngine::formatAmount($singleRoomCents));
         $booking->setPricingSnapshot(
             HotelBookingPricingSnapshot::forQuote(
                 $pricingKind,
@@ -1003,11 +1026,13 @@ final class E2eSeedService
                 PricingEngine::formatAmount($baseDailyPriceCents),
                 PricingEngine::formatAmount($serviceFeeCents),
                 PricingEngine::formatAmount($travelProtectionCents),
+                PricingEngine::formatAmount($singleRoomCents),
                 PricingEngine::formatAmount($quotedTotalCents),
                 $pricingKind === HotelBookingPricingKind::DAYCARE
                     ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
                     : 'Hundehotel',
                 $booking->includesTravelProtection(),
+                $booking->includesSingleRoom(),
             )
                 ->finalize($booking->getTotalPrice())
                 ->toArray(),

@@ -89,6 +89,7 @@ final class PricingEngine
         \DateTimeImmutable $startAt,
         \DateTimeImmutable $endAt,
         bool $includesTravelProtection,
+        bool $includesSingleRoom = false,
     ): HotelBookingPricingQuote {
         $pricingConfig = $this->pricingConfigProvider->getCurrent();
         $pricingKind = $startAt->format('Y-m-d') === $endAt->format('Y-m-d')
@@ -110,10 +111,18 @@ final class PricingEngine
                 + max(0, $billableDays - 7) * self::amountToCents($pricingConfig->getHotelTravelProtectionAdditionalDailyFee())
             )
             : '0.00';
+        $singleRoomDailyPrice = match ($pricingKind) {
+            HotelBookingPricingKind::DAYCARE => $pricingConfig->getHotelSingleRoomDaycareDailyPrice(),
+            HotelBookingPricingKind::HOTEL => $pricingConfig->getHotelSingleRoomHotelDailyPrice(),
+        };
+        $singleRoomPrice = $includesSingleRoom
+            ? self::formatAmount(self::amountToCents($singleRoomDailyPrice) * $billableDays)
+            : '0.00';
         $quotedTotalPrice = self::formatAmount(
             self::amountToCents($baseAmount)
             + self::amountToCents($serviceFee)
             + self::amountToCents($travelProtectionPrice)
+            + self::amountToCents($singleRoomPrice)
         );
         $baseLabel = match ($pricingKind) {
             HotelBookingPricingKind::DAYCARE => sprintf(
@@ -129,17 +138,21 @@ final class PricingEngine
             $baseDailyPrice,
             $serviceFee,
             $travelProtectionPrice,
+            $singleRoomPrice,
             $quotedTotalPrice,
             $includesTravelProtection,
+            $includesSingleRoom,
             HotelBookingPricingSnapshot::forQuote(
                 $pricingKind,
                 $billableDays,
                 $baseDailyPrice,
                 $serviceFee,
                 $travelProtectionPrice,
+                $singleRoomPrice,
                 $quotedTotalPrice,
                 $baseLabel,
                 $includesTravelProtection,
+                $includesSingleRoom,
             ),
         );
     }

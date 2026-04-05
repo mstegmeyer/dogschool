@@ -107,6 +107,8 @@ final class ApiNormalizerTest extends TestCase
 
         self::assertSame('hotelBooking', $data['pricingSnapshot']['type']);
         self::assertSame([], $data['pricingSnapshot']['lineItems']);
+        self::assertFalse($data['includesSingleRoom']);
+        self::assertSame('0.00', $data['singleRoomPrice']);
     }
 
     #[Test]

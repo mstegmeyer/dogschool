@@ -146,6 +146,7 @@ final class BookingController extends AbstractController
             $booking->getStartAt(),
             $booking->getEndAt(),
             $booking->includesTravelProtection(),
+            $booking->includesSingleRoom(),
         );
         $finalPrice = $payload['totalPrice'] ?? $quote->quotedTotalPrice;
         $quotedTotalCents = PricingEngine::amountToCents($quote->quotedTotalPrice);
@@ -156,6 +157,7 @@ final class BookingController extends AbstractController
         $booking->setQuotedTotalPrice($quote->quotedTotalPrice);
         $booking->setServiceFee($quote->serviceFee);
         $booking->setTravelProtectionPrice($quote->travelProtectionPrice);
+        $booking->setSingleRoomPrice($quote->singleRoomPrice);
         $booking->setPricingSnapshot($quote->snapshot->finalize($finalPrice)->toArray());
         $booking->setTotalPrice($finalPrice);
         if (array_key_exists('adminComment', $payload)) {

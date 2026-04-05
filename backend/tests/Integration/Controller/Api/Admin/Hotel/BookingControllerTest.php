@@ -54,6 +54,7 @@ final class BookingControllerTest extends WebTestCase
             ->setDog($dog)
             ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
             ->setEndAt(new \DateTimeImmutable('2026-05-06 10:00'))
+            ->setIncludesSingleRoom(true)
             ->setState(HotelBookingState::REQUESTED);
         $hotelBookingRepository->save($booking);
 
@@ -99,6 +100,83 @@ final class BookingControllerTest extends WebTestCase
         $confirmed = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame('CONFIRMED', $confirmed['state']);
         self::assertSame('Blue Room', $confirmed['roomName']);
+        self::assertTrue($confirmed['includesSingleRoom'] ?? false);
+        self::assertSame('58.00', $confirmed['singleRoomPrice'] ?? null);
+        self::assertSame('181.50', $confirmed['totalPrice'] ?? null);
+    }
+
+    public function testAssignRoomRejectsOverlapWithExistingSingleRoomBooking(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-single-room-block-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $exclusiveDog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Exclusive Dog')
+            ->setShoulderHeightCm(48);
+        $dogRepository->save($exclusiveDog);
+
+        $candidateDog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Candidate Dog')
+            ->setShoulderHeightCm(44);
+        $dogRepository->save($candidateDog);
+
+        $room = (new Room())
+            ->setName('Quiet Room')
+            ->setSquareMeters(16);
+        $roomRepository->save($room);
+
+        $existingBooking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($exclusiveDog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-05 18:00'))
+            ->setIncludesSingleRoom(true)
+            ->setState(HotelBookingState::CONFIRMED);
+        $hotelBookingRepository->save($existingBooking);
+
+        $candidateBooking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($candidateDog)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 09:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-05 17:00'))
+            ->setState(HotelBookingState::REQUESTED);
+        $hotelBookingRepository->save($candidateBooking);
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/hotel/bookings/'.$candidateBooking->getId(), $token);
+        self::assertResponseIsSuccessful();
+        $detail = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $matchingRoom = array_values(array_filter(
+            $detail['availableRooms'],
+            static fn (array $roomOption): bool => ($roomOption['roomId'] ?? null) === $room->getId(),
+        ));
+        self::assertCount(1, $matchingRoom);
+        self::assertFalse($matchingRoom[0]['available']);
+        self::assertTrue($matchingRoom[0]['segments'][0]['singleRoomActive'] ?? false);
+
+        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/hotel/bookings/'.$candidateBooking->getId().'/room', $token, json_encode([
+            'roomId' => $room->getId(),
+        ]));
+        self::assertResponseStatusCodeSame(400);
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Raum ist im ausgewählten Zeitraum nicht verfügbar.', $data['errors']['roomId'] ?? null);
     }
 
     public function testConfirmWithHigherPriceRequiresCustomerApproval(): void

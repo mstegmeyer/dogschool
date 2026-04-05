@@ -33,10 +33,14 @@
                 :total-value='booking.totalPrice'
             />
 
-            <div class='grid gap-3 sm:grid-cols-2'>
+            <div class='grid gap-3 sm:grid-cols-3'>
                 <div class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
                     <span class='font-medium text-slate-700'>Typ:</span>
                     {{ hotelPricingKindLabel(booking.pricingKind) }} · {{ booking.billableDays }} Kalendertag(e)
+                </div>
+                <div class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                    <span class='font-medium text-slate-700'>Einzelzimmer:</span>
+                    {{ booking.includesSingleRoom ? formatMoney(booking.singleRoomPrice) : 'Nicht gewählt' }}
                 </div>
                 <div class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
                     <span class='font-medium text-slate-700'>Reiseschutz:</span>
@@ -122,7 +126,7 @@
                         >
                             {{ formatDateTime(segment.startAt) }} – {{ formatDateTime(segment.endAt) }} ·
                             {{ formatSquareMeters(segment.usedSquareMeters) }} ·
-                            {{ segment.dogNames.join(', ') }}
+                            {{ segment.dogNames.join(', ') }}<span v-if='segment.singleRoomActive'> · Einzelzimmer</span>
                         </div>
                     </div>
                 </div>

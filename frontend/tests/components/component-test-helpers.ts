@@ -276,6 +276,27 @@ export const UToggleStub = defineComponent({
     },
 });
 
+export const UCheckboxStub = defineComponent({
+    name: 'u-checkbox-stub',
+    inheritAttrs: false,
+    emits: ['update:modelValue'],
+    props: {
+        modelValue: { type: Boolean, default: false },
+        label: { type: String, default: '' },
+    },
+    setup(props, { attrs, emit }) {
+        return () => h('label', [
+            h('input', {
+                ...attrs,
+                type: 'checkbox',
+                checked: props.modelValue,
+                onChange: (event: Event) => emit('update:modelValue', (event.target as HTMLInputElement).checked),
+            }),
+            props.label,
+        ]);
+    },
+});
+
 export const UDividerStub = defineComponent({
     name: 'u-divider-stub',
     props: {
@@ -404,6 +425,7 @@ export const componentStubs = {
     UButton: UButtonStub,
     UButtonGroup: UButtonGroupStub,
     UCard: UCardStub,
+    UCheckbox: UCheckboxStub,
     UDivider: UDividerStub,
     UDropdown: UDropdownStub,
     UFormGroup: UFormGroupStub,

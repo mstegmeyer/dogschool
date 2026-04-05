@@ -20,7 +20,8 @@ describe('admin hotel occupancy page', () => {
         expect(apiGetMock).toHaveBeenCalledTimes(1);
         expect(apiGetMock.mock.calls[0]?.[0]).toContain('/api/admin/hotel/occupancy?');
         expect(wrapper.text()).toContain('Waldzimmer');
-        expect(wrapper.text()).toContain('11 m²');
-        expect(wrapper.text()).toContain('Rex, Luna');
+        expect(wrapper.text()).toContain('14 m²');
+        expect(wrapper.text()).toContain('Rex');
+        expect(wrapper.text()).toContain('Einzelzimmer');
     });
 });

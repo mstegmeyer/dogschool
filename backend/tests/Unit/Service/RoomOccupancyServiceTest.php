@@ -43,6 +43,60 @@ final class RoomOccupancyServiceTest extends TestCase
         self::assertNotEmpty($availability['segments']);
     }
 
+    public function testBuildAvailabilityForRoomRejectsCandidateWithSingleRoomWhenAnotherDogOverlaps(): void
+    {
+        $room = (new Room())
+            ->setName('Suite 2')
+            ->setSquareMeters(16);
+
+        $existing = $this->createBooking('Existing', 48, '2026-04-05 08:00', '2026-04-05 12:00');
+        $existing->setState(HotelBookingState::CONFIRMED);
+        $existing->setRoom($room);
+
+        $candidate = $this->createBooking('Candidate', 45, '2026-04-05 09:00', '2026-04-05 11:00');
+        $candidate->setIncludesSingleRoom(true);
+
+        $repository = $this->createMock(HotelBookingRepository::class);
+        $repository
+            ->expects(self::once())
+            ->method('findConfirmedAssignedOverlappingByRoom')
+            ->willReturn([$existing]);
+
+        $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
+        $availability = $service->buildAvailabilityForRoom($room, $candidate);
+
+        self::assertFalse($availability['available']);
+        self::assertSame(17, $availability['peakRequiredSquareMeters']);
+        self::assertTrue($availability['segments'][0]['singleRoomActive']);
+    }
+
+    public function testBuildAvailabilityForRoomRejectsRoommateForExistingSingleRoomBooking(): void
+    {
+        $room = (new Room())
+            ->setName('Suite 3')
+            ->setSquareMeters(18);
+
+        $existing = $this->createBooking('Existing', 52, '2026-04-05 08:00', '2026-04-05 12:00');
+        $existing->setState(HotelBookingState::CONFIRMED);
+        $existing->setRoom($room);
+        $existing->setIncludesSingleRoom(true);
+
+        $candidate = $this->createBooking('Candidate', 45, '2026-04-05 09:00', '2026-04-05 11:00');
+
+        $repository = $this->createMock(HotelBookingRepository::class);
+        $repository
+            ->expects(self::once())
+            ->method('findConfirmedAssignedOverlappingByRoom')
+            ->willReturn([$existing]);
+
+        $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
+        $availability = $service->buildAvailabilityForRoom($room, $candidate);
+
+        self::assertFalse($availability['available']);
+        self::assertSame(19, $availability['peakRequiredSquareMeters']);
+        self::assertTrue($availability['segments'][0]['singleRoomActive']);
+    }
+
     public function testBuildOccupancyOverviewBuildsPerRoomSegments(): void
     {
         $room = (new Room())
@@ -74,6 +128,37 @@ final class RoomOccupancyServiceTest extends TestCase
         self::assertSame(13, $overview[0]['peakRequiredSquareMeters']);
         self::assertCount(5, $overview[0]['segments']);
         self::assertSame(['Mila', 'Bruno'], $overview[0]['segments'][2]['dogNames']);
+        self::assertFalse($overview[0]['segments'][2]['singleRoomActive']);
+    }
+
+    public function testBuildOccupancyOverviewMarksSingleRoomSegmentsAsExclusive(): void
+    {
+        $room = (new Room())
+            ->setName('Ruheraum')
+            ->setSquareMeters(16);
+
+        $booking = $this->createBooking('Mila', 48, '2026-04-05 08:00', '2026-04-05 10:00');
+        $booking->setState(HotelBookingState::CONFIRMED);
+        $booking->setRoom($room);
+        $booking->setIncludesSingleRoom(true);
+
+        $repository = $this->createMock(HotelBookingRepository::class);
+        $repository
+            ->expects(self::once())
+            ->method('findConfirmedAssignedByRange')
+            ->willReturn([$booking]);
+
+        $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
+        $overview = $service->buildOccupancyOverview(
+            [$room],
+            new \DateTimeImmutable('2026-04-05 07:00', new \DateTimeZone('Europe/Berlin')),
+            new \DateTimeImmutable('2026-04-05 12:00', new \DateTimeZone('Europe/Berlin')),
+        );
+
+        self::assertCount(1, $overview);
+        self::assertSame(16, $overview[0]['peakRequiredSquareMeters']);
+        self::assertTrue($overview[0]['segments'][1]['singleRoomActive']);
+        self::assertSame(0, $overview[0]['segments'][1]['freeSquareMeters']);
     }
 
     public function testBuildOccupancyOverviewKeepsWallTimeWhenStoredTimezoneDiffers(): void

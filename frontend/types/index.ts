@@ -82,6 +82,7 @@ export interface RoomOccupancySegment {
     freeSquareMeters: number,
     bookingCount: number,
     dogNames: string[],
+    singleRoomActive: boolean,
 }
 
 export interface RoomAvailability {
@@ -124,10 +125,12 @@ export interface HotelBooking {
     pricingKind: HotelBookingPricingKind,
     billableDays: number,
     includesTravelProtection: boolean,
+    includesSingleRoom: boolean,
     totalPrice: string,
     quotedTotalPrice: string,
     serviceFee: string,
     travelProtectionPrice: string,
+    singleRoomPrice: string,
     state: HotelBookingState,
     customerComment: string | null,
     adminComment: string | null,
@@ -275,8 +278,10 @@ export interface HotelBookingQuotePreview {
     baseDailyPrice: string,
     serviceFee: string,
     travelProtectionPrice: string,
+    singleRoomPrice: string,
     quotedTotalPrice: string,
     includesTravelProtection: boolean,
+    includesSingleRoom: boolean,
     snapshot: PricingSnapshot,
 }
 

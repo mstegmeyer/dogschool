@@ -113,6 +113,34 @@ final class PricingEngineTest extends TestCase
     }
 
     #[Test]
+    public function previewHotelBookingAddsSingleRoomSurchargeAutomatically(): void
+    {
+        $quote = $this->pricingEngine->previewHotelBooking(
+            new \DateTimeImmutable('2026-04-16T08:00:00+02:00'),
+            new \DateTimeImmutable('2026-04-17T10:00:00+02:00'),
+            false,
+            true,
+        );
+
+        self::assertSame('HOTEL', $quote->pricingKind->value);
+        self::assertSame(2, $quote->billableDays);
+        self::assertSame('58.00', $quote->baseDailyPrice);
+        self::assertSame('58.00', $quote->singleRoomPrice);
+        self::assertSame('181.50', $quote->quotedTotalPrice);
+        self::assertContainsEquals(
+            [
+                'key' => 'hotel_single_room',
+                'label' => 'Einzelzimmer-Zuschlag',
+                'quantity' => 2,
+                'unitPrice' => '29.00',
+                'amount' => '58.00',
+                'billingPeriod' => 'DAY',
+            ],
+            $quote->snapshot->toArray()['lineItems'] ?? [],
+        );
+    }
+
+    #[Test]
     public function previewHotelBookingUsesStartedCalendarDaysForOvernightHotelStays(): void
     {
         $quote = $this->pricingEngine->previewHotelBooking(

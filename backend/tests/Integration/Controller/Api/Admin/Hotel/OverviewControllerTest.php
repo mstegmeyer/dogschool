@@ -90,6 +90,7 @@ final class OverviewControllerTest extends WebTestCase
         self::assertSame(13, $gardenOccupancy[0]['peakRequiredSquareMeters']);
         self::assertSame('2026-04-05T09:00:00+02:00', $gardenOccupancy[0]['segments'][2]['startAt']);
         self::assertSame('2026-04-05T18:00:00+02:00', $gardenOccupancy[0]['segments'][2]['endAt']);
+        self::assertFalse($gardenOccupancy[0]['segments'][2]['singleRoomActive'] ?? true);
 
         $helper->adminRequest(
             Request::METHOD_GET,
@@ -113,6 +114,64 @@ final class OverviewControllerTest extends WebTestCase
         self::assertSame('Garden', $gardenArrivals[0]['roomName']);
         self::assertSame('2026-04-05T08:00:00+02:00', $gardenArrivals[0]['startAt']);
         self::assertSame('2026-04-05T18:00:00+02:00', $gardenDepartures[0]['endAt']);
+    }
+
+    public function testOccupancyMarksSingleRoomSegmentsAsExclusive(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-occupancy-single-room-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $room = (new Room())
+            ->setName('Ruheraum')
+            ->setSquareMeters(16);
+        $roomRepository->save($room);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Solo')
+            ->setShoulderHeightCm(48);
+        $dogRepository->save($dog);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-04-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-05 18:00'))
+            ->setIncludesSingleRoom(true)
+            ->setState(HotelBookingState::CONFIRMED);
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(
+            Request::METHOD_GET,
+            '/api/admin/hotel/occupancy?from=2026-04-05T07:00&to=2026-04-05T20:00',
+            $token,
+        );
+        self::assertResponseIsSuccessful();
+        $occupancy = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $exclusiveRoom = array_values(array_filter(
+            $occupancy['items'],
+            static fn (array $item): bool => ($item['room']['id'] ?? null) === $room->getId(),
+        ));
+        self::assertCount(1, $exclusiveRoom);
+        self::assertSame(16, $exclusiveRoom[0]['peakRequiredSquareMeters']);
+        self::assertTrue($exclusiveRoom[0]['segments'][1]['singleRoomActive'] ?? false);
+        self::assertSame(0, $exclusiveRoom[0]['segments'][1]['freeSquareMeters']);
     }
 
     public function testOccupancyAndMovementsRejectInvalidRangesWithGermanErrors(): void

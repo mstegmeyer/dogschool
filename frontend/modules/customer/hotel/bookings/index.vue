@@ -103,6 +103,7 @@ const requestForm = reactive({
     endAt: defaultBookingDateTime(1, 18),
     currentShoulderHeightCm: 0,
     includesTravelProtection: false,
+    includesSingleRoom: false,
     customerComment: '',
 });
 const resubmitForm = reactive({ customerComment: '' });
@@ -156,6 +157,7 @@ function resetRequestForm(): void {
     requestForm.endAt = defaultBookingDateTime(1, 18);
     requestForm.currentShoulderHeightCm = 0;
     requestForm.includesTravelProtection = false;
+    requestForm.includesSingleRoom = false;
     requestForm.customerComment = '';
 }
 
@@ -203,6 +205,7 @@ async function loadPreview(requestId: number): Promise<void> {
             endAt: requestForm.endAt,
             currentShoulderHeightCm: requestForm.currentShoulderHeightCm || null,
             includesTravelProtection: requestForm.includesTravelProtection,
+            includesSingleRoom: requestForm.includesSingleRoom,
             customerComment: requestForm.customerComment || null,
         });
         if (!showRequest.value || requestId !== previewRequestId) {
@@ -295,6 +298,7 @@ async function requestBooking(): Promise<void> {
             endAt: requestForm.endAt,
             currentShoulderHeightCm: requestForm.currentShoulderHeightCm,
             includesTravelProtection: requestForm.includesTravelProtection,
+            includesSingleRoom: requestForm.includesSingleRoom,
             customerComment: requestForm.customerComment || null,
         });
         toast.add({ title: 'Hotelbuchung angefragt', color: 'green' });
@@ -364,7 +368,7 @@ onBeforeUnmount(() => {
 });
 
 watch(
-    () => [showRequest.value, requestForm.dogId, requestForm.startAt, requestForm.endAt, requestForm.includesTravelProtection],
+    () => [showRequest.value, requestForm.dogId, requestForm.startAt, requestForm.endAt, requestForm.includesTravelProtection, requestForm.includesSingleRoom],
     () => {
         schedulePreview();
     },

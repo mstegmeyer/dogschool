@@ -36,7 +36,7 @@
                     {{ contract.coursesPerWeek }}× / Woche · {{ formatContractMonthlyPrice(contract.price, contract.type) }}
                 </p>
             </div>
-            <div class='flex shrink-0 flex-col items-end gap-2'>
+            <div class='flex flex-row gap-2'>
                 <UBadge :color='contractStateColor(contract.state)' variant='soft'>
                     {{ contractStateLabel(contract.state) }}
                 </UBadge>

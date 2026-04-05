@@ -12,6 +12,10 @@ export class CustomerCalendarPage {
         return this.page.locator(`[data-course-date-id="${courseDateId}"]`);
     }
 
+    cardSurface(courseDateId: string): Locator {
+        return this.card(courseDateId).locator('.rounded-xl').first();
+    }
+
     bookingTrigger(courseDateId: string): Locator {
         return this.page.getByTestId(`open-booking-${courseDateId}`);
     }

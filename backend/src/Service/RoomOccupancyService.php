@@ -135,6 +135,8 @@ final class RoomOccupancyService
     /**
      * @param list<HotelBooking> $bookings
      *
+     * @phpstan-type ActiveBooking array{id: string, dogName: string, requirement: int}
+     *
      * @return list<array{
      *     startAt: string,
      *     endAt: string,
@@ -151,6 +153,9 @@ final class RoomOccupancyService
         int $roomSquareMeters,
     ): array {
         $boundaries = [$from->getTimestamp(), $to->getTimestamp()];
+        $activeBookings = [];
+        $startingBookings = [];
+        $endingBookings = [];
 
         foreach ($bookings as $booking) {
             $start = max($from->getTimestamp(), $booking->getStartAt()->getTimestamp());
@@ -160,8 +165,21 @@ final class RoomOccupancyService
                 continue;
             }
 
+            $dog = $booking->getDog();
+            if ($dog === null) {
+                continue;
+            }
+
+            $activeBooking = [
+                'id' => $booking->getId(),
+                'dogName' => $dog->getName(),
+                'requirement' => $this->areaRequirementHelper->squareMetersForDog($dog),
+            ];
+
             $boundaries[] = $start;
             $boundaries[] = $end;
+            $startingBookings[$start][] = $activeBooking;
+            $endingBookings[$end][] = $booking->getId();
         }
 
         $boundaries = array_values(array_unique($boundaries));
@@ -176,29 +194,27 @@ final class RoomOccupancyService
                 continue;
             }
 
-            $active = array_values(array_filter(
-                $bookings,
-                static fn (HotelBooking $booking): bool => $booking->getStartAt()->getTimestamp() < $segmentEnd
-                    && $booking->getEndAt()->getTimestamp() > $segmentStart,
-            ));
-
-            $requirements = [];
-            $dogNames = [];
-            foreach ($active as $booking) {
-                $dog = $booking->getDog();
-                if ($dog === null) {
-                    continue;
-                }
-
-                $requirements[] = $this->areaRequirementHelper->squareMetersForDog($dog);
-                $dogNames[] = $dog->getName();
+            foreach ($endingBookings[$segmentStart] ?? [] as $bookingId) {
+                unset($activeBookings[$bookingId]);
             }
 
+            foreach ($startingBookings[$segmentStart] ?? [] as $activeBooking) {
+                $activeBookings[$activeBooking['id']] = $activeBooking;
+            }
+
+            $requirements = array_map(
+                static fn (array $activeBooking): int => $activeBooking['requirement'],
+                array_values($activeBookings),
+            );
+            $dogNames = array_map(
+                static fn (array $activeBooking): string => $activeBooking['dogName'],
+                array_values($activeBookings),
+            );
             $usedSquareMeters = $this->areaRequirementHelper->aggregateRequiredSquareMeters($requirements);
 
             $segments[] = [
-                'startAt' => LocalDateTime::formatWallTime((new \DateTimeImmutable())->setTimestamp($segmentStart)),
-                'endAt' => LocalDateTime::formatWallTime((new \DateTimeImmutable())->setTimestamp($segmentEnd)),
+                'startAt' => LocalDateTime::formatWallTime(LocalDateTime::fromTimestamp($segmentStart)),
+                'endAt' => LocalDateTime::formatWallTime(LocalDateTime::fromTimestamp($segmentEnd)),
                 'usedSquareMeters' => $usedSquareMeters,
                 'freeSquareMeters' => $roomSquareMeters - $usedSquareMeters,
                 'bookingCount' => count($dogNames),

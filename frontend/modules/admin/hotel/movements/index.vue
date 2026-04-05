@@ -108,30 +108,17 @@ import type { HotelBooking, HotelMovementsResponse } from '~/types';
 definePageMeta({ layout: 'admin' });
 
 const api = useApi();
-const { formatDateTime } = useHelpers();
+const { formatDateTime, futureDateTimeLocalValue } = useHelpers();
 
 const arrivals = ref<HotelBooking[]>([]);
 const departures = ref<HotelBooking[]>([]);
 const loading = ref(true);
-const fromValue = ref(defaultRangeValue(0));
-const toValue = ref(defaultRangeValue(24));
-
-function defaultRangeValue(offsetHours: number): string {
-    const date = new Date();
-    date.setMinutes(0, 0, 0);
-    date.setHours(date.getHours() + offsetHours);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
+const fromValue = ref(futureDateTimeLocalValue(0, true));
+const toValue = ref(futureDateTimeLocalValue(24, true));
 
 function applyPreset(hours: number): void {
-    fromValue.value = defaultRangeValue(0);
-    toValue.value = defaultRangeValue(hours);
+    fromValue.value = futureDateTimeLocalValue(0, true);
+    toValue.value = futureDateTimeLocalValue(hours, true);
     void loadMovements();
 }
 

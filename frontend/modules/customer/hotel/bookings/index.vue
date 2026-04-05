@@ -44,6 +44,7 @@ definePageMeta({ layout: 'customer' });
 
 const api = useApi();
 const toast = useToast();
+const { toDateTimeLocalValue } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError } = useFormFeedback();
 
 const bookings = ref<HotelBooking[]>([]);
@@ -78,19 +79,16 @@ function defaultBookingDateTime(dayOffset: number, hour: number): string {
     return toDateTimeLocalValue(date);
 }
 
-function toDateTimeLocalValue(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
 function closeRequestModal(): void {
     showRequest.value = false;
     clearFormErrors();
+}
+
+function resetRequestForm(): void {
+    requestForm.dogId = '';
+    requestForm.startAt = defaultBookingDateTime(1, 8);
+    requestForm.endAt = defaultBookingDateTime(1, 18);
+    requestForm.currentShoulderHeightCm = 0;
 }
 
 function validateForm(): boolean {
@@ -147,6 +145,11 @@ async function loadBookings(): Promise<void> {
     }
 }
 
+async function loadDogs(): Promise<void> {
+    const response = await api.get<ApiListResponse<Dog>>('/api/customer/dogs');
+    dogs.value = response.items;
+}
+
 async function requestBooking(): Promise<void> {
     if (!validateForm()) {
         return;
@@ -162,13 +165,8 @@ async function requestBooking(): Promise<void> {
         });
         toast.add({ title: 'Hotelbuchung angefragt', color: 'green' });
         closeRequestModal();
-        requestForm.dogId = '';
-        requestForm.startAt = defaultBookingDateTime(1, 8);
-        requestForm.endAt = defaultBookingDateTime(1, 18);
-        requestForm.currentShoulderHeightCm = 0;
-        await loadBookings();
-        const dogResponse = await api.get<ApiListResponse<Dog>>('/api/customer/dogs');
-        dogs.value = dogResponse.items;
+        resetRequestForm();
+        await Promise.all([loadBookings(), loadDogs()]);
     } catch (cause) {
         applyApiError(cause, 'Die Hotelbuchung konnte nicht angefragt werden.');
     } finally {
@@ -177,12 +175,6 @@ async function requestBooking(): Promise<void> {
 }
 
 onMounted(async () => {
-    const [bookingResponse, dogResponse] = await Promise.all([
-        api.get<ApiListResponse<HotelBooking>>('/api/customer/hotel-bookings'),
-        api.get<ApiListResponse<Dog>>('/api/customer/dogs'),
-    ]);
-    bookings.value = bookingResponse.items;
-    dogs.value = dogResponse.items;
-    loading.value = false;
+    await Promise.all([loadBookings(), loadDogs()]);
 });
 </script>

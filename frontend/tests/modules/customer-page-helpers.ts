@@ -128,6 +128,27 @@ export const creditTransaction = {
     createdAt: '2026-04-01T10:00:00+02:00',
 };
 
+function toDateTimeLocalStubValue(value: string | Date): string {
+    const date = value instanceof Date
+        ? value
+        : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toISOString().slice(0, 16);
+}
+
+function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
+    const date = new Date('2026-04-04T08:00:00Z');
+    if (roundToHour) {
+        date.setUTCMinutes(0, 0, 0);
+    }
+    date.setUTCHours(date.getUTCHours() + offsetHours);
+
+    return toDateTimeLocalStubValue(date);
+}
+
 export function installCustomerGlobals() {
     installNuxtGlobals();
     vi.stubGlobal('useApi', () => ({
@@ -160,7 +181,8 @@ export function installCustomerGlobals() {
         hotelBookingStateLabel: (value: string) => value,
         hotelBookingStateColor: () => 'amber',
         formatSquareMeters: (value: number) => `${value} m²`,
-        toDateTimeLocalValue: (value: string) => value,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
     }));
     vi.stubGlobal('useRuntimeConfig', () => ({
         public: { apiBaseUrl: 'https://api.example.test' },

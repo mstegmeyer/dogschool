@@ -51,29 +51,8 @@ final class HotelBookingController extends AbstractController
             return $this->json(['errors' => ['dogId' => 'Invalid or not your dog']], Response::HTTP_BAD_REQUEST);
         }
 
-        $startAt = $this->parseDateTime($dto->startAt);
-        if ($startAt === null) {
-            return $this->json(['errors' => ['startAt' => 'Ungültiger Startzeitpunkt.']], Response::HTTP_BAD_REQUEST);
-        }
-
-        $endAt = $this->parseDateTime($dto->endAt);
-        if ($endAt === null) {
-            return $this->json(['errors' => ['endAt' => 'Ungültiger Endzeitpunkt.']], Response::HTTP_BAD_REQUEST);
-        }
-
-        if ($endAt <= $startAt) {
-            return $this->json(['errors' => ['endAt' => 'Ende muss nach dem Beginn liegen.']], Response::HTTP_BAD_REQUEST);
-        }
-
-        $startMinutes = ((int) $startAt->format('H') * 60) + (int) $startAt->format('i');
-        if ($startMinutes < 360 || $startMinutes > 1320) {
-            return $this->json(['errors' => ['startAt' => 'Beginn muss zwischen 06:00 und 22:00 Uhr liegen.']], Response::HTTP_BAD_REQUEST);
-        }
-
-        $endMinutes = ((int) $endAt->format('H') * 60) + (int) $endAt->format('i');
-        if ($endMinutes < 360 || $endMinutes > 1320) {
-            return $this->json(['errors' => ['endAt' => 'Ende muss zwischen 06:00 und 22:00 Uhr liegen.']], Response::HTTP_BAD_REQUEST);
-        }
+        $startAt = $this->parseValidatedDateTime($dto->startAt);
+        $endAt = $this->parseValidatedDateTime($dto->endAt);
 
         if ($dto->currentShoulderHeightCm !== null) {
             $dog->setShoulderHeightCm($dto->currentShoulderHeightCm);
@@ -96,16 +75,12 @@ final class HotelBookingController extends AbstractController
         return $this->json($this->normalizer->normalizeHotelBooking($booking), Response::HTTP_CREATED);
     }
 
-    private function parseDateTime(?string $value): ?\DateTimeImmutable
+    private function parseValidatedDateTime(?string $value): \DateTimeImmutable
     {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
         try {
-            return new \DateTimeImmutable($value);
+            return new \DateTimeImmutable($value ?? throw new \LogicException('Hotel booking datetime is required.'));
         } catch (\Exception) {
-            return null;
+            throw new \LogicException('Validated hotel booking datetime could not be parsed.');
         }
     }
 }

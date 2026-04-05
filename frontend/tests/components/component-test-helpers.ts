@@ -71,6 +71,27 @@ export const adminNotificationForm = {
     pinnedUntil: '2026-04-10',
 };
 
+function toDateTimeLocalStubValue(value: string | Date): string {
+    const date = value instanceof Date
+        ? value
+        : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toISOString().slice(0, 16);
+}
+
+function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
+    const date = new Date('2026-04-04T08:00:00Z');
+    if (roundToHour) {
+        date.setUTCMinutes(0, 0, 0);
+    }
+    date.setUTCHours(date.getUTCHours() + offsetHours);
+
+    return toDateTimeLocalStubValue(date);
+}
+
 export const courseForm = {
     typeCode: 'AGI',
     dayOfWeek: 2,
@@ -504,6 +525,8 @@ export function installComponentGlobals(options: {
         formatContractMonthlyPrice: (price: string) => `${price} EUR`,
         formatSquareMeters: (value: number) => `${value} m²`,
         creditTypeLabel: (type: string) => type,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
         toMonthEndIso: (value: string) => value.slice(0, 8) + '30',
         isLastOfMonth: (value: string) => value.endsWith('-30'),
         toMonthStartIso: (value: string) => value.slice(0, 8) + '01',

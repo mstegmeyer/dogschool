@@ -160,14 +160,26 @@ export const useHelpers = () => {
         return `${value} m²`;
     }
 
-    function toDateTimeLocalValue(value: string): string {
-        const date = new Date(value);
+    function toDateTimeLocalValue(value: string | Date): string {
+        const date = value instanceof Date
+            ? value
+            : new Date(value);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    function futureDateTimeLocalValue(offsetHours: number, roundToHour = false): string {
+        const date = new Date();
+        if (roundToHour) {
+            date.setMinutes(0, 0, 0);
+        }
+        date.setHours(date.getHours() + offsetHours);
+
+        return toDateTimeLocalValue(date);
     }
 
     function formatNotificationCourse(course: Pick<NotificationCourseRef, 'typeName' | 'typeCode' | 'dayOfWeek' | 'startTime'> | null | undefined): string {
@@ -213,6 +225,7 @@ export const useHelpers = () => {
         formatContractMonthlyPrice,
         formatSquareMeters,
         toDateTimeLocalValue,
+        futureDateTimeLocalValue,
         formatCourseTitleWithLevel,
         formatNotificationCourse,
         formatNotificationCourses,

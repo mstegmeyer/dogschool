@@ -66,8 +66,8 @@ final class RoomOccupancyServiceTest extends TestCase
         $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
         $overview = $service->buildOccupancyOverview(
             [$room],
-            new \DateTimeImmutable('2026-04-05 07:00'),
-            new \DateTimeImmutable('2026-04-05 12:00'),
+            new \DateTimeImmutable('2026-04-05 07:00', new \DateTimeZone('Europe/Berlin')),
+            new \DateTimeImmutable('2026-04-05 12:00', new \DateTimeZone('Europe/Berlin')),
         );
 
         self::assertCount(1, $overview);
@@ -76,12 +76,47 @@ final class RoomOccupancyServiceTest extends TestCase
         self::assertSame(['Mila', 'Bruno'], $overview[0]['segments'][2]['dogNames']);
     }
 
+    public function testBuildOccupancyOverviewKeepsWallTimeWhenPhpDefaultTimezoneDiffers(): void
+    {
+        $room = (new Room())
+            ->setName('Wald')
+            ->setSquareMeters(12);
+
+        $booking = $this->createBooking('Mila', 48, '2026-04-05 08:00', '2026-04-05 10:00');
+        $booking->setState(HotelBookingState::CONFIRMED);
+        $booking->setRoom($room);
+
+        $repository = $this->createMock(HotelBookingRepository::class);
+        $repository
+            ->expects(self::once())
+            ->method('findConfirmedAssignedByRange')
+            ->willReturn([$booking]);
+
+        $previousTimezone = date_default_timezone_get();
+        date_default_timezone_set('UTC');
+
+        try {
+            $service = new RoomOccupancyService($repository, new HotelAreaRequirementHelper());
+            $overview = $service->buildOccupancyOverview(
+                [$room],
+                new \DateTimeImmutable('2026-04-05 07:00', new \DateTimeZone('Europe/Berlin')),
+                new \DateTimeImmutable('2026-04-05 11:00', new \DateTimeZone('Europe/Berlin')),
+            );
+
+            self::assertSame('2026-04-05T08:00:00+02:00', $overview[0]['segments'][1]['startAt']);
+            self::assertSame('2026-04-05T10:00:00+02:00', $overview[0]['segments'][1]['endAt']);
+        } finally {
+            date_default_timezone_set($previousTimezone);
+        }
+    }
+
     private function createBooking(
         string $dogName,
         int $heightCm,
         string $startAt,
         string $endAt,
     ): HotelBooking {
+        $timezone = new \DateTimeZone('Europe/Berlin');
         $customer = (new Customer())
             ->setName('Customer')
             ->setEmail(sprintf('%s@example.com', strtolower($dogName)))
@@ -94,7 +129,7 @@ final class RoomOccupancyServiceTest extends TestCase
         return (new HotelBooking())
             ->setCustomer($customer)
             ->setDog($dog)
-            ->setStartAt(new \DateTimeImmutable($startAt))
-            ->setEndAt(new \DateTimeImmutable($endAt));
+            ->setStartAt(new \DateTimeImmutable($startAt, $timezone))
+            ->setEndAt(new \DateTimeImmutable($endAt, $timezone));
     }
 }

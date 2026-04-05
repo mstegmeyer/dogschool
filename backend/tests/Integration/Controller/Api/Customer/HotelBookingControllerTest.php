@@ -93,10 +93,12 @@ final class HotelBookingControllerTest extends WebTestCase
             'startAt' => '2026-04-05T05:30',
             'endAt' => '2026-04-05T09:00',
         ]));
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
 
-        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
-        self::assertSame('Beginn muss zwischen 06:00 und 22:00 Uhr liegen.', $data['errors']['startAt'] ?? null);
+        self::assertStringContainsString(
+            'Beginn muss zwischen 06:00 und 22:00 Uhr liegen.',
+            $client->getResponse()->getContent() ?: '',
+        );
     }
 
     public function testCreateHotelBookingRejectsInvalidEndWindow(): void
@@ -119,9 +121,41 @@ final class HotelBookingControllerTest extends WebTestCase
             'startAt' => '2026-04-05T08:30',
             'endAt' => '2026-04-06T05:45',
         ]));
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
 
-        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
-        self::assertSame('Ende muss zwischen 06:00 und 22:00 Uhr liegen.', $data['errors']['endAt'] ?? null);
+        self::assertStringContainsString(
+            'Ende muss zwischen 06:00 und 22:00 Uhr liegen.',
+            $client->getResponse()->getContent() ?: '',
+        );
+    }
+
+    public function testCreateHotelBookingRejectsInvalidShoulderHeightUpdate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepository = $container->get(DogRepository::class);
+
+        $dog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Tiny')
+            ->setShoulderHeightCm(42);
+        $dogRepository->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/hotel-bookings', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startAt' => '2026-04-05T08:30',
+            'endAt' => '2026-04-06T10:00',
+            'currentShoulderHeightCm' => -5,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+
+        self::assertStringContainsString(
+            'Schulterhöhe muss zwischen 1 und 200 cm liegen.',
+            $client->getResponse()->getContent() ?: '',
+        );
+        self::assertSame(42, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
     }
 }

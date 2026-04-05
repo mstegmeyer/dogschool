@@ -28,6 +28,20 @@ describe('useFormFeedback', () => {
         expect(message).toBe('Bitte prüfe die markierten Felder.');
     });
 
+    it('extracts Symfony validation violations as field errors', () => {
+        expect(extractApiFieldErrors({
+            data: {
+                violations: [
+                    { propertyPath: 'startAt', title: 'Beginn muss zwischen 06:00 und 22:00 Uhr liegen.' },
+                    { propertyPath: 'currentShoulderHeightCm', title: 'Schulterhöhe muss zwischen 1 und 200 cm liegen.' },
+                ],
+            },
+        })).toEqual({
+            startAt: 'Beginn muss zwischen 06:00 und 22:00 Uhr liegen.',
+            currentShoulderHeightCm: 'Schulterhöhe muss zwischen 1 und 200 cm liegen.',
+        });
+    });
+
     it('returns singular api errors when no field map exists', () => {
         const message = extractApiErrorMessage({
             data: {
@@ -36,6 +50,16 @@ describe('useFormFeedback', () => {
         }, 'Fallback');
 
         expect(message).toBe('Nicht genug Credits.');
+    });
+
+    it('falls back to api detail when no custom message exists', () => {
+        const message = extractApiErrorMessage({
+            data: {
+                detail: 'The request payload is invalid.',
+            },
+        }, 'Fallback');
+
+        expect(message).toBe('The request payload is invalid.');
     });
 
     it('tracks and clears form errors locally', () => {

@@ -83,6 +83,7 @@ describe('admin hotel bookings page', () => {
         await wrapper.get('[data-testid="hotel-booking-from-filter"]').setValue('2026-04-05T00:00');
         await wrapper.get('[data-testid="hotel-booking-to-filter"]').setValue('2026-04-06T00:00');
         await flushPromises();
+        expect(apiGetMock).toHaveBeenCalledTimes(1);
 
         await table.vm.$emit('update:currentPage', 2);
         await flushPromises();
@@ -92,13 +93,11 @@ describe('admin hotel bookings page', () => {
         await resetButton!.trigger('click');
         await flushPromises();
 
-        expect(apiGetMock.mock.calls.some(call =>
-            typeof call[0] === 'string'
-            && call[0].includes('state=REQUESTED')
-            && call[0].includes('page=1')
-            && !call[0].includes('from=')
-            && !call[0].includes('to='),
-        )).toBe(true);
+        expect(apiGetMock).toHaveBeenCalledTimes(1);
+        expect(apiGetMock.mock.calls[0]?.[0]).toContain('state=REQUESTED');
+        expect(apiGetMock.mock.calls[0]?.[0]).toContain('page=1');
+        expect(apiGetMock.mock.calls[0]?.[0]).not.toContain('from=');
+        expect(apiGetMock.mock.calls[0]?.[0]).not.toContain('to=');
     });
 
     it('blocks invalid filter ranges and shows a toast instead of reloading', async () => {

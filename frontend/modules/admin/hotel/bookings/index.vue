@@ -173,12 +173,7 @@ function applyFilters(): void {
         return;
     }
 
-    if (currentPage.value !== 1) {
-        currentPage.value = 1;
-        return;
-    }
-
-    void loadBookings();
+    reloadFirstPage();
 }
 
 function resetFilters(): void {
@@ -186,6 +181,10 @@ function resetFilters(): void {
     fromFilter.value = '';
     toFilter.value = '';
 
+    reloadFirstPage();
+}
+
+function reloadFirstPage(): void {
     if (currentPage.value !== 1) {
         currentPage.value = 1;
         return;
@@ -264,10 +263,6 @@ async function declineBooking(): Promise<void> {
 
 watch(currentPage, () => {
     void loadBookings();
-});
-
-watch(stateFilter, () => {
-    applyFilters();
 });
 
 onMounted(() => {

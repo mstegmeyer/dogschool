@@ -11,7 +11,7 @@ final class LocalDateTime
     private const STORAGE_FORMAT = 'Y-m-d H:i:s';
 
     /**
-     * Hotel datetimes live in MariaDB DATETIME columns and are treated as local wall time.
+     * Hotel datetimes are stored without timezone information and are treated as local wall time.
      * Re-attach the app timezone before serializing them for the browser.
      */
     public static function formatWallTime(\DateTimeImmutable $value): string
@@ -27,5 +27,11 @@ final class LocalDateTime
         }
 
         return $local->format(\DateTimeInterface::ATOM);
+    }
+
+    public static function fromTimestamp(int $timestamp): \DateTimeImmutable
+    {
+        return (new \DateTimeImmutable(sprintf('@%d', $timestamp)))
+            ->setTimezone(new \DateTimeZone(CourseDate::TIMEZONE));
     }
 }

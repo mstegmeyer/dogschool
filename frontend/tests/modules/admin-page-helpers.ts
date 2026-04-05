@@ -171,6 +171,27 @@ export const customerRecord = {
     bankAccount: { iban: null, bic: null, accountHolder: null },
 };
 
+function toDateTimeLocalStubValue(value: string | Date): string {
+    const date = value instanceof Date
+        ? value
+        : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toISOString().slice(0, 16);
+}
+
+function futureDateTimeLocalStubValue(offsetHours: number, roundToHour = false): string {
+    const date = new Date('2026-04-04T08:00:00Z');
+    if (roundToHour) {
+        date.setUTCMinutes(0, 0, 0);
+    }
+    date.setUTCHours(date.getUTCHours() + offsetHours);
+
+    return toDateTimeLocalStubValue(date);
+}
+
 export const todayCourseDate = {
     id: 'course-date-1',
     courseId: 'course-1',
@@ -213,7 +234,8 @@ export function installAdminGlobals() {
         hotelBookingStateLabel: (value: string) => value,
         hotelBookingStateColor: () => 'amber',
         formatSquareMeters: (value: number) => `${value} m²`,
-        toDateTimeLocalValue: (value: string) => value,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
     }));
     vi.stubGlobal('useFormFeedback', () => createFormFeedbackState());
     vi.stubGlobal('extractApiErrorMessage', (cause: unknown, fallback: string) =>

@@ -116,12 +116,12 @@ import type { HotelOccupancyResponse, HotelOccupancyRoom, RoomOccupancySegment }
 definePageMeta({ layout: 'admin' });
 
 const api = useApi();
-const { formatSquareMeters } = useHelpers();
+const { formatSquareMeters, futureDateTimeLocalValue } = useHelpers();
 
 const rooms = ref<HotelOccupancyRoom[]>([]);
 const loading = ref(true);
-const fromValue = ref(defaultRangeValue(0));
-const toValue = ref(defaultRangeValue(24));
+const fromValue = ref(futureDateTimeLocalValue(0, true));
+const toValue = ref(futureDateTimeLocalValue(24, true));
 
 const NIGHT_COMPRESSION_FACTOR = 0.2;
 
@@ -150,27 +150,9 @@ const hourMarks = computed(() => {
     return marks;
 });
 
-function defaultRangeValue(offsetHours: number): string {
-    const date = new Date();
-    date.setMinutes(0, 0, 0);
-    date.setHours(date.getHours() + offsetHours);
-
-    return toDateTimeLocalValue(date);
-}
-
-function toDateTimeLocalValue(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
 function applyPreset(hours: number): void {
-    fromValue.value = defaultRangeValue(0);
-    toValue.value = defaultRangeValue(hours);
+    fromValue.value = futureDateTimeLocalValue(0, true);
+    toValue.value = futureDateTimeLocalValue(hours, true);
     void loadOccupancy();
 }
 

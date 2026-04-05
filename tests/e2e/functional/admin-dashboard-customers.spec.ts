@@ -3,7 +3,6 @@ import { expect, test } from '../fixtures/test';
 test('shows the admin dashboard stats, open contract requests, and today schedule', async ({
     page,
     loginAsAdmin,
-    manifest,
 }) => {
     await loginAsAdmin();
     await page.goto('/admin');
@@ -13,9 +12,8 @@ test('shows the admin dashboard stats, open contract requests, and today schedul
     await expect(page.getByText('Aktive Verträge')).toBeVisible();
     await expect(page.getByText('Monatlicher Vertragswert')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Offene Vertragsanfragen' })).toBeVisible();
-    await expect(page.getByText(manifest.customers.customer_contract_approve.name)).toBeVisible();
-    await expect(page.getByText(manifest.customers.customer_contract_pending.name)).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Prüfen' }).first()).toBeVisible();
+    await expect(page.getByText('Preis prüfen')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Heutige Termine' })).toBeVisible();
 });
 

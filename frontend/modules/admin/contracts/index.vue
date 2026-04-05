@@ -9,7 +9,7 @@
             data-testid='contract-state-filter'
             :options='stateOptions'
             value-attribute='value'
-            class='w-full sm:w-44'
+            class='w-full sm:w-52'
         />
     </div>
 
@@ -23,8 +23,7 @@
         :current-page='currentPage'
         :page-size='pageSize'
         :total-contracts='totalContracts'
-        @approve='approve'
-        @decline='decline'
+        @review='openReview'
         @cancel='openCancelConfirm'
         @update:sort='sort = $event'
         @update:current-page='currentPage = $event'
@@ -43,6 +42,22 @@
         @clear-end-date-error="clearFieldError('endDate')"
         @update:end-date='cancelForm.endDate = $event'
     />
+
+    <ReviewModal
+        :model-value='showReviewModal'
+        :contract='selectedContract'
+        :price='reviewForm.price'
+        :registration-fee='reviewForm.registrationFee'
+        :admin-comment='reviewForm.adminComment'
+        :approving='reviewApproving'
+        :declining='reviewDeclining'
+        @update:model-value='handleReviewModalModelUpdate'
+        @update:price='reviewForm.price = $event'
+        @update:registration-fee='reviewForm.registrationFee = $event'
+        @update:admin-comment='reviewForm.adminComment = $event'
+        @approve='approveSelectedContract'
+        @decline='declineSelectedContract'
+    />
 </div>
 </template>
 
@@ -50,17 +65,23 @@
 import type { ApiListResponse, Contract } from '~/types';
 import CancelModal from './components/CancelModal.vue';
 import ContractsTable from './components/ContractsTable.vue';
+import ReviewModal from './components/ReviewModal.vue';
 
 definePageMeta({ layout: 'admin' });
 
 const api = useApi();
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { toMonthEndIso, isLastOfMonth } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback();
 
+const allowedStateFilters = ['ACTIVE', 'open', 'all', 'REQUESTED', 'PENDING_CUSTOMER_APPROVAL', 'DECLINED', 'CANCELLED'] as const;
+type ContractStateFilter = typeof allowedStateFilters[number];
+
 const contracts = ref<Contract[]>([]);
 const loading = ref(true);
-const stateFilter = ref('ACTIVE');
+const stateFilter = ref<ContractStateFilter>(resolveStateFilter(route.query.state));
 const currentPage = ref(1);
 const totalContracts = ref(0);
 const totalPages = ref(1);
@@ -73,12 +94,21 @@ const showCancelModal = ref(false);
 const contractToCancel = ref<Contract | null>(null);
 const cancelling = ref(false);
 const cancelForm = reactive({ endDate: '' });
+
+const showReviewModal = ref(false);
+const selectedContract = ref<Contract | null>(null);
+const reviewApproving = ref(false);
+const reviewDeclining = ref(false);
+const reviewForm = reactive({ price: '', registrationFee: '', adminComment: '' });
+
 const pageSize = 20;
 
 const stateOptions = [
     { label: 'Aktiv', value: 'ACTIVE' },
+    { label: 'Offen', value: 'open' },
     { label: 'Alle', value: 'all' },
     { label: 'Angefragt', value: 'REQUESTED' },
+    { label: 'Preisprüfung', value: 'PENDING_CUSTOMER_APPROVAL' },
     { label: 'Abgelehnt', value: 'DECLINED' },
     { label: 'Gekündigt', value: 'CANCELLED' },
 ];
@@ -107,30 +137,85 @@ const resultSummary = computed(() => {
     return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`;
 });
 
-function openCancelConfirm(contract: Contract) {
+function resolveStateFilter(value: unknown): ContractStateFilter {
+    return typeof value === 'string' && allowedStateFilters.includes(value as ContractStateFilter)
+        ? value as ContractStateFilter
+        : 'ACTIVE';
+}
+
+function syncStateFilterQuery(): void {
+    const nextQuery = { ...route.query };
+
+    if (stateFilter.value === 'ACTIVE') {
+        delete nextQuery.state;
+    } else {
+        nextQuery.state = stateFilter.value;
+    }
+
+    const currentQueryState = typeof route.query.state === 'string'
+        ? route.query.state
+        : undefined;
+    const nextQueryState = stateFilter.value === 'ACTIVE'
+        ? undefined
+        : stateFilter.value;
+
+    if (currentQueryState === nextQueryState) {
+        return;
+    }
+
+    void router.replace({ query: nextQuery });
+}
+
+function openCancelConfirm(contract: Contract): void {
     contractToCancel.value = contract;
     cancelForm.endDate = contract.endDate ?? '';
     clearFormErrors();
     showCancelModal.value = true;
 }
 
-function closeCancelModal() {
+function closeCancelModal(): void {
     showCancelModal.value = false;
     contractToCancel.value = null;
     cancelForm.endDate = '';
     clearFormErrors();
 }
 
-function normalizeCancelEndDate() {
+function closeReviewModal(): void {
+    showReviewModal.value = false;
+    selectedContract.value = null;
+    reviewForm.price = '';
+    reviewForm.registrationFee = '';
+    reviewForm.adminComment = '';
+}
+
+function handleReviewModalModelUpdate(value: boolean): void {
+    if (value) {
+        showReviewModal.value = true;
+        return;
+    }
+
+    closeReviewModal();
+}
+
+async function openReview(contract: Contract): Promise<void> {
+    selectedContract.value = await api.get<Contract>(`/api/admin/contracts/${contract.id}`);
+    reviewForm.price = selectedContract.value.price;
+    reviewForm.registrationFee = selectedContract.value.registrationFee;
+    reviewForm.adminComment = selectedContract.value.adminComment || '';
+    showReviewModal.value = true;
+}
+
+function normalizeCancelEndDate(): void {
     if (cancelForm.endDate) {
         cancelForm.endDate = toMonthEndIso(cancelForm.endDate);
     }
 }
 
-async function confirmCancel() {
+async function confirmCancel(): Promise<void> {
     if (!contractToCancel.value) {
         return;
     }
+
     clearFormErrors();
     if (!cancelForm.endDate) {
         setFieldError('endDate', 'Bitte ein Enddatum wählen.');
@@ -141,6 +226,7 @@ async function confirmCancel() {
         setFormError('Bitte prüfe die markierten Felder.');
         return;
     }
+
     cancelling.value = true;
     try {
         await api.post(`/api/admin/contracts/${contractToCancel.value.id}/cancel`, {
@@ -156,23 +242,45 @@ async function confirmCancel() {
     }
 }
 
-async function approve(contract: Contract) {
+async function approveSelectedContract(): Promise<void> {
+    if (!selectedContract.value) {
+        return;
+    }
+
+    reviewApproving.value = true;
     try {
-        await api.post(`/api/admin/contracts/${contract.id}/approve`);
-        toast.add({ title: 'Vertrag genehmigt', color: 'green' });
+        await api.post(`/api/admin/contracts/${selectedContract.value.id}/approve`, {
+            price: reviewForm.price || null,
+            registrationFee: reviewForm.registrationFee || null,
+            adminComment: reviewForm.adminComment || null,
+        });
+        toast.add({ title: 'Vertrag geprüft', color: 'green' });
+        closeReviewModal();
         await loadContracts();
     } catch (cause) {
-        toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht genehmigt werden.', { preferFieldSummary: false }), color: 'red' });
+        toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht geprüft werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewApproving.value = false;
     }
 }
 
-async function decline(contract: Contract) {
+async function declineSelectedContract(): Promise<void> {
+    if (!selectedContract.value) {
+        return;
+    }
+
+    reviewDeclining.value = true;
     try {
-        await api.post(`/api/admin/contracts/${contract.id}/decline`);
+        await api.post(`/api/admin/contracts/${selectedContract.value.id}/decline`, {
+            adminComment: reviewForm.adminComment || null,
+        });
         toast.add({ title: 'Vertrag abgelehnt', color: 'amber' });
+        closeReviewModal();
         await loadContracts();
     } catch (cause) {
         toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht abgelehnt werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewDeclining.value = false;
     }
 }
 
@@ -199,6 +307,8 @@ watch(currentPage, () => {
 });
 
 watch(stateFilter, () => {
+    syncStateFilterQuery();
+
     if (currentPage.value !== 1) {
         currentPage.value = 1;
         return;
@@ -217,6 +327,7 @@ watch(sort, () => {
 }, { deep: true });
 
 onMounted(() => {
+    syncStateFilterQuery();
     void loadContracts();
 });
 </script>

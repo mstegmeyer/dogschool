@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils';
+import { ref } from 'vue';
 import { vi } from 'vitest';
 import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
@@ -10,6 +11,8 @@ export const apiPutMock = vi.fn();
 export const apiDelMock = vi.fn();
 export const toastAddMock = vi.fn();
 export const navigateToMock = vi.fn();
+export const routerReplaceMock = vi.fn();
+export const routeQueryMock = ref<Record<string, unknown>>({});
 
 export const recurrenceCourseType = {
     id: 'course-type-1',
@@ -67,6 +70,86 @@ export const room = {
     createdAt: '2026-04-01T10:00:00+02:00',
 };
 
+const hotelPricingSnapshot = {
+    type: 'hotelBooking',
+    pricingKind: 'HOTEL',
+    billableDays: 2,
+    baseDailyPrice: '58.00',
+    serviceFee: '7.50',
+    travelProtectionPrice: '0.00',
+    quotedTotalPrice: '123.50',
+    lineItems: [
+        {
+            key: 'hotel_base',
+            label: 'Hundehotel',
+            quantity: 2,
+            unitPrice: '58.00',
+            amount: '116.00',
+            billingPeriod: 'DAY',
+        },
+        {
+            key: 'hotel_service_fee',
+            label: 'Servicepauschale',
+            quantity: 1,
+            unitPrice: '7.50',
+            amount: '7.50',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
+const activeContractPricingSnapshot = {
+    type: 'contract',
+    coursesPerWeek: 1,
+    monthlyUnitPrice: '89.00',
+    monthlyPrice: '89.00',
+    registrationFee: '149.00',
+    firstInvoiceTotal: '238.00',
+    lineItems: [
+        {
+            key: 'school_contract_monthly',
+            label: '1x Training pro Woche',
+            quantity: 1,
+            unitPrice: '89.00',
+            amount: '89.00',
+            billingPeriod: 'MONTH',
+        },
+        {
+            key: 'school_registration_fee',
+            label: 'Anmeldegebühr',
+            quantity: 1,
+            unitPrice: '149.00',
+            amount: '149.00',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
+const pendingContractPricingSnapshot = {
+    ...activeContractPricingSnapshot,
+    monthlyUnitPrice: '79.00',
+    monthlyPrice: '79.00',
+    firstInvoiceTotal: '228.00',
+    lineItems: [
+        {
+            key: 'school_contract_monthly',
+            label: '1x Training pro Woche',
+            quantity: 1,
+            unitPrice: '79.00',
+            amount: '79.00',
+            billingPeriod: 'MONTH',
+        },
+        {
+            key: 'school_registration_fee',
+            label: 'Anmeldegebühr',
+            quantity: 1,
+            unitPrice: '149.00',
+            amount: '149.00',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
 export const hotelBooking = {
     id: 'hotel-booking-1',
     customerId: 'customer-1',
@@ -78,7 +161,17 @@ export const hotelBooking = {
     roomName: null,
     startAt: '2026-04-05T08:00:00+02:00',
     endAt: '2026-04-06T10:00:00+02:00',
+    pricingKind: 'HOTEL',
+    billableDays: 2,
+    includesTravelProtection: false,
+    totalPrice: '123.50',
+    quotedTotalPrice: '123.50',
+    serviceFee: '7.50',
+    travelProtectionPrice: '0.00',
     state: 'REQUESTED',
+    customerComment: null,
+    adminComment: null,
+    pricingSnapshot: hotelPricingSnapshot,
     createdAt: '2026-04-01T10:00:00+02:00',
     availableRooms: [
         {
@@ -92,6 +185,32 @@ export const hotelBooking = {
             segments: [],
         },
     ],
+};
+
+export const pricingConfig = {
+    id: 'pricing-config-1',
+    schoolOneCoursePrice: '89.00',
+    schoolTwoCoursesUnitPrice: '80.00',
+    schoolThreeCoursesUnitPrice: '76.00',
+    schoolFourCoursesUnitPrice: '71.00',
+    schoolAdditionalCoursesUnitPrice: '67.00',
+    schoolRegistrationFee: '149.00',
+    daycareOffSeasonDailyPrice: '39.00',
+    daycarePeakSeasonDailyPrice: '46.00',
+    hotelDailyPrice: '58.00',
+    hotelServiceFee: '7.50',
+    hotelTravelProtectionBaseFee: '49.00',
+    hotelTravelProtectionAdditionalDailyFee: '11.00',
+    hotelSingleRoomDaycareDailyPrice: '20.00',
+    hotelSingleRoomHotelDailyPrice: '29.00',
+    hotelHeatCycleDailyPrice: '6.00',
+    hotelMedicationPerAdministrationPrice: '3.50',
+    hotelSupplementPerAdministrationPrice: '3.50',
+    hotelPeakSeasons: [
+        { id: 'season-1', startDate: '2026-06-29', endDate: '2026-09-13' },
+    ],
+    createdAt: '2026-01-01T00:00:00+01:00',
+    updatedAt: '2026-01-01T00:00:00+01:00',
 };
 
 export const hotelOccupancyResponse = {
@@ -148,10 +267,16 @@ export const activeContract = {
     startDate: '2026-04-01',
     endDate: null,
     price: '89.00',
+    quotedMonthlyPrice: '89.00',
     priceMonthly: '89.00',
+    registrationFee: '149.00',
+    firstInvoiceTotal: '238.00',
     type: 'PERPETUAL',
     coursesPerWeek: 1,
     state: 'ACTIVE',
+    customerComment: null,
+    adminComment: null,
+    pricingSnapshot: activeContractPricingSnapshot,
     createdAt: '2026-03-01T10:00:00+02:00',
 };
 
@@ -160,7 +285,10 @@ export const pendingContract = {
     id: 'contract-2',
     state: 'REQUESTED',
     price: '79.00',
+    quotedMonthlyPrice: '79.00',
     priceMonthly: '79.00',
+    firstInvoiceTotal: '228.00',
+    pricingSnapshot: pendingContractPricingSnapshot,
 };
 
 export const customerRecord = {
@@ -193,6 +321,8 @@ export const todayCourseDate = {
 
 export function installAdminGlobals() {
     installNuxtGlobals();
+    routeQueryMock.value = {};
+    routerReplaceMock.mockReset();
     vi.stubGlobal('useApi', () => ({
         get: apiGetMock,
         post: apiPostMock,
@@ -203,6 +333,10 @@ export function installAdminGlobals() {
         add: toastAddMock,
     }));
     vi.stubGlobal('navigateTo', navigateToMock);
+    vi.stubGlobal('useRoute', () => ({ query: routeQueryMock.value }));
+    vi.stubGlobal('useRouter', () => ({
+        replace: routerReplaceMock,
+    }));
     vi.stubGlobal('useHelpers', () => ({
         dayName: (dayOfWeek: number) => ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][dayOfWeek] || '',
         todayIso: () => '2026-04-04',
@@ -211,8 +345,13 @@ export function installAdminGlobals() {
         toMonthEndIso: (value: string) => value.slice(0, 8) + '30',
         isLastOfMonth: (value: string) => value.endsWith('-30'),
         getWeekMonday: () => '2026-03-30',
+        contractStateLabel: (value: string) => value,
+        contractStateColor: (value: string) => value === 'ACTIVE' ? 'green' : value === 'PENDING_CUSTOMER_APPROVAL' ? 'amber' : 'gray',
+        formatContractMonthlyPrice: (price: string) => `${price} EUR`,
         hotelBookingStateLabel: (value: string) => value,
         hotelBookingStateColor: () => 'amber',
+        hotelPricingKindLabel: (value: string) => value === 'DAYCARE' ? 'HUTA' : value === 'HOTEL' ? 'Hundehotel' : value,
+        formatMoney: (value: string | null | undefined) => `${value ?? '0.00'} EUR`,
         formatSquareMeters: (value: number) => `${value} m²`,
         toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
         futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
@@ -274,12 +413,17 @@ export async function mountContractsPage() {
                 ContractsTable: namedStub(
                     'ContractsTable',
                     ['loading', 'contracts', 'sort', 'columns', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalContracts'],
-                    ['approve', 'decline', 'cancel', 'update:sort', 'update:current-page'],
+                    ['review', 'cancel', 'update:sort', 'update:current-page'],
                 ),
                 CancelModal: namedStub(
                     'CancelModal',
                     ['modelValue', 'contract', 'endDate', 'endDateError', 'formError', 'saving'],
                     ['cancel', 'submit', 'normalize-end-date', 'clear-end-date-error', 'update:end-date', 'update:modelValue'],
+                ),
+                ReviewModal: namedStub(
+                    'ReviewModal',
+                    ['modelValue', 'contract', 'price', 'registrationFee', 'adminComment', 'approving', 'declining'],
+                    ['approve', 'decline', 'update:modelValue', 'update:price', 'update:registrationFee', 'update:adminComment'],
                 ),
             },
         },
@@ -339,8 +483,13 @@ export async function mountDashboardPage() {
             stubs: {
                 ...uiPageStubs,
                 StatsGrid: namedStub('StatsGrid', ['loading', 'stats']),
-                PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts']),
+                PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts'], ['review']),
                 TodayScheduleCard: namedStub('TodayScheduleCard', ['loading', 'courseDates']),
+                ReviewModal: namedStub(
+                    'ReviewModal',
+                    ['modelValue', 'contract', 'price', 'registrationFee', 'adminComment', 'approving', 'declining'],
+                    ['approve', 'decline', 'update:modelValue', 'update:price', 'update:registrationFee', 'update:adminComment'],
+                ),
             },
         },
     });
@@ -376,12 +525,12 @@ export async function mountHotelAdminBookingsPage() {
                 HotelBookingsTable: namedStub(
                     'HotelBookingsTable',
                     ['loading', 'bookings', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalBookings'],
-                    ['open', 'update:currentPage'],
+                    ['open', 'update:current-page'],
                 ),
                 HotelBookingDetailModal: namedStub(
                     'HotelBookingDetailModal',
-                    ['modelValue', 'booking', 'selectedRoomId', 'roomOptions', 'assigning', 'confirming', 'declining'],
-                    ['assign-room', 'confirm', 'decline', 'cancel', 'update:selectedRoomId', 'update:modelValue'],
+                    ['modelValue', 'booking', 'selectedRoomId', 'roomOptions', 'assigning', 'confirming', 'declining', 'finalPrice', 'adminComment', 'pricingConfig'],
+                    ['assign-room', 'confirm', 'decline', 'cancel', 'update:selected-room-id', 'update:final-price', 'update:admin-comment', 'update:model-value'],
                 ),
             },
         },

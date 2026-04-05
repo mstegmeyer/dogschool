@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\HotelBookingPricingKind;
 use App\Enum\HotelBookingState;
 use App\Support\AppClock;
 use Doctrine\DBAL\Types\Types;
@@ -47,6 +48,37 @@ class HotelBooking
     #[ORM\Column(type: Types::STRING, length: 50, enumType: HotelBookingState::class)]
     private HotelBookingState $state;
 
+    #[ORM\Column(type: Types::STRING, length: 20, enumType: HotelBookingPricingKind::class)]
+    private HotelBookingPricingKind $pricingKind;
+
+    #[ORM\Column(type: Types::INTEGER)]
+    private int $billableDays = 1;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $includesTravelProtection = false;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $totalPrice = '0.00';
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $quotedTotalPrice = '0.00';
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $serviceFee = '0.00';
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $travelProtectionPrice = '0.00';
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $customerComment = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $adminComment = null;
+
+    /** @var array<string, mixed> */
+    #[ORM\Column(type: Types::JSON)]
+    private array $pricingSnapshot = [];
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
@@ -57,6 +89,7 @@ class HotelBooking
         $this->startAt = $this->createdAt;
         $this->endAt = $this->createdAt->modify('+1 hour');
         $this->state = HotelBookingState::REQUESTED;
+        $this->pricingKind = HotelBookingPricingKind::DAYCARE;
     }
 
     public function getId(): string
@@ -136,8 +169,139 @@ class HotelBooking
         return $this;
     }
 
+    public function getPricingKind(): HotelBookingPricingKind
+    {
+        return $this->pricingKind;
+    }
+
+    public function setPricingKind(HotelBookingPricingKind $pricingKind): static
+    {
+        $this->pricingKind = $pricingKind;
+
+        return $this;
+    }
+
+    public function getBillableDays(): int
+    {
+        return $this->billableDays;
+    }
+
+    public function setBillableDays(int $billableDays): static
+    {
+        $this->billableDays = $billableDays;
+
+        return $this;
+    }
+
+    public function includesTravelProtection(): bool
+    {
+        return $this->includesTravelProtection;
+    }
+
+    public function setIncludesTravelProtection(bool $includesTravelProtection): static
+    {
+        $this->includesTravelProtection = $includesTravelProtection;
+
+        return $this;
+    }
+
+    public function getTotalPrice(): string
+    {
+        return self::normalizeAmount($this->totalPrice);
+    }
+
+    public function setTotalPrice(string $totalPrice): static
+    {
+        $this->totalPrice = self::normalizeAmount($totalPrice);
+
+        return $this;
+    }
+
+    public function getQuotedTotalPrice(): string
+    {
+        return self::normalizeAmount($this->quotedTotalPrice);
+    }
+
+    public function setQuotedTotalPrice(string $quotedTotalPrice): static
+    {
+        $this->quotedTotalPrice = self::normalizeAmount($quotedTotalPrice);
+
+        return $this;
+    }
+
+    public function getServiceFee(): string
+    {
+        return self::normalizeAmount($this->serviceFee);
+    }
+
+    public function setServiceFee(string $serviceFee): static
+    {
+        $this->serviceFee = self::normalizeAmount($serviceFee);
+
+        return $this;
+    }
+
+    public function getTravelProtectionPrice(): string
+    {
+        return self::normalizeAmount($this->travelProtectionPrice);
+    }
+
+    public function setTravelProtectionPrice(string $travelProtectionPrice): static
+    {
+        $this->travelProtectionPrice = self::normalizeAmount($travelProtectionPrice);
+
+        return $this;
+    }
+
+    public function getCustomerComment(): ?string
+    {
+        return $this->customerComment;
+    }
+
+    public function setCustomerComment(?string $customerComment): static
+    {
+        $this->customerComment = $customerComment;
+
+        return $this;
+    }
+
+    public function getAdminComment(): ?string
+    {
+        return $this->adminComment;
+    }
+
+    public function setAdminComment(?string $adminComment): static
+    {
+        $this->adminComment = $adminComment;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getPricingSnapshot(): array
+    {
+        return $this->pricingSnapshot;
+    }
+
+    /**
+     * @param array<string, mixed> $pricingSnapshot
+     */
+    public function setPricingSnapshot(array $pricingSnapshot): static
+    {
+        $this->pricingSnapshot = $pricingSnapshot;
+
+        return $this;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    private static function normalizeAmount(string $amount): string
+    {
+        return number_format((float) str_replace(',', '.', trim($amount)), 2, '.', '');
     }
 }

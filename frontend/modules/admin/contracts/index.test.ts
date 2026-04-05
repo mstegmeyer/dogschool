@@ -5,6 +5,7 @@ import {
     apiPostMock,
     installAdminGlobals,
     mountContractsPage,
+    routeQueryMock,
 } from '~/tests/modules/admin-page-helpers';
 import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
@@ -20,26 +21,45 @@ describe('admin contracts page', () => {
                     pagination: { total: 1, pages: 1, page: 1, limit: 20 },
                 });
             }
+            if (url === '/api/admin/contracts/contract-1') {
+                return Promise.resolve(activeContract);
+            }
 
             return Promise.reject(new Error(`Unhandled GET ${url}`));
         });
     });
 
     it('loads contracts, approves, declines, validates cancellation, and cancels with a month end', async () => {
+        routeQueryMock.value = { state: 'open' };
         const wrapper = await mountContractsPage();
         const table = wrapper.getComponent({ name: 'ContractsTable' });
         const modal = wrapper.getComponent({ name: 'CancelModal' });
+        const reviewModal = wrapper.getComponent({ name: 'ReviewModal' });
 
         expect(table.props('contracts')).toHaveLength(1);
+        expect(apiGetMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts?page=1&limit=20&state=open&sort=createdAt&direction=desc');
 
         apiPostMock.mockResolvedValue({});
-        await table.vm.$emit('approve', activeContract);
+        await table.vm.$emit('review', activeContract);
         await flushPromises();
-        await table.vm.$emit('decline', activeContract);
+        expect(reviewModal.props('modelValue')).toBe(true);
+        expect(reviewModal.props('contract')).toMatchObject({ id: 'contract-1' });
+        await reviewModal.vm.$emit('approve');
         await flushPromises();
 
-        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve');
-        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/contracts/contract-1/decline');
+        await table.vm.$emit('review', activeContract);
+        await flushPromises();
+        await reviewModal.vm.$emit('decline');
+        await flushPromises();
+
+        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve', {
+            price: '89.00',
+            registrationFee: '149.00',
+            adminComment: null,
+        });
+        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/contracts/contract-1/decline', {
+            adminComment: null,
+        });
 
         await table.vm.$emit('cancel', activeContract);
         await flushPromises();

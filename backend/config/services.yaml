@@ -32,6 +32,10 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Repository\:
+        resource: '../src/Repository/'
+        tags: ['doctrine.repository_service']
+
     # Resolve Customer / User controller arguments (runs before Security's UserValueResolver)
     App\Controller\ArgumentResolver\CurrentCustomerOrUserValueResolver:
         tags:

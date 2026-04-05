@@ -44,6 +44,12 @@ class Contract
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $price;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $quotedMonthlyPrice = '0.00';
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $registrationFee = '0.00';
+
     #[ORM\Column(type: Types::STRING, length: 50, enumType: ContractType::class)]
     private ContractType $type;
 
@@ -52,6 +58,16 @@ class Contract
 
     #[ORM\Column(type: Types::STRING, length: 50, enumType: ContractState::class)]
     private ContractState $state;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $customerComment = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $adminComment = null;
+
+    /** @var array<string, mixed> */
+    #[ORM\Column(type: Types::JSON)]
+    private array $pricingSnapshot = [];
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
@@ -144,12 +160,12 @@ class Contract
 
     public function getPrice(): string
     {
-        return $this->price;
+        return self::normalizeAmount($this->price);
     }
 
     public function setPrice(string $price): static
     {
-        $this->price = $price;
+        $this->price = self::normalizeAmount($price);
 
         return $this;
     }
@@ -190,8 +206,79 @@ class Contract
         return $this;
     }
 
+    public function getQuotedMonthlyPrice(): string
+    {
+        return self::normalizeAmount($this->quotedMonthlyPrice);
+    }
+
+    public function setQuotedMonthlyPrice(string $quotedMonthlyPrice): static
+    {
+        $this->quotedMonthlyPrice = self::normalizeAmount($quotedMonthlyPrice);
+
+        return $this;
+    }
+
+    public function getRegistrationFee(): string
+    {
+        return self::normalizeAmount($this->registrationFee);
+    }
+
+    public function setRegistrationFee(string $registrationFee): static
+    {
+        $this->registrationFee = self::normalizeAmount($registrationFee);
+
+        return $this;
+    }
+
+    public function getCustomerComment(): ?string
+    {
+        return $this->customerComment;
+    }
+
+    public function setCustomerComment(?string $customerComment): static
+    {
+        $this->customerComment = $customerComment;
+
+        return $this;
+    }
+
+    public function getAdminComment(): ?string
+    {
+        return $this->adminComment;
+    }
+
+    public function setAdminComment(?string $adminComment): static
+    {
+        $this->adminComment = $adminComment;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getPricingSnapshot(): array
+    {
+        return $this->pricingSnapshot;
+    }
+
+    /**
+     * @param array<string, mixed> $pricingSnapshot
+     */
+    public function setPricingSnapshot(array $pricingSnapshot): static
+    {
+        $this->pricingSnapshot = $pricingSnapshot;
+
+        return $this;
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    private static function normalizeAmount(string $amount): string
+    {
+        return number_format((float) str_replace(',', '.', trim($amount)), 2, '.', '');
     }
 }

@@ -30,6 +30,11 @@ class ContractRepository extends ServiceEntityRepository
         return $this->findBy(['customer' => $customer], ['createdAt' => 'DESC']);
     }
 
+    public function findOneByIdAndCustomer(string $id, Customer $customer): ?Contract
+    {
+        return $this->findOneBy(['id' => $id, 'customer' => $customer]);
+    }
+
     /**
      * @return array<int, Contract>
      */
@@ -89,17 +94,19 @@ class ContractRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<ContractState>|null $states
+     *
      * @return array<int, Contract>
      */
     public function findPageForAdminList(
         int $page,
         int $limit,
-        ?ContractState $state = null,
+        ?array $states = null,
         string $sortBy = 'createdAt',
         string $sortDirection = 'DESC',
     ): array {
         /** @var list<Contract> $contracts */
-        $contracts = $this->createAdminListQueryBuilder($state)
+        $contracts = $this->createAdminListQueryBuilder($states)
             ->orderBy('contract.'.$sortBy, $sortDirection)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
@@ -109,9 +116,12 @@ class ContractRepository extends ServiceEntityRepository
         return $contracts;
     }
 
-    public function countForAdminList(?ContractState $state = null): int
+    /**
+     * @param list<ContractState>|null $states
+     */
+    public function countForAdminList(?array $states = null): int
     {
-        return (int) $this->createAdminListQueryBuilder($state)
+        return (int) $this->createAdminListQueryBuilder($states)
             ->select('COUNT(contract.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -125,14 +135,35 @@ class ContractRepository extends ServiceEntityRepository
         }
     }
 
-    private function createAdminListQueryBuilder(?ContractState $state = null): QueryBuilder
+    public function customerHasActivatedContract(Customer $customer, ?string $excludeId = null): bool
+    {
+        $query = $this->createQueryBuilder('contract')
+            ->select('COUNT(contract.id)')
+            ->andWhere('contract.customer = :customer')
+            ->andWhere('contract.state IN (:states)')
+            ->setParameter('customer', $customer)
+            ->setParameter('states', [ContractState::ACTIVE, ContractState::CANCELLED]);
+
+        if ($excludeId !== null && $excludeId !== '') {
+            $query
+                ->andWhere('contract.id != :excludeId')
+                ->setParameter('excludeId', $excludeId);
+        }
+
+        return (int) $query->getQuery()->getSingleScalarResult() > 0;
+    }
+
+    /**
+     * @param list<ContractState>|null $states
+     */
+    private function createAdminListQueryBuilder(?array $states = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('contract');
 
-        if ($state !== null) {
+        if ($states !== null && $states !== []) {
             $qb
-                ->andWhere('contract.state = :state')
-                ->setParameter('state', $state);
+                ->andWhere('contract.state IN (:states)')
+                ->setParameter('states', $states);
         }
 
         return $qb;

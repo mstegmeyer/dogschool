@@ -51,13 +51,33 @@ test('filters contract states, approves, declines, and cancels contracts', async
     await page.goto('/admin/contracts');
 
     await selectMenuOption(page, page.getByTestId('contract-state-filter'), 'Angefragt');
-    await visibleByTestId(page, `approve-contract-${manifest.contracts.approve}`).click();
-    await expect(visibleByTestId(page, `approve-contract-${manifest.contracts.approve}`)).toHaveCount(0);
-    await visibleByTestId(page, `decline-contract-${manifest.contracts.decline}`).click();
-    await expect(visibleByTestId(page, `decline-contract-${manifest.contracts.decline}`)).toHaveCount(0);
+
+    const approveReviewButton = page.locator(
+        `[data-testid="review-contract-${manifest.contracts.approve}"]:visible, [data-testid="review-contract-mobile-${manifest.contracts.approve}"]:visible`,
+    ).first();
+    await expect(approveReviewButton).toBeVisible({ timeout: 15_000 });
+    await approveReviewButton.click();
+    await expect(page.getByTestId('contract-review-modal')).toBeVisible();
+    await page.getByTestId('approve-contract-review').click();
+    await expect(page.getByTestId('contract-review-modal')).toHaveCount(0);
+    await expect(approveReviewButton).toHaveCount(0);
+
+    const declineReviewButton = page.locator(
+        `[data-testid="review-contract-${manifest.contracts.decline}"]:visible, [data-testid="review-contract-mobile-${manifest.contracts.decline}"]:visible`,
+    ).first();
+    await expect(declineReviewButton).toBeVisible({ timeout: 15_000 });
+    await declineReviewButton.click();
+    await expect(page.getByTestId('contract-review-modal')).toBeVisible();
+    await page.getByTestId('decline-contract-review').click();
+    await expect(page.getByTestId('contract-review-modal')).toHaveCount(0);
+    await expect(declineReviewButton).toHaveCount(0);
 
     await selectMenuOption(page, page.getByTestId('contract-state-filter'), 'Aktiv');
-    await visibleByTestId(page, `cancel-contract-${manifest.contracts.cancel}`).click();
+    const cancelButton = page.locator(
+        `[data-testid="cancel-contract-${manifest.contracts.cancel}"]:visible, [data-testid="cancel-contract-mobile-${manifest.contracts.cancel}"]:visible`,
+    ).first();
+    await expect(cancelButton).toBeVisible({ timeout: 15_000 });
+    await cancelButton.click();
     await expect(page.getByTestId('contract-cancel-modal')).toBeVisible();
 
     const contractEndDateInput = visibleByTestId(page, 'contract-end-date');

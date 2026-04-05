@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     activeContract,
     apiGetMock,
+    apiPostMock,
     archivedCourse,
     course,
     installAdminGlobals,
@@ -9,15 +10,26 @@ import {
     pendingContract,
     todayCourseDate,
 } from '~/tests/modules/admin-page-helpers';
+import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
 describe('admin dashboard page', () => {
+    const priceReviewContract = {
+        ...pendingContract,
+        id: 'contract-3',
+        state: 'PENDING_CUSTOMER_APPROVAL',
+        adminComment: 'Bitte Preis vom Kunden bestätigen lassen.',
+    };
+
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
         installAdminGlobals();
         apiGetMock.mockImplementation((url: string) => {
             if (url === '/api/admin/contracts') {
-                return Promise.resolve({ items: [activeContract, pendingContract] });
+                return Promise.resolve({ items: [activeContract, pendingContract, priceReviewContract] });
+            }
+            if (url === '/api/admin/contracts/contract-2') {
+                return Promise.resolve(pendingContract);
             }
             if (url === '/api/admin/courses') {
                 return Promise.resolve({ items: [course, archivedCourse] });
@@ -39,6 +51,7 @@ describe('admin dashboard page', () => {
         const wrapper = await mountDashboardPage();
         const statsGrid = wrapper.getComponent({ name: 'StatsGrid' });
         const pendingCard = wrapper.getComponent({ name: 'PendingContractsCard' });
+        const reviewModal = wrapper.getComponent({ name: 'ReviewModal' });
         const scheduleCard = wrapper.getComponent({ name: 'TodayScheduleCard' });
 
         const stats = statsGrid.props('stats') as Array<{ label: string; value: string | number }>;
@@ -48,6 +61,23 @@ describe('admin dashboard page', () => {
 
         expect(pendingCard.props('count')).toBe(1);
         expect((pendingCard.props('contracts') as unknown[])).toHaveLength(1);
+        expect((pendingCard.props('contracts') as Array<{ id: string }>)[0]?.id).toBe('contract-2');
         expect((scheduleCard.props('courseDates') as unknown[])).toHaveLength(1);
+
+        apiPostMock.mockResolvedValue({});
+        await pendingCard.vm.$emit('review', pendingContract);
+        await flushPromises();
+
+        expect(reviewModal.props('modelValue')).toBe(true);
+        expect(reviewModal.props('contract')).toMatchObject({ id: 'contract-2' });
+
+        await reviewModal.vm.$emit('approve');
+        await flushPromises();
+
+        expect(apiPostMock).toHaveBeenCalledWith('/api/admin/contracts/contract-2/approve', {
+            price: '79.00',
+            registrationFee: '149.00',
+            adminComment: null,
+        });
     });
 });

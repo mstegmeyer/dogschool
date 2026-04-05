@@ -29,10 +29,50 @@
                     <p class='mt-1 text-sm text-slate-500'>
                         Raum: {{ booking.roomName || 'Noch nicht zugewiesen' }}
                     </p>
+                    <p class='mt-1 text-sm text-slate-500'>
+                        {{ hotelPricingKindLabel(booking.pricingKind) }} · {{ booking.billableDays }} Kalendertag(e)
+                    </p>
                 </div>
                 <UBadge :color='hotelBookingStateColor(booking.state)' variant='soft'>
                     {{ hotelBookingStateLabel(booking.state) }}
                 </UBadge>
+            </div>
+            <div class='mt-4 space-y-3'>
+                <PricingBreakdown
+                    :snapshot='booking.pricingSnapshot'
+                    title='Preisaufschlüsselung'
+                    total-label='Gesamt'
+                    :total-value='booking.totalPrice'
+                />
+                <div v-if='booking.customerComment' class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                    <span class='font-medium text-slate-700'>Dein Kommentar:</span>
+                    {{ booking.customerComment }}
+                </div>
+                <div v-if='booking.adminComment' class='rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800'>
+                    <span class='font-medium'>Team-Hinweis:</span>
+                    {{ booking.adminComment }}
+                </div>
+                <div v-if="booking.state === 'PENDING_CUSTOMER_APPROVAL'" class='flex flex-wrap gap-2'>
+                    <UButton
+                        color='green'
+                        :loading='busyId === booking.id'
+                        label='Preis akzeptieren'
+                        @click="emit('accept', booking)"
+                    />
+                    <UButton
+                        color='red'
+                        variant='soft'
+                        :loading='busyId === booking.id'
+                        label='Ablehnen'
+                        @click="emit('decline', booking)"
+                    />
+                    <UButton
+                        variant='soft'
+                        :loading='busyId === booking.id'
+                        label='Kommentar anpassen'
+                        @click="emit('resubmit', booking)"
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -45,7 +85,14 @@ import type { HotelBooking } from '~/types';
 defineProps<{
     loading: boolean,
     bookings: HotelBooking[],
+    busyId?: string | null,
 }>();
 
-const { formatDateTime, hotelBookingStateColor, hotelBookingStateLabel } = useHelpers();
+const emit = defineEmits<{
+    (event: 'accept', value: HotelBooking): void,
+    (event: 'decline', value: HotelBooking): void,
+    (event: 'resubmit', value: HotelBooking): void,
+}>();
+
+const { formatDateTime, hotelBookingStateColor, hotelBookingStateLabel, hotelPricingKindLabel } = useHelpers();
 </script>

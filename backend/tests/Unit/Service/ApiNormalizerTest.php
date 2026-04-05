@@ -12,6 +12,7 @@ use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
+use App\Entity\HotelBooking;
 use App\Entity\Notification;
 use App\Entity\PushDevice;
 use App\Entity\User;
@@ -77,6 +78,35 @@ final class ApiNormalizerTest extends TestCase
         self::assertSame('PERPETUAL', $data['type']);
         self::assertSame('99.00', $data['price']);
         self::assertSame('99.00', $data['priceMonthly']);
+    }
+
+    #[Test]
+    public function normalizeContractBackfillsEmptyPricingSnapshot(): void
+    {
+        $contract = new Contract();
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setType(ContractType::PERPETUAL);
+        $contract->setPrice('99.00');
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setEndDate(new \DateTimeImmutable('2026-01-01'));
+
+        $data = $this->normalizer->normalizeContract($contract);
+
+        self::assertSame('contract', $data['pricingSnapshot']['type']);
+        self::assertSame([], $data['pricingSnapshot']['lineItems']);
+    }
+
+    #[Test]
+    public function normalizeHotelBookingBackfillsEmptyPricingSnapshot(): void
+    {
+        $booking = new HotelBooking();
+        $booking->setStartAt(new \DateTimeImmutable('2026-04-01 08:00'));
+        $booking->setEndAt(new \DateTimeImmutable('2026-04-01 18:00'));
+
+        $data = $this->normalizer->normalizeHotelBooking($booking);
+
+        self::assertSame('hotelBooking', $data['pricingSnapshot']['type']);
+        self::assertSame([], $data['pricingSnapshot']['lineItems']);
     }
 
     #[Test]

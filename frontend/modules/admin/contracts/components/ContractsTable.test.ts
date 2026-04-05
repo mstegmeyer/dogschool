@@ -31,12 +31,12 @@ describe('ContractsTable', () => {
             },
         });
 
-        await wrapper.get('[data-testid="approve-contract-mobile-contract-2"]').trigger('click');
+        await wrapper.get('[data-testid="review-contract-mobile-contract-2"]').trigger('click');
         await wrapper.get('[data-testid="cancel-contract-mobile-contract-1"]').trigger('click');
 
         expect(wrapper.text()).toContain('Max');
         expect(wrapper.text()).toContain('79.00 EUR');
-        expect(wrapper.emitted('approve')).toHaveLength(1);
+        expect(wrapper.emitted('review')).toHaveLength(1);
         expect(wrapper.emitted('cancel')).toHaveLength(1);
     });
 });

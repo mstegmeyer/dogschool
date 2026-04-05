@@ -10,6 +10,7 @@ use App\Enum\HotelBookingState;
 use App\Repository\HotelBookingRepository;
 use App\Repository\RoomRepository;
 use App\Service\ApiNormalizer;
+use App\Service\PricingEngine;
 use App\Service\RoomOccupancyService;
 use App\Support\LocalDateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -29,6 +30,7 @@ final class BookingController extends AbstractController
         private readonly RoomRepository $roomRepository,
         private readonly RoomOccupancyService $roomOccupancyService,
         private readonly ApiNormalizer $normalizer,
+        private readonly PricingEngine $pricingEngine,
     ) {
     }
 
@@ -119,7 +121,7 @@ final class BookingController extends AbstractController
     }
 
     #[Route('/{id}/confirm', name: 'confirm', methods: ['POST'])]
-    public function confirm(string $id): JsonResponse
+    public function confirm(Request $request, string $id): JsonResponse
     {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
@@ -135,22 +137,58 @@ final class BookingController extends AbstractController
             return $this->json(['errors' => ['roomId' => 'Der zugewiesene Raum ist nicht mehr verfügbar.']], Response::HTTP_BAD_REQUEST);
         }
 
-        $booking->setState(HotelBookingState::CONFIRMED);
+        $payload = $this->parsePayload($request);
+        if ($payload instanceof JsonResponse) {
+            return $payload;
+        }
+
+        $quote = $this->pricingEngine->previewHotelBooking(
+            $booking->getStartAt(),
+            $booking->getEndAt(),
+            $booking->includesTravelProtection(),
+        );
+        $finalPrice = $payload['totalPrice'] ?? $quote->quotedTotalPrice;
+        $quotedTotalCents = PricingEngine::amountToCents($quote->quotedTotalPrice);
+        $finalTotalCents = PricingEngine::amountToCents($finalPrice);
+
+        $booking->setPricingKind($quote->pricingKind);
+        $booking->setBillableDays($quote->billableDays);
+        $booking->setQuotedTotalPrice($quote->quotedTotalPrice);
+        $booking->setServiceFee($quote->serviceFee);
+        $booking->setTravelProtectionPrice($quote->travelProtectionPrice);
+        $booking->setPricingSnapshot($quote->snapshot->finalize($finalPrice)->toArray());
+        $booking->setTotalPrice($finalPrice);
+        if (array_key_exists('adminComment', $payload)) {
+            $booking->setAdminComment($payload['adminComment']);
+        }
+        $booking->setState(
+            $finalTotalCents > $quotedTotalCents
+                ? HotelBookingState::PENDING_CUSTOMER_APPROVAL
+                : HotelBookingState::CONFIRMED
+        );
         $this->hotelBookingRepository->save($booking);
 
         return $this->json($this->buildDetailResponse($booking));
     }
 
     #[Route('/{id}/decline', name: 'decline', methods: ['POST'])]
-    public function decline(string $id): JsonResponse
+    public function decline(Request $request, string $id): JsonResponse
     {
         $booking = $this->hotelBookingRepository->find($id);
         if (!$booking instanceof HotelBooking) {
             return $this->json(['error' => 'Hotelbuchung nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
+        $payload = $this->parsePayload($request, false);
+        if ($payload instanceof JsonResponse) {
+            return $payload;
+        }
+
         $booking->setState(HotelBookingState::DECLINED);
         $booking->setRoom(null);
+        if (array_key_exists('adminComment', $payload)) {
+            $booking->setAdminComment($payload['adminComment']);
+        }
         $this->hotelBookingRepository->save($booking);
 
         return $this->json($this->normalizer->normalizeHotelBooking($booking));
@@ -182,5 +220,47 @@ final class BookingController extends AbstractController
                 ];
             }, $availableRooms),
         ];
+    }
+
+    /**
+     * @return array{totalPrice?: string, adminComment?: ?string}|JsonResponse
+     */
+    private function parsePayload(Request $request, bool $allowPrice = true): array|JsonResponse
+    {
+        if (($request->getContent() ?: '') === '') {
+            return [];
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Ungültiger Request Body.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $result = [];
+        if ($allowPrice && array_key_exists('totalPrice', $payload)) {
+            $rawTotalPrice = $payload['totalPrice'];
+            if ($rawTotalPrice !== null && $rawTotalPrice !== '') {
+                if (!is_scalar($rawTotalPrice) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $rawTotalPrice)) {
+                    return $this->json(['errors' => ['totalPrice' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
+                }
+
+                $normalizedTotalPrice = (float) str_replace(',', '.', (string) $rawTotalPrice);
+                if ($normalizedTotalPrice < 0) {
+                    return $this->json(['errors' => ['totalPrice' => 'Der Gesamtpreis darf nicht negativ sein.']], Response::HTTP_BAD_REQUEST);
+                }
+
+                $result['totalPrice'] = number_format($normalizedTotalPrice, 2, '.', '');
+            }
+        }
+
+        if (array_key_exists('adminComment', $payload) && $payload['adminComment'] !== null && !is_string($payload['adminComment'])) {
+            return $this->json(['errors' => ['adminComment' => 'Der Kommentar ist ungültig.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (array_key_exists('adminComment', $payload)) {
+            $result['adminComment'] = $payload['adminComment'];
+        }
+
+        return $result;
     }
 }

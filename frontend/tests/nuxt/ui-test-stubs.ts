@@ -93,6 +93,24 @@ export const UInputStub = defineComponent({
     },
 });
 
+export const UTextareaStub = defineComponent({
+    name: 'u-textarea-stub',
+    emits: ['update:modelValue'],
+    props: {
+        modelValue: { type: String, default: '' },
+        placeholder: { type: String, default: '' },
+        rows: { type: Number, default: 3 },
+    },
+    setup(props, { emit }) {
+        return () => h('textarea', {
+            value: props.modelValue,
+            placeholder: props.placeholder,
+            rows: props.rows,
+            onInput: (event: Event) => emit('update:modelValue', (event.target as HTMLTextAreaElement).value),
+        });
+    },
+});
+
 export const UButtonStub = defineComponent({
     name: 'u-button-stub',
     emits: ['click'],
@@ -229,6 +247,22 @@ export const NuxtLinkStub = defineComponent({
     },
 });
 
+export const PricingBreakdownStub = defineComponent({
+    name: 'pricing-breakdown-stub',
+    props: {
+        title: { type: String, default: '' },
+        totalLabel: { type: String, default: '' },
+        totalValue: { type: String, default: '' },
+    },
+    setup(props) {
+        return () => h('div', { class: 'pricing-breakdown-stub' }, [
+            props.title,
+            props.totalLabel,
+            props.totalValue,
+        ].filter(Boolean).join(' '));
+    },
+});
+
 export const uiPageStubs = {
     AppSkeletonCollection: defineComponent({
         name: 'app-skeleton-collection-stub',
@@ -263,7 +297,9 @@ export const uiPageStubs = {
     UInput: UInputStub,
     UModal: UModalStub,
     UPagination: UPaginationStub,
+    PricingBreakdown: PricingBreakdownStub,
     USelectMenu: USelectMenuStub,
     USkeleton: USkeletonStub,
     UTabs: UTabsStub,
+    UTextarea: UTextareaStub,
 };

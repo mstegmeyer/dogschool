@@ -48,6 +48,7 @@ services:
 
   frontend:
     image: node:22-bookworm-slim
+    restart: unless-stopped
     working_dir: /app
     ports:
       - "5173:5173"
@@ -59,9 +60,12 @@ services:
       - frontend_nuxt:/app/.nuxt
     environment:
       API_PROXY_TARGET: http://frankenphp:80
+      NODE_OPTIONS: "--max-old-space-size=1024"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1500"
     env_file:
       - ./frontend/.env.local
-    command: sh -c "npm install && npm run dev"
+    command: sh ./scripts/docker-dev.sh
 
 volumes:
   caddy_data:

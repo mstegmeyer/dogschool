@@ -76,6 +76,195 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame(ContractState::ACTIVE, $reloaded->getState());
     }
 
+    public function testApproveWithHigherPriceRequiresCustomerApproval(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-review-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Review Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '184.00',
+            'adminComment' => 'Zusatzwünsche erhöhen den Preis.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('PENDING_CUSTOMER_APPROVAL', $data['state']);
+        self::assertSame('184.00', $data['price']);
+        self::assertSame('160.00', $data['quotedMonthlyPrice']);
+        self::assertSame('Zusatzwünsche erhöhen den Preis.', $data['adminComment']);
+        self::assertSame('184.00', $data['pricingSnapshot']['monthlyPrice'] ?? null);
+        self::assertSame('333.00', $data['pricingSnapshot']['firstInvoiceTotal'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'manual_adjustment',
+            'label' => 'Manuelle Preisanpassung',
+            'quantity' => 1,
+            'unitPrice' => '24.00',
+            'amount' => '24.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
+    }
+
+    public function testApproveWithHigherRegistrationFeeRequiresCustomerApproval(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-registration-review-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Registration Review Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contract->setRegistrationFee('149.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '160.00',
+            'registrationFee' => '169.00',
+            'adminComment' => 'Anmeldegebühr wegen Zusatzaufwand erhöht.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('PENDING_CUSTOMER_APPROVAL', $data['state']);
+        self::assertSame('160.00', $data['price']);
+        self::assertSame('169.00', $data['registrationFee']);
+        self::assertSame('329.00', $data['firstInvoiceTotal']);
+        self::assertSame('149.00', $data['pricingSnapshot']['quotedRegistrationFee'] ?? null);
+        self::assertSame('169.00', $data['pricingSnapshot']['registrationFee'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'school_registration_fee',
+            'label' => 'Anmeldegebühr',
+            'quantity' => 1,
+            'unitPrice' => '169.00',
+            'amount' => '169.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
+    }
+
+    public function testApproveAllowsNullOverridesAndClearsAdminComment(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-null-override-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Null Override Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contract->setRegistrationFee('149.00');
+        $contract->setAdminComment('Vorhandener Kommentar');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => null,
+            'registrationFee' => null,
+            'adminComment' => null,
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('ACTIVE', $data['state']);
+        self::assertSame('160.00', $data['price']);
+        self::assertSame('149.00', $data['registrationFee']);
+        self::assertNull($data['adminComment']);
+    }
+
+    public function testApproveRejectsNegativePrice(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-negative-price-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Negative Price Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(1);
+        $contract->setPrice('89.00');
+        $contract->setQuotedMonthlyPrice('89.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '-10.00',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der Preis darf nicht negativ sein.', $data['errors']['price'] ?? null);
+    }
+
     public function testListContractsSupportsPaginationAndStateFilter(): void
     {
         $client = static::createClient();
@@ -119,6 +308,58 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame('ACTIVE', $data['items'][0]['state']);
         self::assertSame($activeTotalBefore + 2, $data['pagination']['total']);
         self::assertSame((int) ceil(($activeTotalBefore + 2) / 1), $data['pagination']['pages']);
+    }
+
+    public function testListContractsSupportsCombinedOpenFilter(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-open-filter-'.uniqid('', true).'@example.com');
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=100&state=open', $token);
+        self::assertResponseIsSuccessful();
+        $before = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $openTotalBefore = (int) ($before['pagination']['total'] ?? 0);
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Open Filter Dog');
+        $dogRepo->save($dog);
+
+        foreach ([ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL, ContractState::ACTIVE] as $index => $state) {
+            $contract = new Contract();
+            $contract->setCustomer($customer);
+            $contract->setDog($dog);
+            $contract->setState($state);
+            $contract->setStartDate(new \DateTimeImmutable('2025-02-0'.($index + 1)));
+            $contract->setPrice('59.00');
+            $contract->setCoursesPerWeek(1);
+            $contractRepo->save($contract);
+        }
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=100&state=open', $token);
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $states = array_map(
+            static fn (array $item): string => (string) ($item['state'] ?? ''),
+            $data['items'] ?? [],
+        );
+        self::assertSame($openTotalBefore + 2, $data['pagination']['total']);
+        self::assertGreaterThanOrEqual(2, count($data['items']));
+        self::assertContains('REQUESTED', $states);
+        self::assertContains('PENDING_CUSTOMER_APPROVAL', $states);
+        foreach ($states as $state) {
+            self::assertContains($state, ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
+        }
     }
 
     public function testDeclineContract(): void
@@ -390,7 +631,7 @@ final class ContractControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
 
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
-        self::assertSame('Only active contracts can be cancelled', $data['error'] ?? null);
+        self::assertSame('Nur aktive Verträge können gekündigt werden', $data['error'] ?? null);
 
         $reloaded = $contractRepo->find($contract->getId());
         self::assertNotNull($reloaded);

@@ -15,6 +15,7 @@ final class ContractRequestDto
         public ?string $endDate = null,
         public ?string $price = null,
         public ?int $coursesPerWeek = null,
+        public ?string $customerComment = null,
     ) {
     }
 }

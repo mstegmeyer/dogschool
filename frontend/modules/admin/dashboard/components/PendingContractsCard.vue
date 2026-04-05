@@ -10,7 +10,7 @@
                     {{ count }}
                 </UBadge>
             </div>
-            <UButton variant='ghost' size='xs' to='/admin/contracts'>
+            <UButton variant='ghost' size='xs' :to='{ path: "/admin/contracts", query: { state: "REQUESTED" } }'>
                 Alle anzeigen
             </UButton>
         </div>
@@ -27,7 +27,7 @@
         Keine offenen Anfragen
     </div>
     <div v-else class='divide-y divide-slate-100'>
-        <div v-for='contract in contracts' :key='contract.id' class='flex items-center justify-between py-3'>
+        <div v-for='contract in contracts' :key='contract.id' class='flex items-start justify-between gap-3 py-3'>
             <div class='min-w-0 pr-2'>
                 <p class='truncate text-sm font-medium text-slate-700'>
                     {{ contract.dogName || 'Hund' }} · {{ contract.customerName || 'Kunde' }}
@@ -36,9 +36,19 @@
                     {{ contract.coursesPerWeek }}× / Woche · {{ formatContractMonthlyPrice(contract.price, contract.type) }}
                 </p>
             </div>
-            <UBadge color='amber' variant='soft'>
-                Angefragt
-            </UBadge>
+            <div class='flex flex-row gap-2'>
+                <UBadge :color='contractStateColor(contract.state)' variant='soft'>
+                    {{ contractStateLabel(contract.state) }}
+                </UBadge>
+                <UButton
+                    :data-testid='`dashboard-review-contract-${contract.id}`'
+                    size='xs'
+                    color='primary'
+                    variant='soft'
+                    label='Prüfen'
+                    @click="emit('review', contract)"
+                />
+            </div>
         </div>
     </div>
 </UCard>
@@ -53,5 +63,9 @@ defineProps<{
     contracts: Contract[],
 }>();
 
-const { formatContractMonthlyPrice } = useHelpers();
+const emit = defineEmits<{
+    (event: 'review', value: Contract): void,
+}>();
+
+const { formatContractMonthlyPrice, contractStateLabel, contractStateColor } = useHelpers();
 </script>

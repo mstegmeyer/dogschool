@@ -17,7 +17,14 @@
         />
     </div>
 
-    <HotelBookingsList :loading='loading' :bookings='bookings' />
+    <HotelBookingsList
+        :loading='loading'
+        :bookings='bookings'
+        :busy-id='reviewActionId'
+        @accept='acceptPrice'
+        @decline='declinePrice'
+        @resubmit='openResubmitModal'
+    />
 
     <HotelBookingRequestModal
         v-model='showRequest'
@@ -28,15 +35,46 @@
         :field-errors='fieldErrors'
         :form-error='formError'
         :saving='saving'
+        :preview-loading='previewLoading'
+        :preview='quotePreview'
         @submit='requestBooking'
         @cancel='closeRequestModal'
         @clear-field-error='clearFieldError'
     />
+
+    <UModal :model-value='showResubmit' @update:model-value='showResubmit = $event'>
+        <UCard v-if='bookingToResubmit' data-testid='hotel-booking-resubmit-modal'>
+            <template #header>
+                <h3 class='font-semibold text-slate-800'>
+                    Kommentar anpassen
+                </h3>
+            </template>
+            <div class='space-y-4'>
+                <PricingBreakdown
+                    :snapshot='bookingToResubmit.pricingSnapshot'
+                    title='Aktuelle Preisübersicht'
+                    total-label='Gesamt'
+                    :total-value='bookingToResubmit.totalPrice'
+                />
+                <UFormGroup label='Neuer Kommentar'>
+                    <UTextarea
+                        v-model='resubmitForm.customerComment'
+                        :rows='4'
+                        placeholder='Beschreibe hier deine Änderungswünsche für das Team.'
+                    />
+                </UFormGroup>
+                <div class='flex justify-end gap-2'>
+                    <UButton variant='ghost' label='Abbrechen' @click='closeResubmitModal' />
+                    <UButton :loading='resubmitting' label='Erneut einreichen' @click='submitResubmission' />
+                </div>
+            </div>
+        </UCard>
+    </UModal>
 </div>
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, Dog, HotelBooking } from '~/types';
+import type { ApiListResponse, Dog, HotelBooking, HotelBookingQuotePreview } from '~/types';
 import HotelBookingsList from './components/BookingsList.vue';
 import HotelBookingRequestModal from './components/RequestModal.vue';
 
@@ -52,16 +90,40 @@ const dogs = ref<Dog[]>([]);
 const loading = ref(true);
 const saving = ref(false);
 const showRequest = ref(false);
+const previewLoading = ref(false);
+const quotePreview = ref<HotelBookingQuotePreview | null>(null);
+const reviewActionId = ref<string | null>(null);
+const showResubmit = ref(false);
+const bookingToResubmit = ref<HotelBooking | null>(null);
+const resubmitting = ref(false);
 
 const requestForm = reactive({
     dogId: '',
     startAt: defaultBookingDateTime(1, 8),
     endAt: defaultBookingDateTime(1, 18),
     currentShoulderHeightCm: 0,
+    includesTravelProtection: false,
+    customerComment: '',
 });
+const resubmitForm = reactive({ customerComment: '' });
 
 const selectedDog = computed(() => dogs.value.find(dog => dog.id === requestForm.dogId) || null);
 const dogOptions = computed(() => dogs.value.map(dog => ({ label: dog.name, value: dog.id })));
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewRequestId = 0;
+
+function clearPreviewTimer(): void {
+    if (previewTimer !== null) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+    }
+}
+
+function invalidatePreviewRequest(): number {
+    previewRequestId += 1;
+
+    return previewRequestId;
+}
 
 watch(() => requestForm.dogId, () => {
     if (selectedDog.value) {
@@ -81,7 +143,11 @@ function defaultBookingDateTime(dayOffset: number, hour: number): string {
 
 function closeRequestModal(): void {
     showRequest.value = false;
+    clearPreviewTimer();
+    invalidatePreviewRequest();
     clearFormErrors();
+    previewLoading.value = false;
+    quotePreview.value = null;
 }
 
 function resetRequestForm(): void {
@@ -89,6 +155,72 @@ function resetRequestForm(): void {
     requestForm.startAt = defaultBookingDateTime(1, 8);
     requestForm.endAt = defaultBookingDateTime(1, 18);
     requestForm.currentShoulderHeightCm = 0;
+    requestForm.includesTravelProtection = false;
+    requestForm.customerComment = '';
+}
+
+function openResubmitModal(booking: HotelBooking): void {
+    bookingToResubmit.value = booking;
+    resubmitForm.customerComment = booking.customerComment || '';
+    showResubmit.value = true;
+}
+
+function closeResubmitModal(): void {
+    showResubmit.value = false;
+    bookingToResubmit.value = null;
+    resubmitForm.customerComment = '';
+}
+
+function canPreviewRequest(): boolean {
+    return !!requestForm.dogId
+        && !!requestForm.startAt
+        && !!requestForm.endAt
+        && new Date(requestForm.endAt) > new Date(requestForm.startAt);
+}
+
+function schedulePreview(): void {
+    clearPreviewTimer();
+    const requestId = invalidatePreviewRequest();
+
+    if (!showRequest.value || !canPreviewRequest()) {
+        previewLoading.value = false;
+        quotePreview.value = null;
+        return;
+    }
+
+    previewLoading.value = true;
+    previewTimer = window.setTimeout(() => {
+        previewTimer = null;
+        void loadPreview(requestId);
+    }, 250);
+}
+
+async function loadPreview(requestId: number): Promise<void> {
+    try {
+        const preview = await api.post<HotelBookingQuotePreview>('/api/customer/hotel-bookings/preview', {
+            dogId: requestForm.dogId,
+            startAt: requestForm.startAt,
+            endAt: requestForm.endAt,
+            currentShoulderHeightCm: requestForm.currentShoulderHeightCm || null,
+            includesTravelProtection: requestForm.includesTravelProtection,
+            customerComment: requestForm.customerComment || null,
+        });
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
+        quotePreview.value = preview;
+    } catch {
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
+        quotePreview.value = null;
+    } finally {
+        if (requestId === previewRequestId) {
+            previewLoading.value = false;
+        }
+    }
 }
 
 function validateForm(): boolean {
@@ -162,6 +294,8 @@ async function requestBooking(): Promise<void> {
             startAt: requestForm.startAt,
             endAt: requestForm.endAt,
             currentShoulderHeightCm: requestForm.currentShoulderHeightCm,
+            includesTravelProtection: requestForm.includesTravelProtection,
+            customerComment: requestForm.customerComment || null,
         });
         toast.add({ title: 'Hotelbuchung angefragt', color: 'green' });
         closeRequestModal();
@@ -174,7 +308,65 @@ async function requestBooking(): Promise<void> {
     }
 }
 
+async function acceptPrice(booking: HotelBooking): Promise<void> {
+    reviewActionId.value = booking.id;
+    try {
+        await api.post(`/api/customer/hotel-bookings/${booking.id}/accept-price`);
+        toast.add({ title: 'Preis akzeptiert', color: 'green' });
+        await loadBookings();
+    } catch (cause) {
+        toast.add({ title: extractApiErrorMessage(cause, 'Der Preis konnte nicht bestätigt werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewActionId.value = null;
+    }
+}
+
+async function declinePrice(booking: HotelBooking): Promise<void> {
+    reviewActionId.value = booking.id;
+    try {
+        await api.post(`/api/customer/hotel-bookings/${booking.id}/decline-price`);
+        toast.add({ title: 'Hotelbuchung abgelehnt', color: 'amber' });
+        await loadBookings();
+    } catch (cause) {
+        toast.add({ title: extractApiErrorMessage(cause, 'Der Preis konnte nicht abgelehnt werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewActionId.value = null;
+    }
+}
+
+async function submitResubmission(): Promise<void> {
+    if (!bookingToResubmit.value) {
+        return;
+    }
+
+    resubmitting.value = true;
+    try {
+        await api.post(`/api/customer/hotel-bookings/${bookingToResubmit.value.id}/resubmit`, {
+            customerComment: resubmitForm.customerComment || null,
+        });
+        toast.add({ title: 'Hotelbuchung erneut eingereicht', color: 'green' });
+        closeResubmitModal();
+        await loadBookings();
+    } catch (cause) {
+        toast.add({ title: extractApiErrorMessage(cause, 'Die erneute Einreichung ist fehlgeschlagen.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        resubmitting.value = false;
+    }
+}
+
 onMounted(async () => {
     await Promise.all([loadBookings(), loadDogs()]);
 });
+
+onBeforeUnmount(() => {
+    clearPreviewTimer();
+    invalidatePreviewRequest();
+});
+
+watch(
+    () => [showRequest.value, requestForm.dogId, requestForm.startAt, requestForm.endAt, requestForm.includesTravelProtection],
+    () => {
+        schedulePreview();
+    },
+);
 </script>

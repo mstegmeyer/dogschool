@@ -19,9 +19,11 @@ describe('useHelpers', () => {
         contractStateLabel,
         contractStateColor,
         creditTypeLabel,
+        hotelPricingKindLabel,
         levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
+        formatMoney,
         hotelAreaRequirementForHeight,
         formatCourseTitleWithLevel,
         formatNotificationCourse,
@@ -78,6 +80,16 @@ describe('useHelpers', () => {
         it('includes date and time components', () => {
             const result = formatDateTime('2026-03-21T14:30:00Z');
             expect(result).toMatch(/21\.03\.2026/);
+        });
+    });
+
+    describe('formatMoney', () => {
+        it('formats dot-decimal strings as Euro currency', () => {
+            expect(formatMoney('12.50')).toMatch(/12,50.*€/);
+        });
+
+        it('formats comma-decimal strings as Euro currency', () => {
+            expect(formatMoney('12,50')).toMatch(/12,50.*€/);
         });
     });
 
@@ -190,6 +202,16 @@ describe('useHelpers', () => {
 
         it('returns raw value for unknown types', () => {
             expect(creditTypeLabel('OTHER')).toBe('OTHER');
+        });
+    });
+
+    describe('hotelPricingKindLabel', () => {
+        it('maps DAYCARE to HUTA', () => {
+            expect(hotelPricingKindLabel('DAYCARE')).toBe('HUTA');
+        });
+
+        it('maps HOTEL to Hundehotel', () => {
+            expect(hotelPricingKindLabel('HOTEL')).toBe('Hundehotel');
         });
     });
 

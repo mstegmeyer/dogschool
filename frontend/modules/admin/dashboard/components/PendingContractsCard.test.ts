@@ -11,7 +11,7 @@ describe('PendingContractsCard', () => {
         installComponentGlobals({ path: '/admin' });
     });
 
-    it('renders pending contracts with contract pricing', () => {
+    it('renders pending contracts with contract pricing', async () => {
         const wrapper = mountComponent(PendingContractsCard, {
             props: {
                 loading: false,
@@ -22,6 +22,9 @@ describe('PendingContractsCard', () => {
 
         expect(wrapper.text()).toContain('Offene Vertragsanfragen');
         expect(wrapper.text()).toContain('79.00 EUR');
-        expect(wrapper.text()).toContain('Angefragt');
+        expect(wrapper.text()).toContain('REQUESTED');
+
+        await wrapper.get('[data-testid="dashboard-review-contract-contract-2"]').trigger('click');
+        expect(wrapper.emitted('review')?.[0]).toEqual([basePendingContract]);
     });
 });

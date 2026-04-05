@@ -26,6 +26,29 @@
                 :description='booking.roomName ? `Aktuell zugewiesen: ${booking.roomName}` : "Die Buchung braucht vor der Bestätigung eine Raumzuweisung."'
             />
 
+            <PricingBreakdown
+                :snapshot='booking.pricingSnapshot'
+                title='Preisübersicht'
+                total-label='Aktueller Gesamtpreis'
+                :total-value='booking.totalPrice'
+            />
+
+            <div class='grid gap-3 sm:grid-cols-2'>
+                <div class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                    <span class='font-medium text-slate-700'>Typ:</span>
+                    {{ hotelPricingKindLabel(booking.pricingKind) }} · {{ booking.billableDays }} Kalendertag(e)
+                </div>
+                <div class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                    <span class='font-medium text-slate-700'>Reiseschutz:</span>
+                    {{ booking.includesTravelProtection ? formatMoney(booking.travelProtectionPrice) : 'Nicht gewählt' }}
+                </div>
+            </div>
+
+            <div v-if='booking.customerComment' class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                <span class='font-medium text-slate-700'>Kundenkommentar:</span>
+                {{ booking.customerComment }}
+            </div>
+
             <UFormGroup label='Raum auswählen'>
                 <USelectMenu
                     :model-value='selectedRoomId'
@@ -36,6 +59,40 @@
                     @update:model-value="emit('update:selectedRoomId', $event)"
                 />
             </UFormGroup>
+
+            <UFormGroup label='Finaler Gesamtpreis'>
+                <UInput
+                    :model-value='finalPrice'
+                    type='number'
+                    step='0.01'
+                    @update:model-value="emit('update:finalPrice', String($event ?? ''))"
+                />
+                <template #hint>
+                    Automatischer Vorschlag: {{ formatMoney(booking.quotedTotalPrice) }}
+                </template>
+            </UFormGroup>
+
+            <UFormGroup label='Admin-Kommentar'>
+                <UTextarea
+                    :model-value='adminComment'
+                    :rows='4'
+                    placeholder='Begründung für Preisänderungen oder Hinweise für den Kunden.'
+                    @update:model-value="emit('update:adminComment', String($event ?? ''))"
+                />
+            </UFormGroup>
+
+            <div v-if='pricingConfig' class='rounded-xl border border-slate-200 bg-slate-50/70 p-4'>
+                <p class='mb-2 text-sm font-semibold text-slate-800'>
+                    Referenzpreise für manuelle Zusatzwünsche
+                </p>
+                <div class='grid gap-2 text-sm text-slate-600 sm:grid-cols-2'>
+                    <p>Einzelzimmer HUTA: {{ formatMoney(pricingConfig.hotelSingleRoomDaycareDailyPrice) }} / Tag</p>
+                    <p>Einzelzimmer Hotel: {{ formatMoney(pricingConfig.hotelSingleRoomHotelDailyPrice) }} / Tag</p>
+                    <p>Läufigkeit: {{ formatMoney(pricingConfig.hotelHeatCycleDailyPrice) }} / Tag</p>
+                    <p>Medikamentengabe: {{ formatMoney(pricingConfig.hotelMedicationPerAdministrationPrice) }} / Gabe</p>
+                    <p>Futtermittelzusätze: {{ formatMoney(pricingConfig.hotelSupplementPerAdministrationPrice) }} / Gabe</p>
+                </div>
+            </div>
 
             <div v-if='booking.availableRooms?.length' class='space-y-3'>
                 <div
@@ -105,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import type { HotelBooking } from '~/types';
+import type { HotelBooking, PricingConfig } from '~/types';
 
 defineProps<{
     modelValue: boolean,
@@ -115,16 +172,21 @@ defineProps<{
     assigning: boolean,
     confirming: boolean,
     declining: boolean,
+    finalPrice: string,
+    adminComment: string,
+    pricingConfig: PricingConfig | null,
 }>();
 
 const emit = defineEmits<{
     (event: 'update:modelValue', value: boolean): void,
     (event: 'update:selectedRoomId', value: string): void,
+    (event: 'update:finalPrice', value: string): void,
+    (event: 'update:adminComment', value: string): void,
     (event: 'assign-room'): void,
     (event: 'confirm'): void,
     (event: 'decline'): void,
     (event: 'cancel'): void,
 }>();
 
-const { formatDateTime, formatSquareMeters, hotelAreaRequirementForHeight, hotelBookingStateColor, hotelBookingStateLabel } = useHelpers();
+const { formatDateTime, formatMoney, formatSquareMeters, hotelAreaRequirementForHeight, hotelBookingStateColor, hotelBookingStateLabel, hotelPricingKindLabel } = useHelpers();
 </script>

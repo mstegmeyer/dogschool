@@ -67,22 +67,14 @@
                     </div>
                 </div>
                 <div class='mt-4 flex flex-wrap gap-2'>
-                    <template v-if="contract.state === 'REQUESTED'">
+                    <template v-if="contract.state === 'REQUESTED' || contract.state === 'PENDING_CUSTOMER_APPROVAL'">
                         <UButton
-                            :data-testid='`approve-contract-mobile-${contract.id}`'
+                            :data-testid='`review-contract-mobile-${contract.id}`'
                             size='sm'
                             color='primary'
                             variant='soft'
-                            label='Genehmigen'
-                            @click="emit('approve', contract)"
-                        />
-                        <UButton
-                            :data-testid='`decline-contract-mobile-${contract.id}`'
-                            size='sm'
-                            color='red'
-                            variant='soft'
-                            label='Ablehnen'
-                            @click="emit('decline', contract)"
+                            label='Prüfen'
+                            @click="emit('review', contract)"
                         />
                     </template>
                     <UButton
@@ -138,22 +130,14 @@
                 </template>
                 <template #actions-data='{ row }'>
                     <div class='flex min-w-[9rem] flex-wrap justify-end gap-1 whitespace-nowrap'>
-                        <template v-if="row.state === 'REQUESTED'">
+                        <template v-if="row.state === 'REQUESTED' || row.state === 'PENDING_CUSTOMER_APPROVAL'">
                             <UButton
-                                :data-testid='`approve-contract-${row.id}`'
+                                :data-testid='`review-contract-${row.id}`'
                                 size='xs'
                                 color='primary'
                                 variant='soft'
-                                label='Genehmigen'
-                                @click="emit('approve', row)"
-                            />
-                            <UButton
-                                :data-testid='`decline-contract-${row.id}`'
-                                size='xs'
-                                color='red'
-                                variant='soft'
-                                label='Ablehnen'
-                                @click="emit('decline', row)"
+                                label='Prüfen'
+                                @click="emit('review', row)"
                             />
                         </template>
                         <UButton
@@ -203,8 +187,7 @@ defineProps<{
 const emit = defineEmits<{
     (event: 'update:sort', value: { column: string | null; direction: 'asc' | 'desc' }): void,
     (event: 'update:currentPage', value: number): void,
-    (event: 'approve', value: Contract): void,
-    (event: 'decline', value: Contract): void,
+    (event: 'review', value: Contract): void,
     (event: 'cancel', value: Contract): void,
 }>();
 

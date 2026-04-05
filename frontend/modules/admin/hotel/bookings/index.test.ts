@@ -6,6 +6,7 @@ import {
     hotelBooking,
     installAdminGlobals,
     mountHotelAdminBookingsPage,
+    pricingConfig,
     toastAddMock,
 } from '~/tests/modules/admin-page-helpers';
 import { flushPromises } from '~/tests/nuxt/page-test-utils';
@@ -24,6 +25,9 @@ describe('admin hotel bookings page', () => {
             }
             if (url === '/api/admin/hotel/bookings/hotel-booking-1') {
                 return Promise.resolve(hotelBooking);
+            }
+            if (url === '/api/admin/pricing') {
+                return Promise.resolve(pricingConfig);
             }
             return Promise.reject(new Error(`Unhandled GET ${url}`));
         });
@@ -45,7 +49,7 @@ describe('admin hotel bookings page', () => {
 
         expect(modal.props('booking')).toEqual(hotelBooking);
 
-        await modal.vm.$emit('update:selectedRoomId', 'room-1');
+        await modal.vm.$emit('update:selected-room-id', 'room-1');
         apiPutMock.mockResolvedValue(hotelBooking);
         await modal.vm.$emit('assign-room');
         await flushPromises();
@@ -62,8 +66,13 @@ describe('admin hotel bookings page', () => {
         await modal.vm.$emit('decline');
         await flushPromises();
 
-        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/hotel/bookings/hotel-booking-1/confirm');
-        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/hotel/bookings/hotel-booking-1/decline');
+        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/hotel/bookings/hotel-booking-1/confirm', {
+            totalPrice: '123.50',
+            adminComment: null,
+        });
+        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/hotel/bookings/hotel-booking-1/decline', {
+            adminComment: null,
+        });
     });
 
     it('resets filters back to requested and reloads the first page', async () => {
@@ -83,9 +92,9 @@ describe('admin hotel bookings page', () => {
         await wrapper.get('[data-testid="hotel-booking-from-filter"]').setValue('2026-04-05T00:00');
         await wrapper.get('[data-testid="hotel-booking-to-filter"]').setValue('2026-04-06T00:00');
         await flushPromises();
-        expect(apiGetMock).toHaveBeenCalledTimes(1);
+        expect(apiGetMock).toHaveBeenCalledTimes(2);
 
-        await table.vm.$emit('update:currentPage', 2);
+        await table.vm.$emit('update:current-page', 2);
         await flushPromises();
         expect(apiGetMock.mock.calls.at(-1)?.[0]).toContain('page=2');
 
@@ -117,5 +126,33 @@ describe('admin hotel bookings page', () => {
             title: 'Ungültiger Zeitraum',
             color: 'red',
         }));
+    });
+
+    it('shows a toast when the pricing reference request fails on mount', async () => {
+        apiGetMock.mockImplementation((url: string) => {
+            if (url.startsWith('/api/admin/hotel/bookings?')) {
+                return Promise.resolve({
+                    items: [hotelBooking],
+                    pagination: { page: 1, limit: 20, total: 1, pages: 1 },
+                });
+            }
+            if (url === '/api/admin/pricing') {
+                return Promise.reject(new Error('pricing failed'));
+            }
+            if (url === '/api/admin/hotel/bookings/hotel-booking-1') {
+                return Promise.resolve(hotelBooking);
+            }
+
+            return Promise.reject(new Error(`Unhandled GET ${url}`));
+        });
+
+        const wrapper = await mountHotelAdminBookingsPage();
+        const modal = wrapper.getComponent({ name: 'HotelBookingDetailModal' });
+
+        expect(toastAddMock).toHaveBeenCalledWith(expect.objectContaining({
+            title: 'pricing failed',
+            color: 'red',
+        }));
+        expect(modal.props('pricingConfig')).toBeNull();
     });
 });

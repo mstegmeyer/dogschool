@@ -61,6 +61,40 @@
                 </UFormGroup>
             </div>
 
+            <UFormGroup label='Zusatzoptionen'>
+                <UCheckbox
+                    v-model='form.includesTravelProtection'
+                    label='Reiseschutz hinzufügen'
+                />
+            </UFormGroup>
+
+            <UFormGroup label='Kommentar für Zusatzwünsche'>
+                <UTextarea
+                    v-model='form.customerComment'
+                    :rows='4'
+                    placeholder='Zum Beispiel Einzelzimmer, Läufigkeit oder besondere Hinweise für das Team.'
+                />
+            </UFormGroup>
+
+            <div v-if='previewLoading' class='rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500'>
+                Preisvorschau wird berechnet…
+            </div>
+            <div v-else-if='preview' class='space-y-3'>
+                <UAlert
+                    color='blue'
+                    variant='soft'
+                    icon='i-heroicons-banknotes'
+                    :title='`${hotelPricingKindLabel(preview.pricingKind)} · ${preview.billableDays} Kalendertag(e)`'
+                    :description='preview.includesTravelProtection ? "Reiseschutz ist in der Vorschau enthalten." : "Reiseschutz ist nicht enthalten."'
+                />
+                <PricingBreakdown
+                    :snapshot='preview.snapshot'
+                    title='Voraussichtlicher Preis'
+                    total-label='Gesamt'
+                    :total-value='preview.quotedTotalPrice'
+                />
+            </div>
+
             <UAlert
                 v-if='formError'
                 color='red'
@@ -84,15 +118,26 @@
 </template>
 
 <script setup lang="ts">
+import type { HotelBookingQuotePreview } from '~/types';
+
 defineProps<{
     modelValue: boolean,
     dogOptions: Array<{ label: string; value: string }>,
     selectedDogName: string,
     storedShoulderHeightCm: number,
-    form: { dogId: string; startAt: string; endAt: string; currentShoulderHeightCm: number },
+    form: {
+        dogId: string,
+        startAt: string,
+        endAt: string,
+        currentShoulderHeightCm: number,
+        includesTravelProtection: boolean,
+        customerComment: string,
+    },
     fieldErrors: Record<string, string>,
     formError: string,
     saving: boolean,
+    previewLoading: boolean,
+    preview: HotelBookingQuotePreview | null,
 }>();
 
 const emit = defineEmits<{
@@ -101,4 +146,6 @@ const emit = defineEmits<{
     (event: 'cancel'): void,
     (event: 'clear-field-error', value: string): void,
 }>();
+
+const { hotelPricingKindLabel } = useHelpers();
 </script>

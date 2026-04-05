@@ -20,10 +20,11 @@ export interface ApiListResponse<T> {
 
 export type DayOfWeek = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type CourseLevel = 0 | 1 | 2 | 3 | 4;
-export type ContractState = 'REQUESTED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED';
+export type ContractState = 'REQUESTED' | 'PENDING_CUSTOMER_APPROVAL' | 'ACTIVE' | 'DECLINED' | 'CANCELLED';
 export type ContractType = 'PERPETUAL';
 export type CreditTransactionType = 'WEEKLY_GRANT' | 'BOOKING' | 'CANCELLATION' | 'MANUAL_ADJUSTMENT';
-export type HotelBookingState = 'REQUESTED' | 'CONFIRMED' | 'DECLINED';
+export type HotelBookingState = 'REQUESTED' | 'PENDING_CUSTOMER_APPROVAL' | 'CONFIRMED' | 'DECLINED';
+export type HotelBookingPricingKind = 'DAYCARE' | 'HOTEL';
 export type RecurrenceKind = 'RECURRING' | 'ONE_TIME' | 'DROP_IN';
 export type DogGender = 'male' | 'female';
 export type AuthRole = 'admin' | 'customer';
@@ -94,6 +95,21 @@ export interface RoomAvailability {
     segments: RoomOccupancySegment[],
 }
 
+export interface PricingLineItem {
+    key: string,
+    label: string,
+    quantity: number,
+    unitPrice: string,
+    amount: string,
+    billingPeriod: string,
+}
+
+export interface PricingSnapshot {
+    type: 'contract' | 'hotelBooking',
+    lineItems: PricingLineItem[],
+    [key: string]: unknown,
+}
+
 export interface HotelBooking {
     id: string,
     customerId: string | null,
@@ -105,7 +121,17 @@ export interface HotelBooking {
     roomName: string | null,
     startAt: string,
     endAt: string,
+    pricingKind: HotelBookingPricingKind,
+    billableDays: number,
+    includesTravelProtection: boolean,
+    totalPrice: string,
+    quotedTotalPrice: string,
+    serviceFee: string,
+    travelProtectionPrice: string,
     state: HotelBookingState,
+    customerComment: string | null,
+    adminComment: string | null,
+    pricingSnapshot: PricingSnapshot,
     createdAt: string,
     availableRooms?: RoomAvailability[],
 }
@@ -218,12 +244,69 @@ export interface Contract {
     startDate: string | null,
     endDate: string | null,
     price: string,
+    quotedMonthlyPrice: string,
     /** Same as price for PERPETUAL (monthly). */
     priceMonthly?: string | null,
+    registrationFee: string,
+    firstInvoiceTotal: string,
     type: ContractType,
     coursesPerWeek: number,
     state: ContractState,
+    customerComment: string | null,
+    adminComment: string | null,
+    pricingSnapshot: PricingSnapshot,
     createdAt: string,
+}
+
+export interface ContractQuotePreview {
+    monthlyPrice: string,
+    registrationFee: string,
+    firstInvoiceTotal: string,
+    monthlyUnitPrice: string,
+    coursesPerWeek: number,
+    requiresRegistrationFee: boolean,
+    snapshot: PricingSnapshot,
+}
+
+export interface HotelBookingQuotePreview {
+    pricingKind: HotelBookingPricingKind,
+    billableDays: number,
+    baseDailyPrice: string,
+    serviceFee: string,
+    travelProtectionPrice: string,
+    quotedTotalPrice: string,
+    includesTravelProtection: boolean,
+    snapshot: PricingSnapshot,
+}
+
+export interface HotelPeakSeason {
+    id?: string,
+    startDate: string | null,
+    endDate: string | null,
+}
+
+export interface PricingConfig {
+    id: string,
+    schoolOneCoursePrice: string,
+    schoolTwoCoursesUnitPrice: string,
+    schoolThreeCoursesUnitPrice: string,
+    schoolFourCoursesUnitPrice: string,
+    schoolAdditionalCoursesUnitPrice: string,
+    schoolRegistrationFee: string,
+    daycareOffSeasonDailyPrice: string,
+    daycarePeakSeasonDailyPrice: string,
+    hotelDailyPrice: string,
+    hotelServiceFee: string,
+    hotelTravelProtectionBaseFee: string,
+    hotelTravelProtectionAdditionalDailyFee: string,
+    hotelSingleRoomDaycareDailyPrice: string,
+    hotelSingleRoomHotelDailyPrice: string,
+    hotelHeatCycleDailyPrice: string,
+    hotelMedicationPerAdministrationPrice: string,
+    hotelSupplementPerAdministrationPrice: string,
+    hotelPeakSeasons: HotelPeakSeason[],
+    createdAt: string,
+    updatedAt: string,
 }
 
 export interface NotificationCourseRef {

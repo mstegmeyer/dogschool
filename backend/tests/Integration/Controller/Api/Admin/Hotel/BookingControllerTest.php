@@ -101,6 +101,170 @@ final class BookingControllerTest extends WebTestCase
         self::assertSame('Blue Room', $confirmed['roomName']);
     }
 
+    public function testConfirmWithHigherPriceRequiresCustomerApproval(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-review-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Review Dog')
+            ->setShoulderHeightCm(58);
+        $dogRepository->save($dog);
+
+        $room = (new Room())
+            ->setName('Review Room '.uniqid('', true))
+            ->setSquareMeters(16);
+        $roomRepository->save($room);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-06 10:00'))
+            ->setState(HotelBookingState::REQUESTED);
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/hotel/bookings/'.$booking->getId().'/confirm', $token, json_encode([
+            'totalPrice' => '148.50',
+            'adminComment' => 'Zusatzleistungen manuell eingepreist.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('PENDING_CUSTOMER_APPROVAL', $data['state']);
+        self::assertSame('148.50', $data['totalPrice']);
+        self::assertSame('123.50', $data['quotedTotalPrice']);
+        self::assertSame('Zusatzleistungen manuell eingepreist.', $data['adminComment']);
+        self::assertSame('148.50', $data['pricingSnapshot']['totalPrice'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'manual_adjustment',
+            'label' => 'Manuelle Preisanpassung',
+            'quantity' => 1,
+            'unitPrice' => '25.00',
+            'amount' => '25.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
+    }
+
+    public function testConfirmAllowsNullPriceAndClearsAdminComment(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-null-price-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Null Price Dog')
+            ->setShoulderHeightCm(52);
+        $dogRepository->save($dog);
+
+        $room = (new Room())
+            ->setName('Null Price Room')
+            ->setSquareMeters(12);
+        $roomRepository->save($room);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-06 10:00'))
+            ->setState(HotelBookingState::REQUESTED)
+            ->setAdminComment('Vorhandener Kommentar');
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/hotel/bookings/'.$booking->getId().'/confirm', $token, json_encode([
+            'totalPrice' => null,
+            'adminComment' => null,
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('CONFIRMED', $data['state']);
+        self::assertSame('123.50', $data['totalPrice']);
+        self::assertNull($data['adminComment']);
+    }
+
+    public function testConfirmRejectsNegativeTotalPrice(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-negative-price-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Negative Price Dog')
+            ->setShoulderHeightCm(55);
+        $dogRepository->save($dog);
+
+        $room = (new Room())
+            ->setName('Negative Price Room')
+            ->setSquareMeters(14);
+        $roomRepository->save($room);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-06 10:00'))
+            ->setState(HotelBookingState::REQUESTED);
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/hotel/bookings/'.$booking->getId().'/confirm', $token, json_encode([
+            'totalPrice' => '-10.00',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der Gesamtpreis darf nicht negativ sein.', $data['errors']['totalPrice'] ?? null);
+    }
+
     public function testDeclineHotelBookingClearsRoom(): void
     {
         $client = static::createClient();

@@ -11,6 +11,29 @@ interface ModuleRoute {
 const MODULE_ROOT = resolve(__dirname, 'modules');
 const SKIPPED_SEGMENTS = new Set(['components', 'composables', 'types', 'utils']);
 const API_PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://localhost:8080';
+const DEFAULT_WATCH_INTERVAL = 1500;
+const VITE_WATCH_IGNORED = [
+    '**/coverage/**',
+    '**/test-results/**',
+    '**/.output/**',
+    '**/.nuxt/**',
+    '**/.nitro/**',
+    '**/.cache/**',
+    '**/dist/**',
+];
+
+function resolveWatchPollInterval(): number {
+    const rawInterval = process.env.CHOKIDAR_INTERVAL;
+    if (!rawInterval) {
+        return DEFAULT_WATCH_INTERVAL;
+    }
+
+    const parsedInterval = Number.parseInt(rawInterval, 10);
+
+    return Number.isNaN(parsedInterval) ? DEFAULT_WATCH_INTERVAL : parsedInterval;
+}
+
+const WATCH_INTERVAL = resolveWatchPollInterval();
 
 function toRouteSegments(filePath: string): string[] {
     const directory = relative(MODULE_ROOT, filePath)
@@ -181,6 +204,19 @@ export default defineNuxtConfig({
 
     // Stub for client pre-transform: Vite resolves import("#app-manifest") even when SSR is stripped (nuxt/nuxt#33606).
     vite: {
+        server: {
+            watch: {
+                // Docker bind mounts can drop native FS events; polling is more stable there.
+                usePolling: process.env.CHOKIDAR_USEPOLLING === 'true',
+                interval: WATCH_INTERVAL,
+                binaryInterval: WATCH_INTERVAL * 2,
+                awaitWriteFinish: {
+                    stabilityThreshold: 300,
+                    pollInterval: 100,
+                },
+                ignored: VITE_WATCH_IGNORED,
+            },
+        },
         $client: {
             resolve: {
                 alias: {

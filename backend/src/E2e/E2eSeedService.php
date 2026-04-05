@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\E2e;
 
+use App\Dto\Pricing\ContractPricingSnapshot;
+use App\Dto\Pricing\HotelBookingPricingSnapshot;
 use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Entity\Course;
@@ -13,15 +15,20 @@ use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\HotelBooking;
+use App\Entity\HotelPeakSeason;
 use App\Entity\Notification;
+use App\Entity\PricingConfig;
 use App\Entity\Room;
 use App\Entity\User;
 use App\Enum\ContractState;
 use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
+use App\Enum\HotelBookingPricingKind;
 use App\Enum\HotelBookingState;
 use App\Repository\CourseTypeRepository;
 use App\Repository\UserRepository;
+use App\Service\PricingConfigProvider;
+use App\Service\PricingEngine;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -198,6 +205,7 @@ final class E2eSeedService
             'hotelBookings' => [],
         ];
 
+        $this->createPricingConfig();
         $courseTypes = $this->indexCourseTypes();
         $trainers = $this->indexTrainers();
 
@@ -591,7 +599,7 @@ final class E2eSeedService
     {
         $contracts = [];
         $states = [
-            'customer_contract_pending' => ContractState::REQUESTED,
+            'customer_contract_pending' => ContractState::PENDING_CUSTOMER_APPROVAL,
             'customer_contract_approve' => ContractState::REQUESTED,
             'customer_contract_decline' => ContractState::REQUESTED,
             'customer_contract_cancel' => ContractState::ACTIVE,
@@ -610,21 +618,20 @@ final class E2eSeedService
                 'customer_multi_dog', 'customer_contract_cancel' => 3,
                 default => 1,
             };
-            $price = match ($coursesPerWeek) {
-                1 => '59.00',
-                2 => '89.00',
-                default => '119.00',
-            };
 
             $contract = new Contract();
             $contract->setCustomer($entry['customer']);
             $contract->setDog($entry['dogs'][0]);
             $contract->setCoursesPerWeek($coursesPerWeek);
-            $contract->setPrice($price);
             $contract->setType(ContractType::PERPETUAL);
             $contract->setState($state);
             $contract->setStartDate($this->referenceMonday()->modify('-2 months'));
             $contract->setEndDate($state === ContractState::CANCELLED ? $this->referenceMonday()->modify('+2 months')->modify('last day of this month') : null);
+            $contract->setCustomerComment('Bitte bei Bedarf auf individuelle Trainingswuensche achten.');
+            $this->applyContractPricing($contract, $state === ContractState::PENDING_CUSTOMER_APPROVAL ? 24_00 : 0, true);
+            if ($state === ContractState::PENDING_CUSTOMER_APPROVAL) {
+                $contract->setAdminComment('Preis angepasst wegen zusaetzlicher Einzelbetreuung.');
+            }
 
             $this->em->persist($contract);
             $this->stampCreatedAt($contract, $this->sequenceTime($this->contractSequence, -10));
@@ -638,6 +645,7 @@ final class E2eSeedService
             'cancel' => $contracts['customer_contract_cancel']->getId(),
             'customerProfile' => $contracts['customer_profile']->getId(),
             'customerContracts' => $contracts['customer_contracts']->getId(),
+            'pendingCustomerReview' => $contracts['customer_contract_pending']->getId(),
         ];
 
         return $contracts;
@@ -847,6 +855,8 @@ final class E2eSeedService
                 'state' => HotelBookingState::REQUESTED,
                 'startAt' => '2026-04-08T09:00:00+02:00',
                 'endAt' => '2026-04-09T10:00:00+02:00',
+                'includesTravelProtection' => false,
+                'extraPriceCents' => 0,
             ],
             'declined' => [
                 'customerKey' => 'customer_contract_decline',
@@ -855,6 +865,8 @@ final class E2eSeedService
                 'state' => HotelBookingState::DECLINED,
                 'startAt' => '2026-04-09T08:00:00+02:00',
                 'endAt' => '2026-04-09T18:00:00+02:00',
+                'includesTravelProtection' => false,
+                'extraPriceCents' => 0,
             ],
             'small_future' => [
                 'customerKey' => 'customer_contract_approve',
@@ -863,6 +875,8 @@ final class E2eSeedService
                 'state' => HotelBookingState::CONFIRMED,
                 'startAt' => '2026-04-07T08:00:00+02:00',
                 'endAt' => '2026-04-07T18:00:00+02:00',
+                'includesTravelProtection' => false,
+                'extraPriceCents' => 0,
             ],
             'medium_first' => [
                 'customerKey' => 'customer_multi_dog',
@@ -871,6 +885,8 @@ final class E2eSeedService
                 'state' => HotelBookingState::CONFIRMED,
                 'startAt' => '2026-04-06T10:00:00+02:00',
                 'endAt' => '2026-04-06T18:00:00+02:00',
+                'includesTravelProtection' => false,
+                'extraPriceCents' => 0,
             ],
             'medium_second' => [
                 'customerKey' => 'customer_dashboard',
@@ -879,6 +895,8 @@ final class E2eSeedService
                 'state' => HotelBookingState::CONFIRMED,
                 'startAt' => '2026-04-06T12:00:00+02:00',
                 'endAt' => '2026-04-06T20:00:00+02:00',
+                'includesTravelProtection' => false,
+                'extraPriceCents' => 0,
             ],
             'large_stay' => [
                 'customerKey' => 'customer_profile',
@@ -887,6 +905,18 @@ final class E2eSeedService
                 'state' => HotelBookingState::CONFIRMED,
                 'startAt' => '2026-04-06T11:00:00+02:00',
                 'endAt' => '2026-04-07T07:00:00+02:00',
+                'includesTravelProtection' => true,
+                'extraPriceCents' => 0,
+            ],
+            'pending_customer_review' => [
+                'customerKey' => 'customer_contract_pending',
+                'dogIndex' => 0,
+                'roomKey' => 'large',
+                'state' => HotelBookingState::PENDING_CUSTOMER_APPROVAL,
+                'startAt' => '2026-04-10T09:00:00+02:00',
+                'endAt' => '2026-04-12T10:00:00+02:00',
+                'includesTravelProtection' => true,
+                'extraPriceCents' => 25_00,
             ],
         ] as $key => $definition) {
             $entry = $customers[$definition['customerKey']];
@@ -897,10 +927,131 @@ final class E2eSeedService
             $booking->setState($definition['state']);
             $booking->setStartAt(new \DateTimeImmutable($definition['startAt']));
             $booking->setEndAt(new \DateTimeImmutable($definition['endAt']));
+            $booking->setIncludesTravelProtection($definition['includesTravelProtection']);
+            $booking->setCustomerComment('Bitte moeglichst ruhige Unterbringung.');
+            $this->applyHotelPricing($booking, $definition['extraPriceCents']);
+            if ($definition['state'] === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
+                $booking->setAdminComment('Preis angepasst wegen manueller Zusatzwuensche.');
+            }
             $this->em->persist($booking);
             $this->stampCreatedAt($booking, $this->sequenceTime($this->hotelBookingSequence, -8));
             $manifestHotelBookings[$key] = $booking->getId();
         }
+    }
+
+    private function createPricingConfig(): void
+    {
+        if ($this->em->getRepository(PricingConfig::class)->findOneBy([]) instanceof PricingConfig) {
+            return;
+        }
+
+        $this->em->persist($this->createDefaultPricingConfigEntity());
+    }
+
+    private function applyContractPricing(Contract $contract, int $extraMonthlyCents = 0, bool $hasRegistrationFee = true): void
+    {
+        $monthlyPriceCents = $this->resolveDefaultSchoolMonthlyPriceCents($contract->getCoursesPerWeek());
+        $quotedMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents);
+        $finalMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents + $extraMonthlyCents);
+        $registrationFee = PricingEngine::formatAmount($hasRegistrationFee ? $this->resolveDefaultRegistrationFeeCents() : 0);
+
+        $contract->setQuotedMonthlyPrice($quotedMonthlyPrice);
+        $contract->setPrice($finalMonthlyPrice);
+        $contract->setRegistrationFee($registrationFee);
+        $contract->setPricingSnapshot(
+            ContractPricingSnapshot::forQuote(
+                $contract->getCoursesPerWeek(),
+                PricingEngine::schoolUnitPriceForCourseCount(new PricingConfig(), $contract->getCoursesPerWeek()),
+                $quotedMonthlyPrice,
+                $registrationFee,
+                PricingEngine::formatAmount(
+                    PricingEngine::amountToCents($quotedMonthlyPrice) + PricingEngine::amountToCents($registrationFee),
+                ),
+            )
+                ->finalize($finalMonthlyPrice, $registrationFee)
+                ->toArray(),
+        );
+    }
+
+    private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
+    {
+        $pricingKind = $booking->getStartAt()->format('Y-m-d') === $booking->getEndAt()->format('Y-m-d')
+            ? HotelBookingPricingKind::DAYCARE
+            : HotelBookingPricingKind::HOTEL;
+        $billableDays = PricingEngine::billableCalendarDays($booking->getStartAt(), $booking->getEndAt());
+        $baseDailyPriceCents = match ($pricingKind) {
+            HotelBookingPricingKind::DAYCARE => $this->isPeakSeasonDate($booking->getStartAt()) ? 46_00 : 39_00,
+            HotelBookingPricingKind::HOTEL => 58_00,
+        };
+        $baseAmountCents = $baseDailyPriceCents * $billableDays;
+        $serviceFeeCents = 7_50;
+        $travelProtectionCents = $booking->includesTravelProtection()
+            ? 49_00 + (max(0, $billableDays - 7) * 11_00)
+            : 0;
+        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents;
+
+        $booking->setPricingKind($pricingKind);
+        $booking->setBillableDays($billableDays);
+        $booking->setQuotedTotalPrice(PricingEngine::formatAmount($quotedTotalCents));
+        $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
+        $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
+        $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
+        $booking->setPricingSnapshot(
+            HotelBookingPricingSnapshot::forQuote(
+                $pricingKind,
+                $billableDays,
+                PricingEngine::formatAmount($baseDailyPriceCents),
+                PricingEngine::formatAmount($serviceFeeCents),
+                PricingEngine::formatAmount($travelProtectionCents),
+                PricingEngine::formatAmount($quotedTotalCents),
+                $pricingKind === HotelBookingPricingKind::DAYCARE
+                    ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
+                    : 'Hundehotel',
+                $booking->includesTravelProtection(),
+            )
+                ->finalize($booking->getTotalPrice())
+                ->toArray(),
+        );
+    }
+
+    private function createDefaultPricingConfigEntity(): PricingConfig
+    {
+        $pricingConfig = new PricingConfig();
+        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
+            $season = new HotelPeakSeason();
+            $season->setStartDate(new \DateTimeImmutable($startDate));
+            $season->setEndDate(new \DateTimeImmutable($endDate));
+            $pricingConfig->addHotelPeakSeason($season);
+        }
+
+        return $pricingConfig;
+    }
+
+    private function resolveDefaultSchoolMonthlyPriceCents(int $coursesPerWeek): int
+    {
+        $normalizedCoursesPerWeek = max(1, $coursesPerWeek);
+        $pricingConfig = new PricingConfig();
+        $unitPrice = PricingEngine::schoolUnitPriceForCourseCount($pricingConfig, $normalizedCoursesPerWeek);
+
+        return PricingEngine::amountToCents($unitPrice) * $normalizedCoursesPerWeek;
+    }
+
+    private function resolveDefaultRegistrationFeeCents(): int
+    {
+        return PricingEngine::amountToCents((new PricingConfig())->getSchoolRegistrationFee());
+    }
+
+    private function isPeakSeasonDate(\DateTimeImmutable $date): bool
+    {
+        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
+            $start = new \DateTimeImmutable($startDate);
+            $end = new \DateTimeImmutable($endDate);
+            if ($date >= $start && $date <= $end->setTime(23, 59, 59)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sequenceTime(int &$sequence, int $stepMinutes = -1): \DateTimeImmutable

@@ -12,15 +12,19 @@ use PHPUnit\Framework\TestCase;
 final class DemoFixturesTest extends TestCase
 {
     #[Test]
-    public function courseDefinitionsMatchTheCurrentCalendarExport(): void
+    public function courseDefinitionsMatchTheCurrentDemoWeek(): void
     {
         $definitions = $this->courseDefinitions();
 
-        self::assertCount(64, $definitions);
+        self::assertCount(67, $definitions);
         self::assertSame('2026-04-13', $definitions[0]['date']);
         self::assertSame('08:00', $definitions[0]['start']);
-        self::assertSame('2026-04-18', $definitions[array_key_last($definitions)]['date']);
-        self::assertSame('14:00', $definitions[array_key_last($definitions)]['start']);
+        $lastDefinition = $definitions[array_key_last($definitions)];
+
+        self::assertSame('2026-04-19', $lastDefinition['date']);
+        self::assertSame('20:00', $lastDefinition['start']);
+        self::assertArrayHasKey('comment', $lastDefinition);
+        self::assertSame('Nachholkurs', $lastDefinition['comment']);
     }
 
     #[Test]
@@ -34,7 +38,7 @@ final class DemoFixturesTest extends TestCase
     }
 
     /**
-     * @return list<array{code: string, date: string, start: string, end: string, level: int, location?: string}>
+     * @return list<array{code: string, date: string, start: string, end: string, level: int, comment?: string}>
      */
     private function courseDefinitions(): array
     {
@@ -44,7 +48,7 @@ final class DemoFixturesTest extends TestCase
             self::fail('DemoFixtures::COURSE_DEFS is missing.');
         }
 
-        /** @var list<array{code: string, date: string, start: string, end: string, level: int, location?: string}> $definitions */
+        /** @var list<array{code: string, date: string, start: string, end: string, level: int, comment?: string}> $definitions */
         $definitions = $constant->getValue();
 
         return $definitions;

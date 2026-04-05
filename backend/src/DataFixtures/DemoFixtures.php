@@ -142,7 +142,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     // -----------------------------------------------------------------------
 
     /**
-     * @var list<array{code: string, date: string, start: string, end: string, level: int, location?: string}>
+     * @var list<array{code: string, date: string, start: string, end: string, level: int, comment?: string}>
      */
     private const COURSE_DEFS = [
         ['code' => 'MH', 'date' => '2026-04-13', 'start' => '08:00', 'end' => '09:00', 'level' => 2],
@@ -157,33 +157,33 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         ['code' => 'MH', 'date' => '2026-04-13', 'start' => '20:00', 'end' => '21:00', 'level' => 3],
         ['code' => 'JUHU', 'date' => '2026-04-13', 'start' => '20:00', 'end' => '21:00', 'level' => 2],
         ['code' => 'FSTS', 'date' => '2026-04-13', 'start' => '21:30', 'end' => '23:30', 'level' => 0],
-        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '09:00', 'end' => '10:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '09:00', 'end' => '10:00', 'level' => 2],
         ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '16:00', 'end' => '17:00', 'level' => 2],
-        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '17:00', 'end' => '18:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '17:00', 'end' => '18:00', 'level' => 2],
         ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '17:00', 'end' => '18:00', 'level' => 3],
         ['code' => 'TK', 'date' => '2026-04-14', 'start' => '18:00', 'end' => '19:00', 'level' => 2],
         ['code' => 'TK', 'date' => '2026-04-14', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
         ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '19:00', 'end' => '20:00', 'level' => 0],
         ['code' => 'MH', 'date' => '2026-04-14', 'start' => '20:00', 'end' => '21:00', 'level' => 2],
         ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '20:00', 'end' => '21:00', 'level' => 1],
-        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '21:00', 'end' => '22:00', 'level' => 4, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '21:00', 'end' => '22:00', 'level' => 4],
         ['code' => 'TK', 'date' => '2026-04-15', 'start' => '17:00', 'end' => '18:00', 'level' => 2],
-        ['code' => 'WELPEN', 'date' => '2026-04-15', 'start' => '18:00', 'end' => '19:00', 'level' => 0, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'WELPEN', 'date' => '2026-04-15', 'start' => '18:00', 'end' => '19:00', 'level' => 0],
         ['code' => 'TK', 'date' => '2026-04-15', 'start' => '18:00', 'end' => '19:00', 'level' => 1],
         ['code' => 'MH', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
         ['code' => 'TK', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
         ['code' => 'JUHU', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
-        ['code' => 'MH', 'date' => '2026-04-15', 'start' => '20:00', 'end' => '21:00', 'level' => 4, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-15', 'start' => '20:00', 'end' => '21:00', 'level' => 4],
         ['code' => 'MH', 'date' => '2026-04-15', 'start' => '21:00', 'end' => '22:00', 'level' => 4],
         ['code' => 'FSTS', 'date' => '2026-04-15', 'start' => '22:00', 'end' => '23:30', 'level' => 0],
         ['code' => 'MT', 'date' => '2026-04-16', 'start' => '08:00', 'end' => '09:00', 'level' => 0],
-        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '17:00', 'end' => '18:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '17:00', 'end' => '18:00', 'level' => 2],
         ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '17:00', 'end' => '18:00', 'level' => 0],
-        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '18:00', 'end' => '19:00', 'level' => 3, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '18:00', 'end' => '19:00', 'level' => 3],
         ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '18:00', 'end' => '19:00', 'level' => 1],
         ['code' => 'TK', 'date' => '2026-04-16', 'start' => '19:00', 'end' => '20:00', 'level' => 2],
         ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
-        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '20:00', 'end' => '21:00', 'level' => 1, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '20:00', 'end' => '21:00', 'level' => 1],
         ['code' => 'AGI', 'date' => '2026-04-16', 'start' => '20:00', 'end' => '21:00', 'level' => 0],
         ['code' => 'FSTS', 'date' => '2026-04-16', 'start' => '21:30', 'end' => '23:30', 'level' => 0],
         ['code' => 'MT', 'date' => '2026-04-17', 'start' => '15:00', 'end' => '16:00', 'level' => 0],
@@ -209,6 +209,9 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         ['code' => 'TK', 'date' => '2026-04-18', 'start' => '12:00', 'end' => '13:00', 'level' => 1],
         ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '13:00', 'end' => '14:00', 'level' => 1],
         ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '14:00', 'end' => '15:00', 'level' => 0],
+        ['code' => 'JUHU', 'date' => '2026-04-19', 'start' => '18:00', 'end' => '19:00', 'level' => 1, 'comment' => 'Nachholkurs'],
+        ['code' => 'TK', 'date' => '2026-04-19', 'start' => '19:00', 'end' => '20:00', 'level' => 1, 'comment' => 'Nachholkurs'],
+        ['code' => 'MH', 'date' => '2026-04-19', 'start' => '20:00', 'end' => '21:00', 'level' => 1, 'comment' => 'Nachholkurs'],
     ];
 
     /** @var Contract[] */
@@ -361,7 +364,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             $c->setStartTime($definition['start']);
             $c->setEndTime($definition['end']);
             $c->setLevel($definition['level']);
-            $c->setComment(self::buildCourseComment($definition['location'] ?? null));
+            $c->setComment($definition['comment'] ?? null);
             if ($trainerPool !== []) {
                 $c->setTrainer($trainerPool[count($courses) % count($trainerPool)]);
             }
@@ -1040,12 +1043,12 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             return;
         }
 
-        // External training ground: location update
+        // Sunday make-up classes
         $n = new Notification();
-        $n->setTitle('Trainingsplatz-Änderung');
-        $n->setMessage("Liebe Kursteilnehmer,\n\nfür alle Gruppen mit Trainingsort-Hinweis trainieren wir in der kommenden Woche am Platz Brock 17 in 48308 Senden. Bitte plant ein paar Minuten extra für die Anfahrt ein.\n\nViele Grüße,\nFlorian");
+        $n->setTitle('Nachholkurse am Sonntag');
+        $n->setMessage("Liebe Kursteilnehmer,\n\nam Sonntag bieten wir drei zusätzliche Nachholkurse an: JUHU 1 um 18:00 Uhr, TK 1 um 19:00 Uhr und MH 1 um 20:00 Uhr. Bitte bucht euch wie gewohnt über den Kalender ein.\n\nViele Grüße,\nFlorian");
         $n->setAuthor($florian);
-        $this->addCoursesWithLocation($n, $courses);
+        $this->addCoursesByComment($n, $courses, 'Nachholkurs');
         $manager->persist($n);
 
         // All AGI: Parcours erneuert
@@ -1148,32 +1151,16 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         }
     }
 
-    /** @param Course[] $courses */
-    private function addCoursesWithLocation(Notification $notification, array $courses): void
+    /**
+     * @param Course[] $courses
+     */
+    private function addCoursesByComment(Notification $notification, array $courses, string $comment): void
     {
         foreach ($courses as $course) {
-            $comment = $course->getComment();
-            if ($comment !== null && str_starts_with($comment, 'Trainingsort: ')) {
+            if ($course->getComment() === $comment) {
                 $notification->addCourse($course);
             }
         }
-    }
-
-    private static function buildCourseComment(?string $location): ?string
-    {
-        if ($location === null || $location === '') {
-            return null;
-        }
-
-        return sprintf('Trainingsort: %s', self::normalizeLocation($location));
-    }
-
-    private static function normalizeLocation(string $location): string
-    {
-        $normalized = trim($location);
-        $normalized = preg_replace('/\bsenden\b/i', 'Senden', $normalized) ?? $normalized;
-
-        return $normalized;
     }
 
     private static function nameToEmail(string $name): string

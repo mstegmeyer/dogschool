@@ -97,7 +97,7 @@ describe('admin hotel bookings page', () => {
             && call[0].includes('state=REQUESTED')
             && call[0].includes('page=1')
             && !call[0].includes('from=')
-            && !call[0].includes('to=')
+            && !call[0].includes('to='),
         )).toBe(true);
     });
 

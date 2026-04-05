@@ -25,7 +25,7 @@ test('customer dialog surfaces stay visually stable', async ({
     await selectMenuOption(
         page,
         page.getByTestId('request-hotel-booking-dog'),
-        manifest.customers.customer_hotel_booking.dogNames[0],
+        manifest.customers.customer_multi_dog.dogNames[0],
     );
     await waitForVisualReady();
     await expect(page.getByTestId('request-hotel-booking-modal')).toHaveScreenshot('dialogs/customer-hotel-booking-modal.png');

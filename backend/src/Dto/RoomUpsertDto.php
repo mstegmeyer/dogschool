@@ -13,7 +13,7 @@ final class RoomUpsertDto
         #[Assert\Length(max: 255)]
         public string $name = '',
         #[Assert\NotNull(message: 'Bitte eine gültige Raumgröße angeben.')]
-        #[Assert\Positive]
+        #[Assert\Positive(message: 'Bitte eine gültige Raumgröße angeben.')]
         public ?int $squareMeters = null,
     ) {
     }

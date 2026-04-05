@@ -55,6 +55,7 @@ final class HotelBookingControllerTest extends WebTestCase
             'startAt' => '2026-04-05T08:30',
             'endAt' => '2026-04-06T10:00',
             'currentShoulderHeightCm' => 44,
+            'includesSingleRoom' => true,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
 
@@ -64,10 +65,14 @@ final class HotelBookingControllerTest extends WebTestCase
         self::assertSame(44, $data['dogShoulderHeightCm']);
         self::assertSame('2026-04-05T08:30:00+02:00', $data['startAt']);
         self::assertSame('2026-04-06T10:00:00+02:00', $data['endAt']);
+        self::assertTrue($data['includesSingleRoom'] ?? false);
+        self::assertSame('58.00', $data['singleRoomPrice'] ?? null);
 
         $bookings = $hotelBookingRepository->findByCustomer($customer);
         self::assertCount(1, $bookings);
         self::assertSame('REQUESTED', $bookings[0]->getState()->value);
+        self::assertTrue($bookings[0]->includesSingleRoom());
+        self::assertSame('58.00', $bookings[0]->getSingleRoomPrice());
         self::assertSame(44, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
 
         $helper->customerRequest(Request::METHOD_GET, '/api/customer/hotel-bookings', $token);
@@ -163,7 +168,7 @@ final class HotelBookingControllerTest extends WebTestCase
         self::assertSame(42, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
     }
 
-    public function testPreviewHotelBookingIncludesServiceFeeAndTravelProtection(): void
+    public function testPreviewHotelBookingIncludesAutomatedOptions(): void
     {
         $client = static::createClient();
         $helper = ApiTestHelper::create($client);
@@ -183,6 +188,7 @@ final class HotelBookingControllerTest extends WebTestCase
             'startAt' => '2026-04-05T08:30',
             'endAt' => '2026-04-05T18:00',
             'includesTravelProtection' => true,
+            'includesSingleRoom' => true,
         ]));
         self::assertResponseIsSuccessful();
 
@@ -192,7 +198,9 @@ final class HotelBookingControllerTest extends WebTestCase
         self::assertSame('46.00', $data['baseDailyPrice']);
         self::assertSame('7.50', $data['serviceFee']);
         self::assertSame('49.00', $data['travelProtectionPrice']);
-        self::assertSame('102.50', $data['quotedTotalPrice']);
+        self::assertSame('20.00', $data['singleRoomPrice']);
+        self::assertTrue($data['includesSingleRoom'] ?? false);
+        self::assertSame('122.50', $data['quotedTotalPrice']);
     }
 
     public function testCreateHotelBookingRejectsUnknownDog(): void

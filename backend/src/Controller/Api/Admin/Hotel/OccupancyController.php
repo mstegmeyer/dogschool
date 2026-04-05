@@ -50,7 +50,8 @@ final class OccupancyController extends AbstractController
          *         usedSquareMeters: int,
          *         freeSquareMeters: int,
          *         bookingCount: int,
-         *         dogNames: list<string>
+         *         dogNames: list<string>,
+         *         singleRoomActive: bool
          *     }>,
          *     bookings: list<HotelBooking>
          * }> $items

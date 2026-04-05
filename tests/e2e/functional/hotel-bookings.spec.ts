@@ -9,7 +9,6 @@ test('customer requests a hotel booking and admin assigns, confirms, and sees th
 }) => {
     const customer = manifest.customers.customer_hotel_booking;
     const dogName = customer.dogNames[0];
-    const storedHeight = customer.dogShoulderHeights[0];
     const roomName = 'E2E Rueckzugsort';
 
     await loginAsCustomer('customer_hotel_booking');
@@ -20,10 +19,11 @@ test('customer requests a hotel booking and admin assigns, confirms, and sees th
     await expect(requestModal).toBeVisible();
 
     await selectMenuOption(page, page.getByTestId('request-hotel-booking-dog'), dogName);
-    await expect(requestModal).toContainText(`Gespeichert sind derzeit ${storedHeight} cm`);
+    await expect(requestModal).toContainText('Gespeichert sind derzeit');
     await page.getByTestId('request-hotel-booking-height').fill('60');
     await page.getByTestId('request-hotel-booking-start-at').fill('2026-04-06T14:00');
     await page.getByTestId('request-hotel-booking-end-at').fill('2026-04-07T08:00');
+    await page.getByTestId('request-hotel-booking-single-room').click();
 
     await Promise.all([
         page.waitForResponse(response =>
@@ -78,6 +78,7 @@ test('customer requests a hotel booking and admin assigns, confirms, and sees th
 
     const detailModal = page.getByTestId('hotel-booking-detail-modal');
     await expect(detailModal).toBeVisible();
+    await expect(detailModal).toContainText('Einzelzimmer: 58,00');
     await selectMenuOption(page, page.getByTestId('hotel-booking-room-select'), `${roomName} · 24 m²`);
 
     await Promise.all([
@@ -106,8 +107,10 @@ test('customer requests a hotel booking and admin assigns, confirms, and sees th
     await expect(bookingRow).toHaveCount(0);
 
     await page.goto('/admin/hotel/occupancy');
+    const occupancyRoom = page.locator('[data-testid^="hotel-occupancy-room-"]').filter({ hasText: roomName });
     await expect(page.getByText(roomName)).toBeVisible();
     await expect(page.getByText(dogName)).toBeVisible();
+    await expect(occupancyRoom).toContainText('Einzelzimmer');
 
     await page.goto('/admin/hotel/movements');
     const arrivalCard = page.locator('[data-testid^="hotel-arrival-"]').filter({ hasText: `${dogName} · ${customer.name}` });

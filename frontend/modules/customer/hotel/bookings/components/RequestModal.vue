@@ -62,17 +62,24 @@
             </div>
 
             <UFormGroup label='Zusatzoptionen'>
-                <UCheckbox
-                    v-model='form.includesTravelProtection'
-                    label='Reiseschutz hinzufügen'
-                />
+                <div class='space-y-2'>
+                    <UCheckbox
+                        v-model='form.includesTravelProtection'
+                        label='Reiseschutz hinzufügen'
+                    />
+                    <UCheckbox
+                        v-model='form.includesSingleRoom'
+                        data-testid='request-hotel-booking-single-room'
+                        label='Einzelzimmer-Zuschlag hinzufügen'
+                    />
+                </div>
             </UFormGroup>
 
             <UFormGroup label='Kommentar für Zusatzwünsche'>
                 <UTextarea
                     v-model='form.customerComment'
                     :rows='4'
-                    placeholder='Zum Beispiel Einzelzimmer, Läufigkeit oder besondere Hinweise für das Team.'
+                    placeholder='Zum Beispiel Läufigkeit, Medikamente oder Spezialfutter.'
                 />
             </UFormGroup>
 
@@ -85,7 +92,7 @@
                     variant='soft'
                     icon='i-heroicons-banknotes'
                     :title='`${hotelPricingKindLabel(preview.pricingKind)} · ${preview.billableDays} Kalendertag(e)`'
-                    :description='preview.includesTravelProtection ? "Reiseschutz ist in der Vorschau enthalten." : "Reiseschutz ist nicht enthalten."'
+                    :description='previewOptionsDescription(preview)'
                 />
                 <PricingBreakdown
                     :snapshot='preview.snapshot'
@@ -131,6 +138,7 @@ defineProps<{
         endAt: string,
         currentShoulderHeightCm: number,
         includesTravelProtection: boolean,
+        includesSingleRoom: boolean,
         customerComment: string,
     },
     fieldErrors: Record<string, string>,
@@ -148,4 +156,13 @@ const emit = defineEmits<{
 }>();
 
 const { hotelPricingKindLabel } = useHelpers();
+
+function previewOptionsDescription(preview: HotelBookingQuotePreview): string {
+    const options = [
+        preview.includesSingleRoom ? 'Einzelzimmer ist enthalten.' : 'Kein Einzelzimmer.',
+        preview.includesTravelProtection ? 'Reiseschutz ist enthalten.' : 'Kein Reiseschutz.',
+    ];
+
+    return options.join(' ');
+}
 </script>

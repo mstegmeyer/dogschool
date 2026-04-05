@@ -14,8 +14,10 @@ final class HotelBookingPricingQuote
         public readonly string $baseDailyPrice,
         public readonly string $serviceFee,
         public readonly string $travelProtectionPrice,
+        public readonly string $singleRoomPrice,
         public readonly string $quotedTotalPrice,
         public readonly bool $includesTravelProtection,
+        public readonly bool $includesSingleRoom,
         public readonly HotelBookingPricingSnapshot $snapshot,
     ) {
     }
@@ -27,8 +29,10 @@ final class HotelBookingPricingQuote
      *   baseDailyPrice: string,
      *   serviceFee: string,
      *   travelProtectionPrice: string,
+     *   singleRoomPrice: string,
      *   quotedTotalPrice: string,
      *   includesTravelProtection: bool,
+     *   includesSingleRoom: bool,
      *   snapshot: array<string, mixed>
      * }
      */
@@ -40,8 +44,10 @@ final class HotelBookingPricingQuote
             'baseDailyPrice' => $this->baseDailyPrice,
             'serviceFee' => $this->serviceFee,
             'travelProtectionPrice' => $this->travelProtectionPrice,
+            'singleRoomPrice' => $this->singleRoomPrice,
             'quotedTotalPrice' => $this->quotedTotalPrice,
             'includesTravelProtection' => $this->includesTravelProtection,
+            'includesSingleRoom' => $this->includesSingleRoom,
             'snapshot' => $this->snapshot->toArray(),
         ];
     }

@@ -25,6 +25,7 @@ final class HotelBookingRequestDto
         )]
         public ?int $currentShoulderHeightCm = null,
         public bool $includesTravelProtection = false,
+        public bool $includesSingleRoom = false,
         public ?string $customerComment = null,
     ) {
     }

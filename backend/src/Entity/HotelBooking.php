@@ -57,6 +57,9 @@ class HotelBooking
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $includesTravelProtection = false;
 
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $includesSingleRoom = false;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $totalPrice = '0.00';
 
@@ -68,6 +71,9 @@ class HotelBooking
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private string $travelProtectionPrice = '0.00';
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private string $singleRoomPrice = '0.00';
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $customerComment = null;
@@ -205,6 +211,18 @@ class HotelBooking
         return $this;
     }
 
+    public function includesSingleRoom(): bool
+    {
+        return $this->includesSingleRoom;
+    }
+
+    public function setIncludesSingleRoom(bool $includesSingleRoom): static
+    {
+        $this->includesSingleRoom = $includesSingleRoom;
+
+        return $this;
+    }
+
     public function getTotalPrice(): string
     {
         return self::normalizeAmount($this->totalPrice);
@@ -249,6 +267,18 @@ class HotelBooking
     public function setTravelProtectionPrice(string $travelProtectionPrice): static
     {
         $this->travelProtectionPrice = self::normalizeAmount($travelProtectionPrice);
+
+        return $this;
+    }
+
+    public function getSingleRoomPrice(): string
+    {
+        return self::normalizeAmount($this->singleRoomPrice);
+    }
+
+    public function setSingleRoomPrice(string $singleRoomPrice): static
+    {
+        $this->singleRoomPrice = self::normalizeAmount($singleRoomPrice);
 
         return $this;
     }

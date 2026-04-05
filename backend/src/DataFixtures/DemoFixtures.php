@@ -601,6 +601,10 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     {
         $hotelDogEntries = $this->buildHotelDogEntries($customers);
         $rooms = [];
+        $singleRoomSlotsByRoom = [
+            'waldzimmer' => ['today_arrival'],
+            'wiesennest' => ['weekend'],
+        ];
         foreach ([
             'waldzimmer' => ['name' => 'Waldzimmer', 'squareMeters' => 10, 'pattern' => 'compact'],
             'birkenkoje' => ['name' => 'Birkenkoje', 'squareMeters' => 12, 'pattern' => 'compact'],
@@ -699,7 +703,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         ];
 
         $roomIndex = 0;
-        foreach ($rooms as $entry) {
+        foreach ($rooms as $roomKey => $entry) {
             $room = $entry['room'];
             $pattern = $entry['pattern'];
             $slotKeys = match ($pattern) {
@@ -716,6 +720,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                     $roomIndex,
                     $slotIndex,
                 );
+                $includesSingleRoom = in_array($slotKey, $singleRoomSlotsByRoom[$roomKey] ?? [], true);
                 $this->createHotelBooking(
                     $manager,
                     $dogEntry['customer'],
@@ -724,6 +729,9 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                     HotelBookingState::CONFIRMED,
                     $window['start'],
                     $window['end'],
+                    false,
+                    0,
+                    $includesSingleRoom,
                 );
             }
 
@@ -741,6 +749,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             'requested_long',
         ] as $slotIndex => $slotKey) {
             $travelProtection = in_array($slotKey, ['requested_multi_day', 'requested_extended', 'requested_long'], true);
+            $includesSingleRoom = in_array($slotKey, ['requested_multi_day', 'requested_long'], true);
             $window = $this->varyHotelWindow(
                 $timeframes[$slotKey]['start'],
                 $timeframes[$slotKey]['end'],
@@ -757,6 +766,8 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 $window['start'],
                 $window['end'],
                 $travelProtection,
+                0,
+                $includesSingleRoom,
             );
         }
 
@@ -809,6 +820,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         \DateTimeImmutable $endAt,
         bool $includesTravelProtection = false,
         int $extraPriceCents = 0,
+        bool $includesSingleRoom = false,
     ): void {
         $booking = new HotelBooking();
         $booking->setCustomer($customer);
@@ -818,6 +830,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setStartAt($startAt);
         $booking->setEndAt($endAt);
         $booking->setIncludesTravelProtection($includesTravelProtection);
+        $booking->setIncludesSingleRoom($includesSingleRoom);
         $booking->setCustomerComment('Bitte möglichst ruhige Unterbringung.');
         $this->applyHotelPricing($booking, $extraPriceCents);
         if ($state === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
@@ -909,20 +922,34 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
     {
+        $pricingConfig = new PricingConfig();
         $pricingKind = $booking->getStartAt()->format('Y-m-d') === $booking->getEndAt()->format('Y-m-d')
             ? HotelBookingPricingKind::DAYCARE
             : HotelBookingPricingKind::HOTEL;
         $billableDays = PricingEngine::billableCalendarDays($booking->getStartAt(), $booking->getEndAt());
         $baseDailyPriceCents = match ($pricingKind) {
-            HotelBookingPricingKind::DAYCARE => $this->isPeakSeasonDate($booking->getStartAt()) ? 46_00 : 39_00,
-            HotelBookingPricingKind::HOTEL => 58_00,
+            HotelBookingPricingKind::DAYCARE => PricingEngine::amountToCents(
+                $this->isPeakSeasonDate($booking->getStartAt())
+                    ? $pricingConfig->getDaycarePeakSeasonDailyPrice()
+                    : $pricingConfig->getDaycareOffSeasonDailyPrice(),
+            ),
+            HotelBookingPricingKind::HOTEL => PricingEngine::amountToCents($pricingConfig->getHotelDailyPrice()),
         };
         $baseAmountCents = $baseDailyPriceCents * $billableDays;
-        $serviceFeeCents = 7_50;
+        $serviceFeeCents = PricingEngine::amountToCents($pricingConfig->getHotelServiceFee());
         $travelProtectionCents = $booking->includesTravelProtection()
-            ? 49_00 + (max(0, $billableDays - 7) * 11_00)
+            ? PricingEngine::amountToCents($pricingConfig->getHotelTravelProtectionBaseFee())
+                + (max(0, $billableDays - 7)
+                    * PricingEngine::amountToCents($pricingConfig->getHotelTravelProtectionAdditionalDailyFee()))
             : 0;
-        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents;
+        $singleRoomDailyPriceCents = match ($pricingKind) {
+            HotelBookingPricingKind::DAYCARE => PricingEngine::amountToCents($pricingConfig->getHotelSingleRoomDaycareDailyPrice()),
+            HotelBookingPricingKind::HOTEL => PricingEngine::amountToCents($pricingConfig->getHotelSingleRoomHotelDailyPrice()),
+        };
+        $singleRoomCents = $booking->includesSingleRoom()
+            ? $singleRoomDailyPriceCents * $billableDays
+            : 0;
+        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents + $singleRoomCents;
 
         $booking->setPricingKind($pricingKind);
         $booking->setBillableDays($billableDays);
@@ -930,6 +957,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
         $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
         $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
+        $booking->setSingleRoomPrice(PricingEngine::formatAmount($singleRoomCents));
         $booking->setPricingSnapshot(
             HotelBookingPricingSnapshot::forQuote(
                 $pricingKind,
@@ -937,11 +965,13 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 PricingEngine::formatAmount($baseDailyPriceCents),
                 PricingEngine::formatAmount($serviceFeeCents),
                 PricingEngine::formatAmount($travelProtectionCents),
+                PricingEngine::formatAmount($singleRoomCents),
                 PricingEngine::formatAmount($quotedTotalCents),
                 $pricingKind === HotelBookingPricingKind::DAYCARE
                     ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
                     : 'Hundehotel',
                 $booking->includesTravelProtection(),
+                $booking->includesSingleRoom(),
             )
                 ->finalize($booking->getTotalPrice())
                 ->toArray(),

@@ -29,7 +29,8 @@ final class RoomOccupancyService
      *         usedSquareMeters: int,
      *         freeSquareMeters: int,
      *         bookingCount: int,
-     *         dogNames: list<string>
+     *         dogNames: list<string>,
+     *         singleRoomActive: bool
      *     }>
      * }
      */
@@ -135,7 +136,7 @@ final class RoomOccupancyService
     /**
      * @param list<HotelBooking> $bookings
      *
-     * @phpstan-type ActiveBooking array{id: string, dogName: string, requirement: int}
+     * @phpstan-type ActiveBooking array{id: string, dogName: string, requirement: int, includesSingleRoom: bool}
      *
      * @return list<array{
      *     startAt: string,
@@ -143,7 +144,8 @@ final class RoomOccupancyService
      *     usedSquareMeters: int,
      *     freeSquareMeters: int,
      *     bookingCount: int,
-     *     dogNames: list<string>
+     *     dogNames: list<string>,
+     *     singleRoomActive: bool
      * }>
      */
     private function buildSegments(
@@ -176,6 +178,7 @@ final class RoomOccupancyService
                 'id' => $booking->getId(),
                 'dogName' => $dog->getName(),
                 'requirement' => $this->areaRequirementHelper->squareMetersForDog($dog),
+                'includesSingleRoom' => $booking->includesSingleRoom(),
             ];
 
             $boundaries[] = $start;
@@ -204,15 +207,29 @@ final class RoomOccupancyService
                 $activeBookings[$activeBooking['id']] = $activeBooking;
             }
 
+            $currentBookings = array_values($activeBookings);
             $requirements = array_map(
                 static fn (array $activeBooking): int => $activeBooking['requirement'],
-                array_values($activeBookings),
+                $currentBookings,
             );
             $dogNames = array_map(
                 static fn (array $activeBooking): string => $activeBooking['dogName'],
-                array_values($activeBookings),
+                $currentBookings,
             );
             $usedSquareMeters = $this->areaRequirementHelper->aggregateRequiredSquareMeters($requirements);
+            $singleRoomActive = array_reduce(
+                $currentBookings,
+                static fn (bool $carry, array $activeBooking): bool => $carry || $activeBooking['includesSingleRoom'],
+                false,
+            );
+
+            if ($singleRoomActive) {
+                $usedSquareMeters = max($usedSquareMeters, $roomSquareMeters);
+
+                if (count($currentBookings) > 1) {
+                    $usedSquareMeters = max($usedSquareMeters, $roomSquareMeters + 1);
+                }
+            }
 
             $segments[] = [
                 'startAt' => LocalDateTime::formatWallTime(LocalDateTime::fromTimestamp($segmentStart)),
@@ -221,6 +238,7 @@ final class RoomOccupancyService
                 'freeSquareMeters' => $roomSquareMeters - $usedSquareMeters,
                 'bookingCount' => count($dogNames),
                 'dogNames' => $dogNames,
+                'singleRoomActive' => $singleRoomActive,
             ];
         }
 

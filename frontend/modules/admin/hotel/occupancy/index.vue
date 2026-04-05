@@ -92,14 +92,17 @@
                         <div
                             v-for='segment in item.segments.filter(segment => segment.bookingCount > 0)'
                             :key='`${item.room.id}-${segment.startAt}-${segment.endAt}`'
-                            class='absolute inset-y-2 overflow-hidden rounded-lg border border-komm-200 bg-komm-100/85 px-2 py-1 text-[11px] leading-tight text-komm-900 shadow-sm'
+                            class='absolute inset-y-2 overflow-hidden rounded-lg border px-2 py-1 text-[11px] leading-tight shadow-sm'
+                            :class='segment.singleRoomActive
+                                ? "border-amber-300 bg-amber-100/90 text-amber-950"
+                                : "border-komm-200 bg-komm-100/85 text-komm-900"'
                             :style='segmentStyle(segment)'
                         >
                             <p class='font-medium'>
                                 {{ formatSquareMeters(segment.usedSquareMeters) }}
                             </p>
                             <p class='truncate'>
-                                {{ segment.dogNames.join(', ') }}
+                                {{ segment.dogNames.join(', ') }}<span v-if='segment.singleRoomActive'> · Einzelzimmer</span>
                             </p>
                         </div>
                     </div>

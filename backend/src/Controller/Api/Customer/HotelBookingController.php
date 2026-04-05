@@ -78,8 +78,14 @@ final class HotelBookingController extends AbstractController
         $booking->setEndAt($endAt);
         $booking->setState(HotelBookingState::REQUESTED);
         $booking->setIncludesTravelProtection($dto->includesTravelProtection);
+        $booking->setIncludesSingleRoom($dto->includesSingleRoom);
         $booking->setCustomerComment($dto->customerComment);
-        $this->applyQuotedPrice($booking, $this->pricingEngine->previewHotelBooking($startAt, $endAt, $dto->includesTravelProtection));
+        $this->applyQuotedPrice($booking, $this->pricingEngine->previewHotelBooking(
+            $startAt,
+            $endAt,
+            $dto->includesTravelProtection,
+            $dto->includesSingleRoom,
+        ));
         $this->hotelBookingRepository->save($booking);
 
         return $this->json($this->normalizer->normalizeHotelBooking($booking), Response::HTTP_CREATED);
@@ -99,7 +105,12 @@ final class HotelBookingController extends AbstractController
             throw new \LogicException('Validated hotel booking preview request is incomplete.');
         }
 
-        return $this->json($this->pricingEngine->previewHotelBooking($startAt, $endAt, $dto->includesTravelProtection)->toArray());
+        return $this->json($this->pricingEngine->previewHotelBooking(
+            $startAt,
+            $endAt,
+            $dto->includesTravelProtection,
+            $dto->includesSingleRoom,
+        )->toArray());
     }
 
     #[Route('/{id}/accept-price', name: 'accept_price', methods: ['POST'])]
@@ -172,6 +183,7 @@ final class HotelBookingController extends AbstractController
                 $booking->getStartAt(),
                 $booking->getEndAt(),
                 $booking->includesTravelProtection(),
+                $booking->includesSingleRoom(),
             ),
         );
         $this->hotelBookingRepository->save($booking);
@@ -209,6 +221,7 @@ final class HotelBookingController extends AbstractController
         $booking->setTotalPrice($quote->quotedTotalPrice);
         $booking->setServiceFee($quote->serviceFee);
         $booking->setTravelProtectionPrice($quote->travelProtectionPrice);
+        $booking->setSingleRoomPrice($quote->singleRoomPrice);
         $booking->setPricingSnapshot($quote->snapshot->toArray());
     }
 }

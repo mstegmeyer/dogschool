@@ -44,6 +44,7 @@ describe('customer hotel bookings page', () => {
         form.currentShoulderHeightCm = 52;
         form.startAt = '2026-04-05T08:00';
         form.endAt = '2026-04-06T10:00';
+        form.includesSingleRoom = true;
 
         apiPostMock.mockResolvedValue({});
         await modal.vm.$emit('submit');
@@ -55,6 +56,7 @@ describe('customer hotel bookings page', () => {
             endAt: '2026-04-06T10:00',
             currentShoulderHeightCm: 52,
             includesTravelProtection: false,
+            includesSingleRoom: true,
             customerComment: null,
         });
     });
@@ -147,8 +149,10 @@ describe('customer hotel bookings page', () => {
             baseDailyPrice: '58.00',
             serviceFee: '7.50',
             travelProtectionPrice: '0.00',
+            singleRoomPrice: '0.00',
             quotedTotalPrice: '123.50',
             includesTravelProtection: false,
+            includesSingleRoom: false,
             snapshot: {
                 type: 'hotelBooking',
                 lineItems: [],

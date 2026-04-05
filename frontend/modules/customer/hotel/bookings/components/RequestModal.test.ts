@@ -19,10 +19,15 @@ describe('HotelBookingRequestModal', () => {
                     startAt: '',
                     endAt: '',
                     currentShoulderHeightCm: 48,
+                    includesTravelProtection: false,
+                    includesSingleRoom: false,
+                    customerComment: '',
                 },
                 fieldErrors: {},
                 formError: '',
                 saving: false,
+                previewLoading: false,
+                preview: null,
             },
         });
 
@@ -36,6 +41,9 @@ describe('HotelBookingRequestModal', () => {
             startAt: '',
             endAt: '',
             currentShoulderHeightCm: 48,
+            includesTravelProtection: false,
+            includesSingleRoom: false,
+            customerComment: '',
         };
 
         const wrapper = mountComponent(HotelBookingRequestModal, {
@@ -50,17 +58,21 @@ describe('HotelBookingRequestModal', () => {
                 },
                 formError: 'Bitte prüfe die markierten Felder.',
                 saving: false,
+                previewLoading: false,
+                preview: null,
             },
         });
 
         expect(wrapper.text()).toContain('Bitte die aktuelle Schulterhöhe von Luna prüfen.');
         expect(wrapper.text()).toContain('Gespeichert sind derzeit 48 cm.');
         expect(wrapper.text()).toContain('Bitte prüfe die markierten Felder.');
+        expect(wrapper.get('textarea').attributes('placeholder')).toBe('Zum Beispiel Läufigkeit, Medikamente oder Spezialfutter.');
 
         await wrapper.get('[data-testid="request-hotel-booking-dog"]').setValue('dog-1');
         await wrapper.get('[data-testid="request-hotel-booking-height"]').setValue('52');
         await wrapper.get('[data-testid="request-hotel-booking-start-at"]').setValue('2026-04-05T08:00');
         await wrapper.get('[data-testid="request-hotel-booking-end-at"]').setValue('2026-04-06T10:00');
+        await wrapper.get('[data-testid="request-hotel-booking-single-room"]').setValue(true);
         await wrapper.get('form').trigger('submit.prevent');
         await wrapper.get('button[type="button"]').trigger('click');
 
@@ -69,6 +81,9 @@ describe('HotelBookingRequestModal', () => {
             startAt: '2026-04-05T08:00',
             endAt: '2026-04-06T10:00',
             currentShoulderHeightCm: 52,
+            includesTravelProtection: false,
+            includesSingleRoom: true,
+            customerComment: '',
         });
         expect(wrapper.emitted('clear-field-error')).toEqual([
             ['dogId'],

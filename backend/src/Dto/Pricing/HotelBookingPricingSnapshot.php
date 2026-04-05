@@ -18,6 +18,7 @@ final class HotelBookingPricingSnapshot
         public readonly string $baseDailyPrice,
         public readonly string $serviceFee,
         public readonly string $travelProtectionPrice,
+        public readonly string $singleRoomPrice,
         public readonly string $quotedTotalPrice,
         public readonly string $totalPrice,
         public readonly string $finalTotalPrice,
@@ -31,9 +32,11 @@ final class HotelBookingPricingSnapshot
         string $baseDailyPrice,
         string $serviceFee,
         string $travelProtectionPrice,
+        string $singleRoomPrice,
         string $quotedTotalPrice,
         string $baseLabel,
         bool $includesTravelProtection,
+        bool $includesSingleRoom,
     ): self {
         $lineItems = [
             new PricingLineItem(
@@ -54,6 +57,17 @@ final class HotelBookingPricingSnapshot
             ),
         ];
 
+        if ($includesSingleRoom) {
+            $lineItems[] = new PricingLineItem(
+                'hotel_single_room',
+                'Einzelzimmer-Zuschlag',
+                $billableDays,
+                PricingEngine::formatAmount(intdiv(PricingEngine::amountToCents($singleRoomPrice), max(1, $billableDays))),
+                $singleRoomPrice,
+                'DAY',
+            );
+        }
+
         if ($includesTravelProtection) {
             $lineItems[] = new PricingLineItem(
                 'hotel_travel_protection',
@@ -71,6 +85,7 @@ final class HotelBookingPricingSnapshot
             $baseDailyPrice,
             $serviceFee,
             $travelProtectionPrice,
+            $singleRoomPrice,
             $quotedTotalPrice,
             $quotedTotalPrice,
             $quotedTotalPrice,
@@ -96,6 +111,7 @@ final class HotelBookingPricingSnapshot
             self::readString($data, 'baseDailyPrice', '0.00'),
             self::readString($data, 'serviceFee', '0.00'),
             self::readString($data, 'travelProtectionPrice', '0.00'),
+            self::readString($data, 'singleRoomPrice', '0.00'),
             $quotedTotalPrice,
             $totalPrice,
             self::readString($data, 'finalTotalPrice', $totalPrice),
@@ -121,6 +137,7 @@ final class HotelBookingPricingSnapshot
             $this->baseDailyPrice,
             $this->serviceFee,
             $this->travelProtectionPrice,
+            $this->singleRoomPrice,
             $this->quotedTotalPrice,
             $finalTotalPrice,
             $finalTotalPrice,
@@ -140,6 +157,7 @@ final class HotelBookingPricingSnapshot
             'baseDailyPrice' => $this->baseDailyPrice,
             'serviceFee' => $this->serviceFee,
             'travelProtectionPrice' => $this->travelProtectionPrice,
+            'singleRoomPrice' => $this->singleRoomPrice,
             'quotedTotalPrice' => $this->quotedTotalPrice,
             'totalPrice' => $this->totalPrice,
             'finalTotalPrice' => $this->finalTotalPrice,

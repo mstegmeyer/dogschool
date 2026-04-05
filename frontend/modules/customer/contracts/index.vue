@@ -91,6 +91,13 @@ const resubmitForm = reactive({ customerComment: '' });
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })));
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 
+function clearPreviewTimer(): void {
+    if (previewTimer !== null) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+    }
+}
+
 function normalizeRequestStartDate() {
     if (requestForm.startDate) {
         requestForm.startDate = toMonthStartIso(requestForm.startDate);
@@ -100,6 +107,7 @@ function normalizeRequestStartDate() {
 
 function closeRequestModal() {
     showRequest.value = false;
+    clearPreviewTimer();
     clearFormErrors();
     previewLoading.value = false;
     quotePreview.value = null;
@@ -126,9 +134,7 @@ function canPreviewRequest(): boolean {
 }
 
 function schedulePreview(): void {
-    if (previewTimer !== null) {
-        clearTimeout(previewTimer);
-    }
+    clearPreviewTimer();
 
     if (!showRequest.value || !canPreviewRequest()) {
         previewLoading.value = false;
@@ -138,6 +144,7 @@ function schedulePreview(): void {
 
     previewLoading.value = true;
     previewTimer = window.setTimeout(() => {
+        previewTimer = null;
         void loadPreview();
     }, 250);
 }
@@ -262,5 +269,9 @@ onMounted(async () => {
         api.get<ApiListResponse<Dog>>('/api/customer/dogs'),
     ]);
     dogs.value = dogRes.items;
+});
+
+onBeforeUnmount(() => {
+    clearPreviewTimer();
 });
 </script>

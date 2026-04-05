@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     apiGetMock,
     apiPostMock,
@@ -23,6 +23,10 @@ describe('customer hotel bookings page', () => {
             }
             return Promise.reject(new Error(`Unhandled GET ${url}`));
         });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('loads bookings, validates the request form, and submits a hotel booking', async () => {
@@ -72,5 +76,36 @@ describe('customer hotel bookings page', () => {
             endAt: 'Das Ende muss zwischen 06:00 und 22:00 Uhr liegen.',
         });
         expect(apiPostMock).not.toHaveBeenCalled();
+    });
+
+    it('clears a pending preview timer when the request modal closes or the page unmounts', async () => {
+        vi.useFakeTimers();
+
+        const wrapper = await mountHotelBookingsPage();
+        const openButton = wrapper.get('[data-testid="open-hotel-booking-request"]');
+
+        await openButton.trigger('click');
+        const modal = wrapper.getComponent({ name: 'HotelBookingRequestModal' });
+        const form = modal.props('form') as Record<string, any>;
+        form.dogId = dog.id;
+        form.startAt = '2026-04-05T08:00';
+        form.endAt = '2026-04-06T10:00';
+        await flushPromises();
+
+        await modal.vm.$emit('cancel');
+        vi.advanceTimersByTime(300);
+        await flushPromises();
+        expect(apiPostMock).not.toHaveBeenCalledWith('/api/customer/hotel-bookings/preview', expect.anything());
+
+        await openButton.trigger('click');
+        form.dogId = dog.id;
+        form.startAt = '2026-04-05T08:00';
+        form.endAt = '2026-04-06T10:00';
+        await flushPromises();
+
+        wrapper.unmount();
+        vi.advanceTimersByTime(300);
+        await flushPromises();
+        expect(apiPostMock).not.toHaveBeenCalledWith('/api/customer/hotel-bookings/preview', expect.anything());
     });
 });

@@ -200,6 +200,62 @@ final class ContractControllerTest extends WebTestCase
         self::assertCount(2, $data['snapshot']['lineItems'] ?? []);
     }
 
+    public function testRequestContractRejectsMissingStartDate(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Missing Start Dog');
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Startdatum ist erforderlich.', $data['errors']['startDate'] ?? null);
+    }
+
+    public function testRequestContractRejectsInvalidStartDateFormat(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Invalid Date Dog');
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => 'not-a-date',
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Ungültiges Startdatum.', $data['errors']['startDate'] ?? null);
+    }
+
+    public function testRequestContractRejectsInvalidCoursesPerWeek(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Too Many Courses Dog');
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => '2025-06-01',
+            'coursesPerWeek' => 8,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Kurse pro Woche müssen zwischen 1 und 7 liegen.', $data['errors']['coursesPerWeek'] ?? null);
+    }
+
     public function testCustomerCanAcceptAndResubmitRevisedContract(): void
     {
         $client = static::createClient();
@@ -276,6 +332,72 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame('Bitte doch ohne Zusatzleistung prüfen.', $reloaded->getCustomerComment());
     }
 
+    public function testAcceptPriceReturnsNotFoundForUnknownContract(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createCustomerAndLogin();
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts/unknown-contract/accept-price', $token);
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Vertrag nicht gefunden', $data['error'] ?? null);
+    }
+
+    public function testAcceptPriceRejectsContractWithoutCustomerReviewState(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Wrong State Dog');
+        $contract = $this->createContract($customer, $dog, ContractState::REQUESTED);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/contracts/%s/accept-price', $contract->getId()), $token);
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Nur Verträge mit Preisprüfung können angenommen werden', $data['error'] ?? null);
+    }
+
+    public function testCustomerCanDeclineRevisedContract(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Decline Dog');
+        $contract = $this->createContract($customer, $dog, ContractState::PENDING_CUSTOMER_APPROVAL);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/contracts/%s/decline-price', $contract->getId()), $token);
+        self::assertResponseIsSuccessful();
+
+        /** @var ContractRepository $contractRepository */
+        $contractRepository = static::getContainer()->get(ContractRepository::class);
+        $reloaded = $contractRepository->find($contract->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(ContractState::DECLINED, $reloaded->getState());
+    }
+
+    public function testResubmitRejectsContractWithoutCustomerReviewState(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $dog = $this->createDog($customer, 'Resubmit Wrong State Dog');
+        $contract = $this->createContract($customer, $dog, ContractState::REQUESTED);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/contracts/%s/resubmit', $contract->getId()), $token, json_encode([
+            'customerComment' => 'Bitte neu prüfen.',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Nur Verträge mit Preisprüfung können erneut eingereicht werden', $data['error'] ?? null);
+    }
+
     public function testRequestContractFailsWithWrongDogId(): void
     {
         $client = static::createClient();
@@ -291,5 +413,37 @@ final class ContractControllerTest extends WebTestCase
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertArrayHasKey('errors', $data);
         self::assertArrayHasKey('dogId', $data['errors']);
+    }
+
+    private function createDog(\App\Entity\Customer $customer, string $name): Dog
+    {
+        /** @var DogRepository $dogRepository */
+        $dogRepository = static::getContainer()->get(DogRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName($name);
+        $dogRepository->save($dog);
+
+        return $dog;
+    }
+
+    private function createContract(\App\Entity\Customer $customer, Dog $dog, ContractState $state): Contract
+    {
+        /** @var ContractRepository $contractRepository */
+        $contractRepository = static::getContainer()->get(ContractRepository::class);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState($state);
+        $contract->setStartDate(new \DateTimeImmutable('2025-06-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contract->setPrice('184.00');
+        $contract->setRegistrationFee('149.00');
+        $contractRepository->save($contract);
+
+        return $contract;
     }
 }

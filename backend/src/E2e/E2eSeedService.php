@@ -1033,14 +1033,14 @@ final class E2eSeedService
                     'amount' => '7.50',
                     'billingPeriod' => 'ONCE',
                 ],
-                [
+                ...($booking->includesTravelProtection() ? [[
                     'key' => 'hotel_travel_protection',
                     'label' => 'Reiseschutz',
-                    'quantity' => $booking->includesTravelProtection() ? 1 : 0,
+                    'quantity' => 1,
                     'unitPrice' => PricingEngine::formatAmount($travelProtectionCents),
                     'amount' => PricingEngine::formatAmount($travelProtectionCents),
                     'billingPeriod' => 'ONCE',
-                ],
+                ]] : []),
             ],
         ], $booking->getTotalPrice()));
     }

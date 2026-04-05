@@ -76,7 +76,7 @@ final class ContractController extends AbstractController
     {
         $contract = $this->contractRepository->find($id);
         if ($contract === null) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json($this->normalizer->normalizeContract($contract));
@@ -87,11 +87,11 @@ final class ContractController extends AbstractController
     {
         $contract = $this->contractRepository->find($id);
         if ($contract === null) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if (!in_array($contract->getState(), [ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL], true)) {
-            return $this->json(['error' => 'Only requested contracts can be approved'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur angefragte oder zur Preisprüfung offene Verträge können bestätigt werden'], Response::HTTP_BAD_REQUEST);
         }
 
         $payload = $this->parsePayload($request);
@@ -124,11 +124,11 @@ final class ContractController extends AbstractController
     {
         $contract = $this->contractRepository->find($id);
         if ($contract === null) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if (!in_array($contract->getState(), [ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL], true)) {
-            return $this->json(['error' => 'Only requested contracts can be declined'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur angefragte oder zur Preisprüfung offene Verträge können abgelehnt werden'], Response::HTTP_BAD_REQUEST);
         }
 
         $payload = $this->parsePayload($request, false);
@@ -150,11 +150,11 @@ final class ContractController extends AbstractController
     ): JsonResponse {
         $contract = $this->contractRepository->find($id);
         if ($contract === null) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($contract->getState() !== ContractState::ACTIVE) {
-            return $this->json(['error' => 'Only active contracts can be cancelled'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur aktive Verträge können gekündigt werden'], Response::HTTP_BAD_REQUEST);
         }
 
         if ($dto->endDate === null || $dto->endDate === '') {

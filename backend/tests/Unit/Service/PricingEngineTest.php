@@ -127,5 +127,12 @@ final class PricingEngineTest extends TestCase
         self::assertSame('7.50', $quote['serviceFee']);
         self::assertSame('0.00', $quote['travelProtectionPrice']);
         self::assertSame('123.50', $quote['quotedTotalPrice']);
+        self::assertNotContains(
+            'hotel_travel_protection',
+            array_map(
+                static fn (array $item): string => (string) ($item['key'] ?? ''),
+                $quote['snapshot']['lineItems'] ?? [],
+            ),
+        );
     }
 }

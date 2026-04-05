@@ -111,6 +111,13 @@ const selectedDog = computed(() => dogs.value.find(dog => dog.id === requestForm
 const dogOptions = computed(() => dogs.value.map(dog => ({ label: dog.name, value: dog.id })));
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 
+function clearPreviewTimer(): void {
+    if (previewTimer !== null) {
+        clearTimeout(previewTimer);
+        previewTimer = null;
+    }
+}
+
 watch(() => requestForm.dogId, () => {
     if (selectedDog.value) {
         requestForm.currentShoulderHeightCm = selectedDog.value.shoulderHeightCm;
@@ -129,6 +136,7 @@ function defaultBookingDateTime(dayOffset: number, hour: number): string {
 
 function closeRequestModal(): void {
     showRequest.value = false;
+    clearPreviewTimer();
     clearFormErrors();
     previewLoading.value = false;
     quotePreview.value = null;
@@ -163,9 +171,7 @@ function canPreviewRequest(): boolean {
 }
 
 function schedulePreview(): void {
-    if (previewTimer !== null) {
-        clearTimeout(previewTimer);
-    }
+    clearPreviewTimer();
 
     if (!showRequest.value || !canPreviewRequest()) {
         previewLoading.value = false;
@@ -175,6 +181,7 @@ function schedulePreview(): void {
 
     previewLoading.value = true;
     previewTimer = window.setTimeout(() => {
+        previewTimer = null;
         void loadPreview();
     }, 250);
 }
@@ -329,6 +336,10 @@ async function submitResubmission(): Promise<void> {
 
 onMounted(async () => {
     await Promise.all([loadBookings(), loadDogs()]);
+});
+
+onBeforeUnmount(() => {
+    clearPreviewTimer();
 });
 
 watch(

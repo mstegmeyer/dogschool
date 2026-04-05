@@ -442,7 +442,7 @@ final class ContractControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
 
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
-        self::assertSame('Only active contracts can be cancelled', $data['error'] ?? null);
+        self::assertSame('Nur aktive Verträge können gekündigt werden', $data['error'] ?? null);
 
         $reloaded = $contractRepo->find($contract->getId());
         self::assertNotNull($reloaded);

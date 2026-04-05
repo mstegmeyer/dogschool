@@ -224,14 +224,14 @@ final class PricingEngine
                         'amount' => $serviceFee,
                         'billingPeriod' => 'ONCE',
                     ],
-                    [
+                    ...($includesTravelProtection ? [[
                         'key' => 'hotel_travel_protection',
                         'label' => 'Reiseschutz',
-                        'quantity' => $includesTravelProtection ? 1 : 0,
+                        'quantity' => 1,
                         'unitPrice' => $travelProtectionPrice,
                         'amount' => $travelProtectionPrice,
                         'billingPeriod' => 'ONCE',
-                    ],
+                    ]] : []),
                 ],
             ],
         ];

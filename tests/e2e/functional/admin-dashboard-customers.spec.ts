@@ -12,7 +12,7 @@ test('shows the admin dashboard stats, open contract requests, and today schedul
     await expect(page.getByText('Aktive Verträge')).toBeVisible();
     await expect(page.getByText('Monatlicher Vertragswert')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Offene Vertragsanfragen' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Prüfen' }).first()).toBeVisible();
+    await expect(page.getByText('Alle anzeigen')).toBeVisible();
     await expect(page.getByText('Preis prüfen')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Heutige Termine' })).toBeVisible();
 });

@@ -6,6 +6,7 @@ namespace App\Controller\Api\Customer;
 
 use App\Dto\CustomerReviewDecisionDto;
 use App\Dto\HotelBookingRequestDto;
+use App\Dto\Pricing\HotelBookingPricingQuote;
 use App\Entity\Customer;
 use App\Entity\HotelBooking;
 use App\Enum\HotelBookingState;
@@ -98,7 +99,7 @@ final class HotelBookingController extends AbstractController
             throw new \LogicException('Validated hotel booking preview request is incomplete.');
         }
 
-        return $this->json($this->pricingEngine->previewHotelBooking($startAt, $endAt, $dto->includesTravelProtection));
+        return $this->json($this->pricingEngine->previewHotelBooking($startAt, $endAt, $dto->includesTravelProtection)->toArray());
     }
 
     #[Route('/{id}/accept-price', name: 'accept_price', methods: ['POST'])]
@@ -200,24 +201,14 @@ final class HotelBookingController extends AbstractController
         return [$dog, $startAt, $endAt, null];
     }
 
-    /**
-     * @param array{
-     *   pricingKind: \App\Enum\HotelBookingPricingKind,
-     *   billableDays: int,
-     *   quotedTotalPrice: string,
-     *   serviceFee: string,
-     *   travelProtectionPrice: string,
-     *   snapshot: array<string, mixed>
-     * } $quote
-     */
-    private function applyQuotedPrice(HotelBooking $booking, array $quote): void
+    private function applyQuotedPrice(HotelBooking $booking, HotelBookingPricingQuote $quote): void
     {
-        $booking->setPricingKind($quote['pricingKind']);
-        $booking->setBillableDays($quote['billableDays']);
-        $booking->setQuotedTotalPrice($quote['quotedTotalPrice']);
-        $booking->setTotalPrice($quote['quotedTotalPrice']);
-        $booking->setServiceFee($quote['serviceFee']);
-        $booking->setTravelProtectionPrice($quote['travelProtectionPrice']);
-        $booking->setPricingSnapshot($quote['snapshot']);
+        $booking->setPricingKind($quote->pricingKind);
+        $booking->setBillableDays($quote->billableDays);
+        $booking->setQuotedTotalPrice($quote->quotedTotalPrice);
+        $booking->setTotalPrice($quote->quotedTotalPrice);
+        $booking->setServiceFee($quote->serviceFee);
+        $booking->setTravelProtectionPrice($quote->travelProtectionPrice);
+        $booking->setPricingSnapshot($quote->snapshot->toArray());
     }
 }

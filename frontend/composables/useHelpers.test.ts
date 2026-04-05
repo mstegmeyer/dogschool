@@ -22,6 +22,7 @@ describe('useHelpers', () => {
         levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
+        formatMoney,
         hotelAreaRequirementForHeight,
         formatCourseTitleWithLevel,
         formatNotificationCourse,
@@ -78,6 +79,16 @@ describe('useHelpers', () => {
         it('includes date and time components', () => {
             const result = formatDateTime('2026-03-21T14:30:00Z');
             expect(result).toMatch(/21\.03\.2026/);
+        });
+    });
+
+    describe('formatMoney', () => {
+        it('formats dot-decimal strings as Euro currency', () => {
+            expect(formatMoney('12.50')).toMatch(/12,50.*€/);
+        });
+
+        it('formats comma-decimal strings as Euro currency', () => {
+            expect(formatMoney('12,50')).toMatch(/12,50.*€/);
         });
     });
 

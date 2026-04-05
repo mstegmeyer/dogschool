@@ -90,12 +90,19 @@ const requestForm = reactive({ dogId: '', coursesPerWeek: 2, startDate: firstDay
 const resubmitForm = reactive({ customerComment: '' });
 const dogOptions = computed(() => dogs.value.map(d => ({ label: d.name, value: d.id })));
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewRequestId = 0;
 
 function clearPreviewTimer(): void {
     if (previewTimer !== null) {
         clearTimeout(previewTimer);
         previewTimer = null;
     }
+}
+
+function invalidatePreviewRequest(): number {
+    previewRequestId += 1;
+
+    return previewRequestId;
 }
 
 function normalizeRequestStartDate() {
@@ -108,6 +115,7 @@ function normalizeRequestStartDate() {
 function closeRequestModal() {
     showRequest.value = false;
     clearPreviewTimer();
+    invalidatePreviewRequest();
     clearFormErrors();
     previewLoading.value = false;
     quotePreview.value = null;
@@ -135,6 +143,7 @@ function canPreviewRequest(): boolean {
 
 function schedulePreview(): void {
     clearPreviewTimer();
+    const requestId = invalidatePreviewRequest();
 
     if (!showRequest.value || !canPreviewRequest()) {
         previewLoading.value = false;
@@ -145,22 +154,33 @@ function schedulePreview(): void {
     previewLoading.value = true;
     previewTimer = window.setTimeout(() => {
         previewTimer = null;
-        void loadPreview();
+        void loadPreview(requestId);
     }, 250);
 }
 
-async function loadPreview(): Promise<void> {
+async function loadPreview(requestId: number): Promise<void> {
     try {
-        quotePreview.value = await api.post<ContractQuotePreview>('/api/customer/contracts/preview', {
+        const preview = await api.post<ContractQuotePreview>('/api/customer/contracts/preview', {
             dogId: requestForm.dogId,
             coursesPerWeek: requestForm.coursesPerWeek,
             startDate: requestForm.startDate || null,
             customerComment: requestForm.customerComment || null,
         });
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
+        quotePreview.value = preview;
     } catch {
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
         quotePreview.value = null;
     } finally {
-        previewLoading.value = false;
+        if (requestId === previewRequestId) {
+            previewLoading.value = false;
+        }
     }
 }
 
@@ -273,5 +293,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     clearPreviewTimer();
+    invalidatePreviewRequest();
 });
 </script>

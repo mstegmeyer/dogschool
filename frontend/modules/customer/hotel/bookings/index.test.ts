@@ -108,4 +108,55 @@ describe('customer hotel bookings page', () => {
         await flushPromises();
         expect(apiPostMock).not.toHaveBeenCalledWith('/api/customer/hotel-bookings/preview', expect.anything());
     });
+
+    it('ignores late preview responses after the request modal closes', async () => {
+        vi.useFakeTimers();
+
+        let resolvePreview: ((value: unknown) => void) | null = null;
+        apiPostMock.mockImplementation((url: string) => {
+            if (url === '/api/customer/hotel-bookings/preview') {
+                return new Promise(resolve => {
+                    resolvePreview = resolve;
+                });
+            }
+
+            return Promise.reject(new Error(`Unhandled POST ${url}`));
+        });
+
+        const wrapper = await mountHotelBookingsPage();
+        const openButton = wrapper.get('[data-testid="open-hotel-booking-request"]');
+
+        await openButton.trigger('click');
+        const modal = wrapper.getComponent({ name: 'HotelBookingRequestModal' });
+        const form = modal.props('form') as Record<string, any>;
+        form.dogId = dog.id;
+        form.startAt = '2026-04-05T08:00';
+        form.endAt = '2026-04-06T10:00';
+        await flushPromises();
+
+        vi.advanceTimersByTime(300);
+        await flushPromises();
+        expect(resolvePreview).not.toBeNull();
+
+        await modal.vm.$emit('cancel');
+        await flushPromises();
+
+        resolvePreview?.({
+            pricingKind: 'HOTEL',
+            billableDays: 2,
+            baseDailyPrice: '58.00',
+            serviceFee: '7.50',
+            travelProtectionPrice: '0.00',
+            quotedTotalPrice: '123.50',
+            includesTravelProtection: false,
+            snapshot: {
+                type: 'hotelBooking',
+                lineItems: [],
+            },
+        });
+        await flushPromises();
+
+        expect(modal.props('preview')).toBeNull();
+        expect(modal.props('previewLoading')).toBe(false);
+    });
 });

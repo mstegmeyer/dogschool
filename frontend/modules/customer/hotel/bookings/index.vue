@@ -110,12 +110,19 @@ const resubmitForm = reactive({ customerComment: '' });
 const selectedDog = computed(() => dogs.value.find(dog => dog.id === requestForm.dogId) || null);
 const dogOptions = computed(() => dogs.value.map(dog => ({ label: dog.name, value: dog.id })));
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewRequestId = 0;
 
 function clearPreviewTimer(): void {
     if (previewTimer !== null) {
         clearTimeout(previewTimer);
         previewTimer = null;
     }
+}
+
+function invalidatePreviewRequest(): number {
+    previewRequestId += 1;
+
+    return previewRequestId;
 }
 
 watch(() => requestForm.dogId, () => {
@@ -137,6 +144,7 @@ function defaultBookingDateTime(dayOffset: number, hour: number): string {
 function closeRequestModal(): void {
     showRequest.value = false;
     clearPreviewTimer();
+    invalidatePreviewRequest();
     clearFormErrors();
     previewLoading.value = false;
     quotePreview.value = null;
@@ -172,6 +180,7 @@ function canPreviewRequest(): boolean {
 
 function schedulePreview(): void {
     clearPreviewTimer();
+    const requestId = invalidatePreviewRequest();
 
     if (!showRequest.value || !canPreviewRequest()) {
         previewLoading.value = false;
@@ -182,13 +191,13 @@ function schedulePreview(): void {
     previewLoading.value = true;
     previewTimer = window.setTimeout(() => {
         previewTimer = null;
-        void loadPreview();
+        void loadPreview(requestId);
     }, 250);
 }
 
-async function loadPreview(): Promise<void> {
+async function loadPreview(requestId: number): Promise<void> {
     try {
-        quotePreview.value = await api.post<HotelBookingQuotePreview>('/api/customer/hotel-bookings/preview', {
+        const preview = await api.post<HotelBookingQuotePreview>('/api/customer/hotel-bookings/preview', {
             dogId: requestForm.dogId,
             startAt: requestForm.startAt,
             endAt: requestForm.endAt,
@@ -196,10 +205,21 @@ async function loadPreview(): Promise<void> {
             includesTravelProtection: requestForm.includesTravelProtection,
             customerComment: requestForm.customerComment || null,
         });
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
+        quotePreview.value = preview;
     } catch {
+        if (!showRequest.value || requestId !== previewRequestId) {
+            return;
+        }
+
         quotePreview.value = null;
     } finally {
-        previewLoading.value = false;
+        if (requestId === previewRequestId) {
+            previewLoading.value = false;
+        }
     }
 }
 
@@ -340,6 +360,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     clearPreviewTimer();
+    invalidatePreviewRequest();
 });
 
 watch(

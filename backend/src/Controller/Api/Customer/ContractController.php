@@ -6,6 +6,7 @@ namespace App\Controller\Api\Customer;
 
 use App\Dto\ContractRequestDto;
 use App\Dto\CustomerReviewDecisionDto;
+use App\Dto\Pricing\ContractPricingQuote;
 use App\Entity\Contract;
 use App\Entity\Customer;
 use App\Enum\ContractState;
@@ -84,7 +85,7 @@ final class ContractController extends AbstractController
             return $validationError;
         }
 
-        return $this->json($this->pricingEngine->previewContract($customer, $dto->coursesPerWeek ?? 0));
+        return $this->json($this->pricingEngine->previewContract($customer, $dto->coursesPerWeek ?? 0)->toArray());
     }
 
     #[Route('/{id}/accept-price', name: 'accept_price', methods: ['POST'])]
@@ -186,18 +187,11 @@ final class ContractController extends AbstractController
         return [$startDate, $dog, null];
     }
 
-    /**
-     * @param array{
-     *   monthlyPrice: string,
-     *   registrationFee: string,
-     *   snapshot: array<string, mixed>
-     * } $quote
-     */
-    private function applyQuotedPrice(Contract $contract, array $quote): void
+    private function applyQuotedPrice(Contract $contract, ContractPricingQuote $quote): void
     {
-        $contract->setPrice($quote['monthlyPrice']);
-        $contract->setQuotedMonthlyPrice($quote['monthlyPrice']);
-        $contract->setRegistrationFee($quote['registrationFee']);
-        $contract->setPricingSnapshot($quote['snapshot']);
+        $contract->setPrice($quote->monthlyPrice);
+        $contract->setQuotedMonthlyPrice($quote->monthlyPrice);
+        $contract->setRegistrationFee($quote->registrationFee);
+        $contract->setPricingSnapshot($quote->snapshot->toArray());
     }
 }

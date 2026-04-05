@@ -147,18 +147,20 @@ final class BookingController extends AbstractController
             $booking->getEndAt(),
             $booking->includesTravelProtection(),
         );
-        $finalPrice = $payload['totalPrice'] ?? $quote['quotedTotalPrice'];
-        $quotedTotalCents = PricingEngine::amountToCents($quote['quotedTotalPrice']);
+        $finalPrice = $payload['totalPrice'] ?? $quote->quotedTotalPrice;
+        $quotedTotalCents = PricingEngine::amountToCents($quote->quotedTotalPrice);
         $finalTotalCents = PricingEngine::amountToCents($finalPrice);
 
-        $booking->setPricingKind($quote['pricingKind']);
-        $booking->setBillableDays($quote['billableDays']);
-        $booking->setQuotedTotalPrice($quote['quotedTotalPrice']);
-        $booking->setServiceFee($quote['serviceFee']);
-        $booking->setTravelProtectionPrice($quote['travelProtectionPrice']);
-        $booking->setPricingSnapshot(PricingEngine::finalizeHotelBookingSnapshot($quote['snapshot'], $finalPrice));
+        $booking->setPricingKind($quote->pricingKind);
+        $booking->setBillableDays($quote->billableDays);
+        $booking->setQuotedTotalPrice($quote->quotedTotalPrice);
+        $booking->setServiceFee($quote->serviceFee);
+        $booking->setTravelProtectionPrice($quote->travelProtectionPrice);
+        $booking->setPricingSnapshot($quote->snapshot->finalize($finalPrice)->toArray());
         $booking->setTotalPrice($finalPrice);
-        $booking->setAdminComment($payload['adminComment'] ?? $booking->getAdminComment());
+        if (array_key_exists('adminComment', $payload)) {
+            $booking->setAdminComment($payload['adminComment']);
+        }
         $booking->setState(
             $finalTotalCents > $quotedTotalCents
                 ? HotelBookingState::PENDING_CUSTOMER_APPROVAL
@@ -184,7 +186,9 @@ final class BookingController extends AbstractController
 
         $booking->setState(HotelBookingState::DECLINED);
         $booking->setRoom(null);
-        $booking->setAdminComment($payload['adminComment'] ?? $booking->getAdminComment());
+        if (array_key_exists('adminComment', $payload)) {
+            $booking->setAdminComment($payload['adminComment']);
+        }
         $this->hotelBookingRepository->save($booking);
 
         return $this->json($this->normalizer->normalizeHotelBooking($booking));
@@ -219,7 +223,7 @@ final class BookingController extends AbstractController
     }
 
     /**
-     * @return array{totalPrice?: string, adminComment?: string}|JsonResponse
+     * @return array{totalPrice?: string, adminComment?: ?string}|JsonResponse
      */
     private function parsePayload(Request $request, bool $allowPrice = true): array|JsonResponse
     {
@@ -234,11 +238,14 @@ final class BookingController extends AbstractController
 
         $result = [];
         if ($allowPrice && array_key_exists('totalPrice', $payload)) {
-            if (!is_scalar($payload['totalPrice']) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $payload['totalPrice'])) {
-                return $this->json(['errors' => ['totalPrice' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
-            }
+            $rawTotalPrice = $payload['totalPrice'];
+            if ($rawTotalPrice !== null && $rawTotalPrice !== '') {
+                if (!is_scalar($rawTotalPrice) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $rawTotalPrice)) {
+                    return $this->json(['errors' => ['totalPrice' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
+                }
 
-            $result['totalPrice'] = number_format((float) str_replace(',', '.', (string) $payload['totalPrice']), 2, '.', '');
+                $result['totalPrice'] = number_format((float) str_replace(',', '.', (string) $rawTotalPrice), 2, '.', '');
+            }
         }
 
         if (array_key_exists('adminComment', $payload) && $payload['adminComment'] !== null && !is_string($payload['adminComment'])) {

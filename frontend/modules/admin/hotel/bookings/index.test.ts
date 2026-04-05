@@ -127,4 +127,32 @@ describe('admin hotel bookings page', () => {
             color: 'red',
         }));
     });
+
+    it('shows a toast when the pricing reference request fails on mount', async () => {
+        apiGetMock.mockImplementation((url: string) => {
+            if (url.startsWith('/api/admin/hotel/bookings?')) {
+                return Promise.resolve({
+                    items: [hotelBooking],
+                    pagination: { page: 1, limit: 20, total: 1, pages: 1 },
+                });
+            }
+            if (url === '/api/admin/pricing') {
+                return Promise.reject(new Error('pricing failed'));
+            }
+            if (url === '/api/admin/hotel/bookings/hotel-booking-1') {
+                return Promise.resolve(hotelBooking);
+            }
+
+            return Promise.reject(new Error(`Unhandled GET ${url}`));
+        });
+
+        const wrapper = await mountHotelAdminBookingsPage();
+        const modal = wrapper.getComponent({ name: 'HotelBookingDetailModal' });
+
+        expect(toastAddMock).toHaveBeenCalledWith(expect.objectContaining({
+            title: 'pricing failed',
+            color: 'red',
+        }));
+        expect(modal.props('pricingConfig')).toBeNull();
+    });
 });

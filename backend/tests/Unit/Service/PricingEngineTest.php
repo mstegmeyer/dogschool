@@ -62,11 +62,11 @@ final class PricingEngineTest extends TestCase
             ->method('customerHasActivatedContract')
             ->willReturn(false);
 
-        self::assertSame('89.00', $this->pricingEngine->previewContract($customer, 1)['monthlyPrice']);
-        self::assertSame('160.00', $this->pricingEngine->previewContract($customer, 2)['monthlyPrice']);
-        self::assertSame('228.00', $this->pricingEngine->previewContract($customer, 3)['monthlyPrice']);
-        self::assertSame('284.00', $this->pricingEngine->previewContract($customer, 4)['monthlyPrice']);
-        self::assertSame('335.00', $this->pricingEngine->previewContract($customer, 5)['monthlyPrice']);
+        self::assertSame('89.00', $this->pricingEngine->previewContract($customer, 1)->monthlyPrice);
+        self::assertSame('160.00', $this->pricingEngine->previewContract($customer, 2)->monthlyPrice);
+        self::assertSame('228.00', $this->pricingEngine->previewContract($customer, 3)->monthlyPrice);
+        self::assertSame('284.00', $this->pricingEngine->previewContract($customer, 4)->monthlyPrice);
+        self::assertSame('335.00', $this->pricingEngine->previewContract($customer, 5)->monthlyPrice);
     }
 
     #[Test]
@@ -90,9 +90,9 @@ final class PricingEngineTest extends TestCase
 
         $quote = $this->pricingEngine->previewExistingContract($contract);
 
-        self::assertSame('160.00', $quote['monthlyPrice']);
-        self::assertSame('0.00', $quote['registrationFee']);
-        self::assertSame('160.00', $quote['firstInvoiceTotal']);
+        self::assertSame('160.00', $quote->monthlyPrice);
+        self::assertSame('0.00', $quote->registrationFee);
+        self::assertSame('160.00', $quote->firstInvoiceTotal);
     }
 
     #[Test]
@@ -104,12 +104,12 @@ final class PricingEngineTest extends TestCase
             true,
         );
 
-        self::assertSame('DAYCARE', $quote['pricingKind']->value);
-        self::assertSame(1, $quote['billableDays']);
-        self::assertSame('46.00', $quote['baseDailyPrice']);
-        self::assertSame('7.50', $quote['serviceFee']);
-        self::assertSame('49.00', $quote['travelProtectionPrice']);
-        self::assertSame('102.50', $quote['quotedTotalPrice']);
+        self::assertSame('DAYCARE', $quote->pricingKind->value);
+        self::assertSame(1, $quote->billableDays);
+        self::assertSame('46.00', $quote->baseDailyPrice);
+        self::assertSame('7.50', $quote->serviceFee);
+        self::assertSame('49.00', $quote->travelProtectionPrice);
+        self::assertSame('102.50', $quote->quotedTotalPrice);
     }
 
     #[Test]
@@ -121,17 +121,17 @@ final class PricingEngineTest extends TestCase
             false,
         );
 
-        self::assertSame('HOTEL', $quote['pricingKind']->value);
-        self::assertSame(2, $quote['billableDays']);
-        self::assertSame('58.00', $quote['baseDailyPrice']);
-        self::assertSame('7.50', $quote['serviceFee']);
-        self::assertSame('0.00', $quote['travelProtectionPrice']);
-        self::assertSame('123.50', $quote['quotedTotalPrice']);
+        self::assertSame('HOTEL', $quote->pricingKind->value);
+        self::assertSame(2, $quote->billableDays);
+        self::assertSame('58.00', $quote->baseDailyPrice);
+        self::assertSame('7.50', $quote->serviceFee);
+        self::assertSame('0.00', $quote->travelProtectionPrice);
+        self::assertSame('123.50', $quote->quotedTotalPrice);
         self::assertNotContains(
             'hotel_travel_protection',
             array_map(
                 static fn (array $item): string => (string) ($item['key'] ?? ''),
-                $quote['snapshot']['lineItems'] ?? [],
+                $quote->snapshot->toArray()['lineItems'] ?? [],
             ),
         );
     }

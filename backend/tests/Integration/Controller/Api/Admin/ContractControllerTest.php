@@ -182,6 +182,51 @@ final class ContractControllerTest extends WebTestCase
         ], $data['pricingSnapshot']['lineItems'] ?? []);
     }
 
+    public function testApproveAllowsNullOverridesAndClearsAdminComment(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-null-override-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Null Override Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contract->setRegistrationFee('149.00');
+        $contract->setAdminComment('Vorhandener Kommentar');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => null,
+            'registrationFee' => null,
+            'adminComment' => null,
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('ACTIVE', $data['state']);
+        self::assertSame('160.00', $data['price']);
+        self::assertSame('149.00', $data['registrationFee']);
+        self::assertNull($data['adminComment']);
+    }
+
     public function testListContractsSupportsPaginationAndStateFilter(): void
     {
         $client = static::createClient();

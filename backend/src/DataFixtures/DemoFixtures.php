@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\DataFixtures;
 
+use App\Dto\Pricing\ContractPricingSnapshot;
+use App\Dto\Pricing\HotelBookingPricingSnapshot;
 use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Entity\Course;
@@ -874,34 +876,19 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $contract->setQuotedMonthlyPrice($quotedMonthlyPrice);
         $contract->setPrice($finalMonthlyPrice);
         $contract->setRegistrationFee($registrationFee);
-        $contract->setPricingSnapshot(PricingEngine::finalizeContractSnapshot([
-            'type' => 'contract',
-            'coursesPerWeek' => $contract->getCoursesPerWeek(),
-            'monthlyUnitPrice' => PricingEngine::schoolUnitPriceForCourseCount(new PricingConfig(), $contract->getCoursesPerWeek()),
-            'monthlyPrice' => $quotedMonthlyPrice,
-            'registrationFee' => $registrationFee,
-            'firstInvoiceTotal' => PricingEngine::formatAmount(
-                PricingEngine::amountToCents($quotedMonthlyPrice) + PricingEngine::amountToCents($registrationFee),
-            ),
-            'lineItems' => [
-                [
-                    'key' => 'school_contract_monthly',
-                    'label' => sprintf('%dx Training pro Woche', $contract->getCoursesPerWeek()),
-                    'quantity' => $contract->getCoursesPerWeek(),
-                    'unitPrice' => PricingEngine::formatAmount(intdiv($monthlyPriceCents, $contract->getCoursesPerWeek())),
-                    'amount' => $quotedMonthlyPrice,
-                    'billingPeriod' => 'MONTH',
-                ],
-                [
-                    'key' => 'school_registration_fee',
-                    'label' => 'Anmeldegebühr',
-                    'quantity' => 1,
-                    'unitPrice' => $registrationFee,
-                    'amount' => $registrationFee,
-                    'billingPeriod' => 'ONCE',
-                ],
-            ],
-        ], $finalMonthlyPrice, $registrationFee));
+        $contract->setPricingSnapshot(
+            ContractPricingSnapshot::forQuote(
+                $contract->getCoursesPerWeek(),
+                PricingEngine::schoolUnitPriceForCourseCount(new PricingConfig(), $contract->getCoursesPerWeek()),
+                $quotedMonthlyPrice,
+                $registrationFee,
+                PricingEngine::formatAmount(
+                    PricingEngine::amountToCents($quotedMonthlyPrice) + PricingEngine::amountToCents($registrationFee),
+                ),
+            )
+                ->finalize($finalMonthlyPrice, $registrationFee)
+                ->toArray(),
+        );
     }
 
     private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
@@ -927,40 +914,22 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
         $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
         $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
-        $booking->setPricingSnapshot(PricingEngine::finalizeHotelBookingSnapshot([
-            'type' => 'hotelBooking',
-            'pricingKind' => $pricingKind->value,
-            'billableDays' => $billableDays,
-            'quotedTotalPrice' => PricingEngine::formatAmount($quotedTotalCents),
-            'lineItems' => [
-                [
-                    'key' => 'hotel_base',
-                    'label' => $pricingKind === HotelBookingPricingKind::DAYCARE
-                        ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
-                        : 'Hundehotel',
-                    'quantity' => $billableDays,
-                    'unitPrice' => PricingEngine::formatAmount($baseDailyPriceCents),
-                    'amount' => PricingEngine::formatAmount($baseAmountCents),
-                    'billingPeriod' => 'DAY',
-                ],
-                [
-                    'key' => 'hotel_service_fee',
-                    'label' => 'Servicepauschale',
-                    'quantity' => 1,
-                    'unitPrice' => '7.50',
-                    'amount' => '7.50',
-                    'billingPeriod' => 'ONCE',
-                ],
-                ...($booking->includesTravelProtection() ? [[
-                    'key' => 'hotel_travel_protection',
-                    'label' => 'Reiseschutz',
-                    'quantity' => 1,
-                    'unitPrice' => PricingEngine::formatAmount($travelProtectionCents),
-                    'amount' => PricingEngine::formatAmount($travelProtectionCents),
-                    'billingPeriod' => 'ONCE',
-                ]] : []),
-            ],
-        ], $booking->getTotalPrice()));
+        $booking->setPricingSnapshot(
+            HotelBookingPricingSnapshot::forQuote(
+                $pricingKind,
+                $billableDays,
+                PricingEngine::formatAmount($baseDailyPriceCents),
+                PricingEngine::formatAmount($serviceFeeCents),
+                PricingEngine::formatAmount($travelProtectionCents),
+                PricingEngine::formatAmount($quotedTotalCents),
+                $pricingKind === HotelBookingPricingKind::DAYCARE
+                    ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
+                    : 'Hundehotel',
+                $booking->includesTravelProtection(),
+            )
+                ->finalize($booking->getTotalPrice())
+                ->toArray(),
+        );
     }
 
     private function createDefaultPricingConfigEntity(): PricingConfig

@@ -178,7 +178,12 @@ async function loadBookings(): Promise<void> {
 }
 
 async function loadPricingConfig(): Promise<void> {
-    pricingConfig.value = await api.get<PricingConfig>('/api/admin/pricing');
+    try {
+        pricingConfig.value = await api.get<PricingConfig>('/api/admin/pricing');
+    } catch (cause) {
+        pricingConfig.value = null;
+        toast.add({ title: extractApiErrorMessage(cause, 'Die Preisreferenzen konnten nicht geladen werden.', { preferFieldSummary: false }), color: 'red' });
+    }
 }
 
 function applyFilters(): void {
@@ -287,7 +292,11 @@ watch(currentPage, () => {
     void loadBookings();
 });
 
+async function initializePage(): Promise<void> {
+    await Promise.allSettled([loadBookings(), loadPricingConfig()]);
+}
+
 onMounted(() => {
-    void Promise.all([loadBookings(), loadPricingConfig()]);
+    void initializePage();
 });
 </script>

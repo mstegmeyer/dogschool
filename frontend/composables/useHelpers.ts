@@ -171,7 +171,7 @@ export const useHelpers = () => {
 
         const numeric = typeof amount === 'number'
             ? amount
-            : Number.parseFloat(amount);
+            : Number.parseFloat(amount.replace(',', '.'));
         if (!Number.isFinite(numeric)) {
             return `${amount} €`;
         }

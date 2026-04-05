@@ -9,6 +9,14 @@
         </p>
     </div>
 
+    <UAlert
+        v-if='!form && formError'
+        color='red'
+        variant='soft'
+        icon='i-heroicons-exclamation-triangle'
+        :title='formError'
+    />
+
     <UCard v-if='form'>
         <form class='space-y-8' @submit.prevent='savePricing'>
             <section class='space-y-4'>
@@ -170,7 +178,7 @@ definePageMeta({ layout: 'admin' });
 
 const api = useApi();
 const toast = useToast();
-const { formError, fieldErrors, clearFormErrors, applyApiError } = useFormFeedback();
+const { formError, fieldErrors, clearFormErrors, setFormError, applyApiError } = useFormFeedback();
 
 const form = ref<PricingConfig | null>(null);
 const saving = ref(false);
@@ -202,7 +210,14 @@ function removePeakSeason(index: number): void {
 }
 
 async function loadPricing(): Promise<void> {
-    form.value = clonePricingConfig(await api.get<PricingConfig>('/api/admin/pricing'));
+    clearFormErrors();
+    try {
+        form.value = clonePricingConfig(await api.get<PricingConfig>('/api/admin/pricing'));
+    } catch (cause) {
+        form.value = null;
+        setFormError(extractApiErrorMessage(cause, 'Die Preise konnten nicht geladen werden.', { preferFieldSummary: false }));
+        toast.add({ title: formError.value, color: 'red' });
+    }
 }
 
 async function savePricing(): Promise<void> {

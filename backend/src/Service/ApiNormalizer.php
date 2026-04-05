@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Dto\Pricing\ContractPricingSnapshot;
+use App\Dto\Pricing\HotelBookingPricingSnapshot;
 use App\Entity\Booking;
 use App\Entity\Contract;
 use App\Entity\Course;
@@ -418,6 +420,10 @@ final class ApiNormalizer
      */
     private function normalizePricingSnapshot(array $snapshot, string $type): array
     {
-        return PricingEngine::normalizeSnapshot($snapshot, $type);
+        return match ($type) {
+            'contract' => ContractPricingSnapshot::fromArray($snapshot)->toArray(),
+            'hotelBooking' => HotelBookingPricingSnapshot::fromArray($snapshot)->toArray(),
+            default => $snapshot,
+        };
     }
 }

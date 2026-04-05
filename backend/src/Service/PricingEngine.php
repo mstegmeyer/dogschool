@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Dto\Pricing\ContractPricingQuote;
+use App\Dto\Pricing\ContractPricingSnapshot;
+use App\Dto\Pricing\HotelBookingPricingQuote;
+use App\Dto\Pricing\HotelBookingPricingSnapshot;
 use App\Entity\Contract;
 use App\Entity\Customer;
 use App\Entity\HotelPeakSeason;
@@ -20,18 +24,7 @@ final class PricingEngine
     ) {
     }
 
-    /**
-     * @return array{
-     *   monthlyPrice: string,
-     *   registrationFee: string,
-     *   firstInvoiceTotal: string,
-     *   monthlyUnitPrice: string,
-     *   coursesPerWeek: int,
-     *   requiresRegistrationFee: bool,
-     *   snapshot: array<string, mixed>
-     * }
-     */
-    public function previewContract(Customer $customer, int $coursesPerWeek): array
+    public function previewContract(Customer $customer, int $coursesPerWeek): ContractPricingQuote
     {
         $pricingConfig = $this->pricingConfigProvider->getCurrent();
         $monthlyUnitPrice = self::schoolUnitPriceForCourseCount($pricingConfig, $coursesPerWeek);
@@ -41,54 +34,24 @@ final class PricingEngine
         $registrationFee = $requiresRegistrationFee ? $pricingConfig->getSchoolRegistrationFee() : '0.00';
         $firstInvoiceTotal = self::formatAmount(self::amountToCents($monthlyPrice) + self::amountToCents($registrationFee));
 
-        return [
-            'monthlyPrice' => $monthlyPrice,
-            'registrationFee' => $registrationFee,
-            'firstInvoiceTotal' => $firstInvoiceTotal,
-            'monthlyUnitPrice' => $monthlyUnitPrice,
-            'coursesPerWeek' => $coursesPerWeek,
-            'requiresRegistrationFee' => $requiresRegistrationFee,
-            'snapshot' => [
-                'type' => 'contract',
-                'coursesPerWeek' => $coursesPerWeek,
-                'monthlyUnitPrice' => $monthlyUnitPrice,
-                'monthlyPrice' => $monthlyPrice,
-                'registrationFee' => $registrationFee,
-                'firstInvoiceTotal' => $firstInvoiceTotal,
-                'lineItems' => [
-                    [
-                        'key' => 'school_contract_monthly',
-                        'label' => sprintf('%dx Training pro Woche', $coursesPerWeek),
-                        'quantity' => $coursesPerWeek,
-                        'unitPrice' => $monthlyUnitPrice,
-                        'amount' => $monthlyPrice,
-                        'billingPeriod' => 'MONTH',
-                    ],
-                    [
-                        'key' => 'school_registration_fee',
-                        'label' => 'Anmeldegebühr',
-                        'quantity' => 1,
-                        'unitPrice' => $registrationFee,
-                        'amount' => $registrationFee,
-                        'billingPeriod' => 'ONCE',
-                    ],
-                ],
-            ],
-        ];
+        return new ContractPricingQuote(
+            $monthlyPrice,
+            $registrationFee,
+            $firstInvoiceTotal,
+            $monthlyUnitPrice,
+            $coursesPerWeek,
+            $requiresRegistrationFee,
+            ContractPricingSnapshot::forQuote(
+                $coursesPerWeek,
+                $monthlyUnitPrice,
+                $monthlyPrice,
+                $registrationFee,
+                $firstInvoiceTotal,
+            ),
+        );
     }
 
-    /**
-     * @return array{
-     *   monthlyPrice: string,
-     *   registrationFee: string,
-     *   firstInvoiceTotal: string,
-     *   monthlyUnitPrice: string,
-     *   coursesPerWeek: int,
-     *   requiresRegistrationFee: bool,
-     *   snapshot: array<string, mixed>
-     * }
-     */
-    public function previewExistingContract(Contract $contract): array
+    public function previewExistingContract(Contract $contract): ContractPricingQuote
     {
         $customer = $contract->getCustomer() ?? throw new \LogicException('Contract customer is required for pricing.');
         $coursesPerWeek = $contract->getCoursesPerWeek();
@@ -105,59 +68,28 @@ final class PricingEngine
         $registrationFee = $requiresRegistrationFee ? $pricingConfig->getSchoolRegistrationFee() : '0.00';
         $firstInvoiceTotal = self::formatAmount(self::amountToCents($monthlyPrice) + self::amountToCents($registrationFee));
 
-        return [
-            'monthlyPrice' => $monthlyPrice,
-            'registrationFee' => $registrationFee,
-            'firstInvoiceTotal' => $firstInvoiceTotal,
-            'monthlyUnitPrice' => $monthlyUnitPrice,
-            'coursesPerWeek' => $coursesPerWeek,
-            'requiresRegistrationFee' => $requiresRegistrationFee,
-            'snapshot' => [
-                'type' => 'contract',
-                'coursesPerWeek' => $coursesPerWeek,
-                'monthlyUnitPrice' => $monthlyUnitPrice,
-                'monthlyPrice' => $monthlyPrice,
-                'registrationFee' => $registrationFee,
-                'firstInvoiceTotal' => $firstInvoiceTotal,
-                'lineItems' => [
-                    [
-                        'key' => 'school_contract_monthly',
-                        'label' => sprintf('%dx Training pro Woche', $coursesPerWeek),
-                        'quantity' => $coursesPerWeek,
-                        'unitPrice' => $monthlyUnitPrice,
-                        'amount' => $monthlyPrice,
-                        'billingPeriod' => 'MONTH',
-                    ],
-                    [
-                        'key' => 'school_registration_fee',
-                        'label' => 'Anmeldegebühr',
-                        'quantity' => 1,
-                        'unitPrice' => $registrationFee,
-                        'amount' => $registrationFee,
-                        'billingPeriod' => 'ONCE',
-                    ],
-                ],
-            ],
-        ];
+        return new ContractPricingQuote(
+            $monthlyPrice,
+            $registrationFee,
+            $firstInvoiceTotal,
+            $monthlyUnitPrice,
+            $coursesPerWeek,
+            $requiresRegistrationFee,
+            ContractPricingSnapshot::forQuote(
+                $coursesPerWeek,
+                $monthlyUnitPrice,
+                $monthlyPrice,
+                $registrationFee,
+                $firstInvoiceTotal,
+            ),
+        );
     }
 
-    /**
-     * @return array{
-     *   pricingKind: HotelBookingPricingKind,
-     *   billableDays: int,
-     *   baseDailyPrice: string,
-     *   serviceFee: string,
-     *   travelProtectionPrice: string,
-     *   quotedTotalPrice: string,
-     *   includesTravelProtection: bool,
-     *   snapshot: array<string, mixed>
-     * }
-     */
     public function previewHotelBooking(
         \DateTimeImmutable $startAt,
         \DateTimeImmutable $endAt,
         bool $includesTravelProtection,
-    ): array {
+    ): HotelBookingPricingQuote {
         $pricingConfig = $this->pricingConfigProvider->getCurrent();
         $pricingKind = $startAt->format('Y-m-d') === $endAt->format('Y-m-d')
             ? HotelBookingPricingKind::DAYCARE
@@ -191,50 +123,25 @@ final class PricingEngine
             HotelBookingPricingKind::HOTEL => 'Hundehotel',
         };
 
-        return [
-            'pricingKind' => $pricingKind,
-            'billableDays' => $billableDays,
-            'baseDailyPrice' => $baseDailyPrice,
-            'serviceFee' => $serviceFee,
-            'travelProtectionPrice' => $travelProtectionPrice,
-            'quotedTotalPrice' => $quotedTotalPrice,
-            'includesTravelProtection' => $includesTravelProtection,
-            'snapshot' => [
-                'type' => 'hotelBooking',
-                'pricingKind' => $pricingKind->value,
-                'billableDays' => $billableDays,
-                'baseDailyPrice' => $baseDailyPrice,
-                'serviceFee' => $serviceFee,
-                'travelProtectionPrice' => $travelProtectionPrice,
-                'quotedTotalPrice' => $quotedTotalPrice,
-                'lineItems' => [
-                    [
-                        'key' => 'hotel_base',
-                        'label' => $baseLabel,
-                        'quantity' => $billableDays,
-                        'unitPrice' => $baseDailyPrice,
-                        'amount' => $baseAmount,
-                        'billingPeriod' => 'DAY',
-                    ],
-                    [
-                        'key' => 'hotel_service_fee',
-                        'label' => 'Servicepauschale',
-                        'quantity' => 1,
-                        'unitPrice' => $serviceFee,
-                        'amount' => $serviceFee,
-                        'billingPeriod' => 'ONCE',
-                    ],
-                    ...($includesTravelProtection ? [[
-                        'key' => 'hotel_travel_protection',
-                        'label' => 'Reiseschutz',
-                        'quantity' => 1,
-                        'unitPrice' => $travelProtectionPrice,
-                        'amount' => $travelProtectionPrice,
-                        'billingPeriod' => 'ONCE',
-                    ]] : []),
-                ],
-            ],
-        ];
+        return new HotelBookingPricingQuote(
+            $pricingKind,
+            $billableDays,
+            $baseDailyPrice,
+            $serviceFee,
+            $travelProtectionPrice,
+            $quotedTotalPrice,
+            $includesTravelProtection,
+            HotelBookingPricingSnapshot::forQuote(
+                $pricingKind,
+                $billableDays,
+                $baseDailyPrice,
+                $serviceFee,
+                $travelProtectionPrice,
+                $quotedTotalPrice,
+                $baseLabel,
+                $includesTravelProtection,
+            ),
+        );
     }
 
     public static function schoolUnitPriceForCourseCount(PricingConfig $pricingConfig, int $coursesPerWeek): string
@@ -284,88 +191,6 @@ final class PricingEngine
         return ((int) $startDate->diff($endDate)->days) + 1;
     }
 
-    /**
-     * @param array<string, mixed> $snapshot
-     *
-     * @return array<string, mixed>
-     */
-    public static function normalizeSnapshot(array $snapshot, string $type): array
-    {
-        $normalized = $snapshot;
-        $normalized['type'] = $type;
-
-        $rawLineItems = $snapshot['lineItems'] ?? $snapshot['items'] ?? [];
-        $lineItems = [];
-        if (is_array($rawLineItems)) {
-            foreach ($rawLineItems as $item) {
-                if (is_array($item)) {
-                    $lineItems[] = $item;
-                }
-            }
-        }
-        $normalized['lineItems'] = $lineItems;
-
-        return $normalized;
-    }
-
-    /**
-     * @param array<string, mixed> $snapshot
-     *
-     * @return array<string, mixed>
-     */
-    public static function finalizeContractSnapshot(array $snapshot, string $finalMonthlyPrice, string $registrationFee): array
-    {
-        $normalized = self::normalizeSnapshot($snapshot, 'contract');
-        $quotedMonthlyPrice = is_string($normalized['quotedMonthlyPrice'] ?? null)
-            ? $normalized['quotedMonthlyPrice']
-            : (is_string($normalized['monthlyPrice'] ?? null) ? $normalized['monthlyPrice'] : $finalMonthlyPrice);
-        $quotedRegistrationFee = is_string($normalized['quotedRegistrationFee'] ?? null)
-            ? $normalized['quotedRegistrationFee']
-            : (is_string($normalized['registrationFee'] ?? null) ? $normalized['registrationFee'] : $registrationFee);
-        $adjustmentCents = self::amountToCents($finalMonthlyPrice) - self::amountToCents($quotedMonthlyPrice);
-
-        if ($adjustmentCents !== 0) {
-            $normalized = self::appendManualAdjustmentLineItem($normalized, $adjustmentCents);
-        }
-
-        $normalized['quotedMonthlyPrice'] = $quotedMonthlyPrice;
-        $normalized['quotedRegistrationFee'] = $quotedRegistrationFee;
-        $normalized['monthlyPrice'] = $finalMonthlyPrice;
-        $normalized['registrationFee'] = $registrationFee;
-        /** @var array<int, array<string, mixed>> $lineItems */
-        $lineItems = $normalized['lineItems'];
-        $normalized['lineItems'] = self::synchronizeContractRegistrationFeeLineItem($lineItems, $registrationFee);
-        $normalized['firstInvoiceTotal'] = self::formatAmount(
-            self::amountToCents($finalMonthlyPrice) + self::amountToCents($registrationFee)
-        );
-
-        return $normalized;
-    }
-
-    /**
-     * @param array<string, mixed> $snapshot
-     *
-     * @return array<string, mixed>
-     */
-    public static function finalizeHotelBookingSnapshot(array $snapshot, string $finalTotalPrice): array
-    {
-        $normalized = self::normalizeSnapshot($snapshot, 'hotelBooking');
-        $quotedTotalPrice = is_string($normalized['quotedTotalPrice'] ?? null)
-            ? $normalized['quotedTotalPrice']
-            : (is_string($normalized['totalPrice'] ?? null) ? $normalized['totalPrice'] : $finalTotalPrice);
-        $adjustmentCents = self::amountToCents($finalTotalPrice) - self::amountToCents($quotedTotalPrice);
-
-        if ($adjustmentCents !== 0) {
-            $normalized = self::appendManualAdjustmentLineItem($normalized, $adjustmentCents);
-        }
-
-        $normalized['quotedTotalPrice'] = $quotedTotalPrice;
-        $normalized['totalPrice'] = $finalTotalPrice;
-        $normalized['finalTotalPrice'] = $finalTotalPrice;
-
-        return $normalized;
-    }
-
     private function isPeakSeasonDate(PricingConfig $pricingConfig, \DateTimeImmutable $date): bool
     {
         $comparisonDate = $date->setTime(0, 0);
@@ -384,64 +209,5 @@ final class PricingEngine
         }
 
         return false;
-    }
-
-    /**
-     * @param array<string, mixed> $snapshot
-     *
-     * @return array<string, mixed>
-     */
-    private static function appendManualAdjustmentLineItem(array $snapshot, int $adjustmentCents): array
-    {
-        $lineItems = isset($snapshot['lineItems']) && is_array($snapshot['lineItems'])
-            ? $snapshot['lineItems']
-            : [];
-        $lineItems[] = [
-            'key' => 'manual_adjustment',
-            'label' => 'Manuelle Preisanpassung',
-            'quantity' => 1,
-            'unitPrice' => self::formatAmount($adjustmentCents),
-            'amount' => self::formatAmount($adjustmentCents),
-            'billingPeriod' => 'ONCE',
-        ];
-        $snapshot['lineItems'] = $lineItems;
-
-        return $snapshot;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $lineItems
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private static function synchronizeContractRegistrationFeeLineItem(array $lineItems, string $registrationFee): array
-    {
-        $updatedLineItems = [];
-        $updated = false;
-
-        foreach ($lineItems as $item) {
-            if (($item['key'] ?? null) === 'school_registration_fee') {
-                $item['quantity'] = 1;
-                $item['unitPrice'] = $registrationFee;
-                $item['amount'] = $registrationFee;
-                $item['billingPeriod'] = 'ONCE';
-                $updated = true;
-            }
-
-            $updatedLineItems[] = $item;
-        }
-
-        if (!$updated) {
-            $updatedLineItems[] = [
-                'key' => 'school_registration_fee',
-                'label' => 'Anmeldegebühr',
-                'quantity' => 1,
-                'unitPrice' => $registrationFee,
-                'amount' => $registrationFee,
-                'billingPeriod' => 'ONCE',
-            ];
-        }
-
-        return $updatedLineItems;
     }
 }

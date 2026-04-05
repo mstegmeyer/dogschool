@@ -48,6 +48,7 @@ describe('admin contracts page', () => {
 
         expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve', {
             price: '89.00',
+            registrationFee: '149.00',
             adminComment: null,
         });
         expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/contracts/contract-1/decline', {

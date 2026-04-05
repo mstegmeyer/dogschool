@@ -66,7 +66,7 @@
                     :snapshot='selectedContract.pricingSnapshot'
                     title='Aktuelle Preisübersicht'
                     total-label='Erste Rechnung'
-                    :total-value='selectedContract.firstInvoiceTotal'
+                    :total-value='reviewFirstInvoiceTotal'
                 />
 
                 <div v-if='selectedContract.customerComment' class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
@@ -78,6 +78,13 @@
                     <UInput v-model='reviewForm.price' type='number' step='0.01' />
                     <template #hint>
                         Automatischer Vorschlag: {{ formatContractMonthlyPrice(selectedContract.quotedMonthlyPrice, selectedContract.type) }}
+                    </template>
+                </UFormGroup>
+
+                <UFormGroup label='Anmeldegebühr'>
+                    <UInput v-model='reviewForm.registrationFee' type='number' step='0.01' />
+                    <template #hint>
+                        Automatischer Vorschlag: {{ formatMoney(reviewSuggestedRegistrationFee) }}
                     </template>
                 </UFormGroup>
 
@@ -122,7 +129,7 @@ definePageMeta({ layout: 'admin' });
 
 const api = useApi();
 const toast = useToast();
-const { toMonthEndIso, isLastOfMonth, contractStateLabel, contractStateColor, formatContractMonthlyPrice } = useHelpers();
+const { toMonthEndIso, isLastOfMonth, contractStateLabel, contractStateColor, formatContractMonthlyPrice, formatMoney } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback();
 
 const contracts = ref<Contract[]>([]);
@@ -145,7 +152,7 @@ const showReviewModal = ref(false);
 const selectedContract = ref<Contract | null>(null);
 const reviewApproving = ref(false);
 const reviewDeclining = ref(false);
-const reviewForm = reactive({ price: '', adminComment: '' });
+const reviewForm = reactive({ price: '', registrationFee: '', adminComment: '' });
 
 const pageSize = 20;
 
@@ -182,6 +189,23 @@ const resultSummary = computed(() => {
     return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`;
 });
 
+const reviewSuggestedRegistrationFee = computed(() => {
+    if (!selectedContract.value) {
+        return '0.00';
+    }
+
+    const snapshotRegistrationFee = selectedContract.value.pricingSnapshot.quotedRegistrationFee;
+
+    return typeof snapshotRegistrationFee === 'string'
+        ? snapshotRegistrationFee
+        : selectedContract.value.registrationFee;
+});
+
+const reviewFirstInvoiceTotal = computed(() => formatAmount(
+    amountToCents(reviewForm.price || selectedContract.value?.price || '0.00')
+    + amountToCents(reviewForm.registrationFee || selectedContract.value?.registrationFee || '0.00'),
+));
+
 function openCancelConfirm(contract: Contract): void {
     contractToCancel.value = contract;
     cancelForm.endDate = contract.endDate ?? '';
@@ -200,12 +224,14 @@ function closeReviewModal(): void {
     showReviewModal.value = false;
     selectedContract.value = null;
     reviewForm.price = '';
+    reviewForm.registrationFee = '';
     reviewForm.adminComment = '';
 }
 
 async function openReview(contract: Contract): Promise<void> {
     selectedContract.value = await api.get<Contract>(`/api/admin/contracts/${contract.id}`);
     reviewForm.price = selectedContract.value.price;
+    reviewForm.registrationFee = selectedContract.value.registrationFee;
     reviewForm.adminComment = selectedContract.value.adminComment || '';
     showReviewModal.value = true;
 }
@@ -256,6 +282,7 @@ async function approveSelectedContract(): Promise<void> {
     try {
         await api.post(`/api/admin/contracts/${selectedContract.value.id}/approve`, {
             price: reviewForm.price || null,
+            registrationFee: reviewForm.registrationFee || null,
             adminComment: reviewForm.adminComment || null,
         });
         toast.add({ title: 'Vertrag geprüft', color: 'green' });
@@ -331,4 +358,22 @@ watch(sort, () => {
 onMounted(() => {
     void loadContracts();
 });
+
+function amountToCents(value: string): number {
+    const normalized = value.trim().replace(',', '.');
+    if (normalized === '') {
+        return 0;
+    }
+
+    const numericValue = Number.parseFloat(normalized);
+    if (Number.isNaN(numericValue)) {
+        return 0;
+    }
+
+    return Math.round(numericValue * 100);
+}
+
+function formatAmount(cents: number): string {
+    return (cents / 100).toFixed(2);
+}
 </script>

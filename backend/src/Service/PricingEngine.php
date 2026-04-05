@@ -319,6 +319,9 @@ final class PricingEngine
         $quotedMonthlyPrice = is_string($normalized['quotedMonthlyPrice'] ?? null)
             ? $normalized['quotedMonthlyPrice']
             : (is_string($normalized['monthlyPrice'] ?? null) ? $normalized['monthlyPrice'] : $finalMonthlyPrice);
+        $quotedRegistrationFee = is_string($normalized['quotedRegistrationFee'] ?? null)
+            ? $normalized['quotedRegistrationFee']
+            : (is_string($normalized['registrationFee'] ?? null) ? $normalized['registrationFee'] : $registrationFee);
         $adjustmentCents = self::amountToCents($finalMonthlyPrice) - self::amountToCents($quotedMonthlyPrice);
 
         if ($adjustmentCents !== 0) {
@@ -326,8 +329,10 @@ final class PricingEngine
         }
 
         $normalized['quotedMonthlyPrice'] = $quotedMonthlyPrice;
+        $normalized['quotedRegistrationFee'] = $quotedRegistrationFee;
         $normalized['monthlyPrice'] = $finalMonthlyPrice;
         $normalized['registrationFee'] = $registrationFee;
+        $normalized['lineItems'] = self::synchronizeContractRegistrationFeeLineItem($normalized['lineItems'], $registrationFee);
         $normalized['firstInvoiceTotal'] = self::formatAmount(
             self::amountToCents($finalMonthlyPrice) + self::amountToCents($registrationFee)
         );
@@ -400,5 +405,41 @@ final class PricingEngine
         $snapshot['lineItems'] = $lineItems;
 
         return $snapshot;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $lineItems
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function synchronizeContractRegistrationFeeLineItem(array $lineItems, string $registrationFee): array
+    {
+        $updatedLineItems = [];
+        $updated = false;
+
+        foreach ($lineItems as $item) {
+            if (($item['key'] ?? null) === 'school_registration_fee') {
+                $item['quantity'] = 1;
+                $item['unitPrice'] = $registrationFee;
+                $item['amount'] = $registrationFee;
+                $item['billingPeriod'] = 'ONCE';
+                $updated = true;
+            }
+
+            $updatedLineItems[] = $item;
+        }
+
+        if (!$updated) {
+            $updatedLineItems[] = [
+                'key' => 'school_registration_fee',
+                'label' => 'Anmeldegebühr',
+                'quantity' => 1,
+                'unitPrice' => $registrationFee,
+                'amount' => $registrationFee,
+                'billingPeriod' => 'ONCE',
+            ];
+        }
+
+        return $updatedLineItems;
     }
 }

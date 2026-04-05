@@ -101,16 +101,19 @@ final class ContractController extends AbstractController
 
         $quote = $this->pricingEngine->previewExistingContract($contract);
         $finalPrice = $payload['price'] ?? $quote['monthlyPrice'];
+        $finalRegistrationFee = $payload['registrationFee'] ?? $quote['registrationFee'];
         $quotedMonthlyPriceCents = PricingEngine::amountToCents($quote['monthlyPrice']);
         $finalPriceCents = PricingEngine::amountToCents($finalPrice);
+        $quotedRegistrationFeeCents = PricingEngine::amountToCents($quote['registrationFee']);
+        $finalRegistrationFeeCents = PricingEngine::amountToCents($finalRegistrationFee);
 
         $contract->setQuotedMonthlyPrice($quote['monthlyPrice']);
-        $contract->setRegistrationFee($quote['registrationFee']);
-        $contract->setPricingSnapshot(PricingEngine::finalizeContractSnapshot($quote['snapshot'], $finalPrice, $quote['registrationFee']));
+        $contract->setRegistrationFee($finalRegistrationFee);
+        $contract->setPricingSnapshot(PricingEngine::finalizeContractSnapshot($quote['snapshot'], $finalPrice, $finalRegistrationFee));
         $contract->setPrice($finalPrice);
         $contract->setAdminComment($payload['adminComment'] ?? $contract->getAdminComment());
         $contract->setState(
-            $finalPriceCents > $quotedMonthlyPriceCents
+            $finalPriceCents > $quotedMonthlyPriceCents || $finalRegistrationFeeCents > $quotedRegistrationFeeCents
                 ? ContractState::PENDING_CUSTOMER_APPROVAL
                 : ContractState::ACTIVE
         );
@@ -186,7 +189,7 @@ final class ContractController extends AbstractController
     }
 
     /**
-     * @return array{price?: string, adminComment?: string}|JsonResponse
+     * @return array{price?: string, registrationFee?: string, adminComment?: string}|JsonResponse
      */
     private function parsePayload(Request $request, bool $allowPrice = true): array|JsonResponse
     {
@@ -206,6 +209,14 @@ final class ContractController extends AbstractController
             }
 
             $result['price'] = number_format((float) str_replace(',', '.', (string) $payload['price']), 2, '.', '');
+        }
+
+        if ($allowPrice && array_key_exists('registrationFee', $payload)) {
+            if (!is_scalar($payload['registrationFee']) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $payload['registrationFee'])) {
+                return $this->json(['errors' => ['registrationFee' => 'Bitte eine gültige Anmeldegebühr angeben.']], Response::HTTP_BAD_REQUEST);
+            }
+
+            $result['registrationFee'] = number_format((float) str_replace(',', '.', (string) $payload['registrationFee']), 2, '.', '');
         }
 
         if (array_key_exists('adminComment', $payload) && $payload['adminComment'] !== null && !is_string($payload['adminComment'])) {

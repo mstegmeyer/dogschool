@@ -128,6 +128,60 @@ final class ContractControllerTest extends WebTestCase
         ], $data['pricingSnapshot']['lineItems'] ?? []);
     }
 
+    public function testApproveWithHigherRegistrationFeeRequiresCustomerApproval(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-registration-review-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Registration Review Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contract->setRegistrationFee('149.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '160.00',
+            'registrationFee' => '169.00',
+            'adminComment' => 'Anmeldegebühr wegen Zusatzaufwand erhöht.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('PENDING_CUSTOMER_APPROVAL', $data['state']);
+        self::assertSame('160.00', $data['price']);
+        self::assertSame('169.00', $data['registrationFee']);
+        self::assertSame('329.00', $data['firstInvoiceTotal']);
+        self::assertSame('149.00', $data['pricingSnapshot']['quotedRegistrationFee'] ?? null);
+        self::assertSame('169.00', $data['pricingSnapshot']['registrationFee'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'school_registration_fee',
+            'label' => 'Anmeldegebühr',
+            'quantity' => 1,
+            'unitPrice' => '169.00',
+            'amount' => '169.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
+    }
+
     public function testListContractsSupportsPaginationAndStateFilter(): void
     {
         $client = static::createClient();

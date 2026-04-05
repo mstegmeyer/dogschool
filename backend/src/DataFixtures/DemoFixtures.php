@@ -12,11 +12,14 @@ use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
+use App\Entity\HotelBooking;
 use App\Entity\Notification;
+use App\Entity\Room;
 use App\Entity\User;
 use App\Enum\ContractState;
 use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
+use App\Enum\HotelBookingState;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -202,6 +205,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $this->createContracts($manager, $customers);
         $this->createCreditTransactions($manager);
         $this->createBookings($manager, $customers, $courseDates);
+        $this->createHotelData($manager, $customers);
         $this->createNotifications($manager, $courses, $trainers);
 
         $manager->flush();
@@ -287,6 +291,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 $dog->setRace($breed);
                 $dog->setGender($gender);
                 $dog->setColor($color);
+                $dog->setShoulderHeightCm(self::defaultDogShoulderHeight($dogIdx));
                 $customer->addDog($dog);
                 $manager->persist($dog);
                 $dogs[] = $dog;
@@ -564,6 +569,301 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     }
 
     // -----------------------------------------------------------------------
+    // Hotel rooms + bookings
+    // -----------------------------------------------------------------------
+
+    /**
+     * @param array<int, array{customer: Customer, dogs: Dog[]}> $customers
+     */
+    private function createHotelData(ObjectManager $manager, array $customers): void
+    {
+        $hotelDogEntries = $this->buildHotelDogEntries($customers);
+        $rooms = [];
+        foreach ([
+            'waldzimmer' => ['name' => 'Waldzimmer', 'squareMeters' => 10, 'pattern' => 'compact'],
+            'birkenkoje' => ['name' => 'Birkenkoje', 'squareMeters' => 12, 'pattern' => 'compact'],
+            'wiesennest' => ['name' => 'Wiesennest', 'squareMeters' => 12, 'pattern' => 'compact'],
+            'gartenkabine' => ['name' => 'Gartenkabine', 'squareMeters' => 14, 'pattern' => 'compact'],
+            'sonnenstube' => ['name' => 'Sonnenstube', 'squareMeters' => 16, 'pattern' => 'paired'],
+            'parksuite' => ['name' => 'Parksuite', 'squareMeters' => 16, 'pattern' => 'paired'],
+            'landhaus' => ['name' => 'Landhaus', 'squareMeters' => 18, 'pattern' => 'paired'],
+            'hofblick' => ['name' => 'Hofblick', 'squareMeters' => 18, 'pattern' => 'paired'],
+            'apfelhof' => ['name' => 'Apfelhof', 'squareMeters' => 20, 'pattern' => 'busy'],
+            'muehlenloft' => ['name' => 'Mühlenloft', 'squareMeters' => 20, 'pattern' => 'busy'],
+            'kaminzimmer' => ['name' => 'Kaminzimmer', 'squareMeters' => 22, 'pattern' => 'busy'],
+            'pfoetchenloft' => ['name' => 'Pfötchenloft', 'squareMeters' => 24, 'pattern' => 'busy'],
+        ] as $key => $definition) {
+            $room = new Room();
+            $room->setName($definition['name']);
+            $room->setSquareMeters($definition['squareMeters']);
+            $manager->persist($room);
+            $rooms[$key] = ['room' => $room, 'pattern' => $definition['pattern']];
+        }
+
+        $today = new \DateTimeImmutable('today 00:00');
+        $timeframes = [
+            'overnight_departing' => [
+                'start' => $today->modify('-1 day')->setTime(18, 0),
+                'end' => $today->setTime(7, 30),
+            ],
+            'today_arrival' => [
+                'start' => $today->setTime(9, 30),
+                'end' => $today->modify('+1 day')->setTime(8, 30),
+            ],
+            'today_overlap' => [
+                'start' => $today->setTime(13, 30),
+                'end' => $today->modify('+1 day')->setTime(17, 30),
+            ],
+            'tomorrow_evening' => [
+                'start' => $today->modify('+1 day')->setTime(18, 30),
+                'end' => $today->modify('+2 days')->setTime(12, 0),
+            ],
+            'day_three_overlap' => [
+                'start' => $today->modify('+2 days')->setTime(9, 30),
+                'end' => $today->modify('+3 days')->setTime(17, 30),
+            ],
+            'weekend' => [
+                'start' => $today->modify('+4 days')->setTime(8, 0),
+                'end' => $today->modify('+5 days')->setTime(18, 0),
+            ],
+            'requested_short' => [
+                'start' => $today->modify('+1 day')->setTime(6, 30),
+                'end' => $today->modify('+1 day')->setTime(17, 0),
+            ],
+            'requested_multi_day' => [
+                'start' => $today->modify('+2 days')->setTime(8, 0),
+                'end' => $today->modify('+4 days')->setTime(10, 0),
+            ],
+            'requested_daycare' => [
+                'start' => $today->modify('+3 days')->setTime(9, 30),
+                'end' => $today->modify('+3 days')->setTime(19, 30),
+            ],
+            'requested_weekend' => [
+                'start' => $today->modify('+5 days')->setTime(7, 0),
+                'end' => $today->modify('+6 days')->setTime(18, 30),
+            ],
+            'requested_extended' => [
+                'start' => $today->modify('+6 days')->setTime(10, 0),
+                'end' => $today->modify('+8 days')->setTime(16, 0),
+            ],
+            'requested_morning' => [
+                'start' => $today->modify('+7 days')->setTime(6, 0),
+                'end' => $today->modify('+7 days')->setTime(15, 0),
+            ],
+            'requested_evening' => [
+                'start' => $today->modify('+8 days')->setTime(18, 0),
+                'end' => $today->modify('+9 days')->setTime(11, 0),
+            ],
+            'requested_long' => [
+                'start' => $today->modify('+9 days')->setTime(9, 0),
+                'end' => $today->modify('+11 days')->setTime(13, 0),
+            ],
+            'declined_one' => [
+                'start' => $today->modify('+2 days')->setTime(8, 30),
+                'end' => $today->modify('+3 days')->setTime(17, 0),
+            ],
+            'declined_two' => [
+                'start' => $today->modify('+4 days')->setTime(10, 0),
+                'end' => $today->modify('+5 days')->setTime(18, 0),
+            ],
+            'declined_three' => [
+                'start' => $today->modify('+6 days')->setTime(7, 30),
+                'end' => $today->modify('+7 days')->setTime(14, 0),
+            ],
+            'declined_four' => [
+                'start' => $today->modify('+8 days')->setTime(12, 0),
+                'end' => $today->modify('+9 days')->setTime(18, 0),
+            ],
+        ];
+
+        $roomIndex = 0;
+        foreach ($rooms as $entry) {
+            $room = $entry['room'];
+            $pattern = $entry['pattern'];
+            $slotKeys = match ($pattern) {
+                'compact' => ['overnight_departing', 'today_arrival', 'tomorrow_evening', 'weekend'],
+                'paired' => ['overnight_departing', 'today_arrival', 'today_overlap', 'weekend'],
+                default => ['overnight_departing', 'today_arrival', 'today_overlap', 'tomorrow_evening', 'day_three_overlap'],
+            };
+
+            foreach ($slotKeys as $slotIndex => $slotKey) {
+                $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
+                $window = $this->varyHotelWindow(
+                    $timeframes[$slotKey]['start'],
+                    $timeframes[$slotKey]['end'],
+                    $roomIndex,
+                    $slotIndex,
+                );
+                $this->createHotelBooking(
+                    $manager,
+                    $dogEntry['customer'],
+                    $dogEntry['dog'],
+                    $room,
+                    HotelBookingState::CONFIRMED,
+                    $window['start'],
+                    $window['end'],
+                );
+            }
+
+            ++$roomIndex;
+        }
+
+        foreach ([
+            'requested_short',
+            'requested_multi_day',
+            'requested_daycare',
+            'requested_weekend',
+            'requested_extended',
+            'requested_morning',
+            'requested_evening',
+            'requested_long',
+        ] as $slotIndex => $slotKey) {
+            $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
+            $window = $this->varyHotelWindow(
+                $timeframes[$slotKey]['start'],
+                $timeframes[$slotKey]['end'],
+                20,
+                $slotIndex,
+            );
+            $this->createHotelBooking(
+                $manager,
+                $dogEntry['customer'],
+                $dogEntry['dog'],
+                null,
+                HotelBookingState::REQUESTED,
+                $window['start'],
+                $window['end'],
+            );
+        }
+
+        foreach ([
+            'declined_one',
+            'declined_two',
+            'declined_three',
+            'declined_four',
+        ] as $slotIndex => $slotKey) {
+            $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
+            $window = $this->varyHotelWindow(
+                $timeframes[$slotKey]['start'],
+                $timeframes[$slotKey]['end'],
+                40,
+                $slotIndex,
+            );
+            $this->createHotelBooking(
+                $manager,
+                $dogEntry['customer'],
+                $dogEntry['dog'],
+                null,
+                HotelBookingState::DECLINED,
+                $window['start'],
+                $window['end'],
+            );
+        }
+    }
+
+    private function createHotelBooking(
+        ObjectManager $manager,
+        Customer $customer,
+        Dog $dog,
+        ?Room $room,
+        HotelBookingState $state,
+        \DateTimeImmutable $startAt,
+        \DateTimeImmutable $endAt,
+    ): void {
+        $booking = new HotelBooking();
+        $booking->setCustomer($customer);
+        $booking->setDog($dog);
+        $booking->setRoom($room);
+        $booking->setState($state);
+        $booking->setStartAt($startAt);
+        $booking->setEndAt($endAt);
+        $manager->persist($booking);
+    }
+
+    /**
+     * Spread bookings across the day so arrivals and departures look less synchronized.
+     *
+     * @return array{start: \DateTimeImmutable, end: \DateTimeImmutable}
+     */
+    private function varyHotelWindow(
+        \DateTimeImmutable $startAt,
+        \DateTimeImmutable $endAt,
+        int $groupIndex,
+        int $slotIndex,
+    ): array {
+        $startShiftMinutes = (($groupIndex * 43) + ($slotIndex * 37)) % 150 - 40;
+        $endShiftMinutes = (($groupIndex * 29) + ($slotIndex * 31)) % 120 - 20;
+
+        $shiftedStart = $this->normalizeHotelBoundary($startAt->modify(sprintf('%+d minutes', $startShiftMinutes)));
+        $shiftedEnd = $this->normalizeHotelBoundary($endAt->modify(sprintf('%+d minutes', $startShiftMinutes + $endShiftMinutes)));
+
+        if ($shiftedEnd <= $shiftedStart) {
+            $minimumDurationMinutes = max(240, (int) (($endAt->getTimestamp() - $startAt->getTimestamp()) / 120));
+            $shiftedEnd = $this->normalizeHotelBoundary($shiftedStart->modify(sprintf('+%d minutes', $minimumDurationMinutes)));
+        }
+
+        if ($shiftedEnd <= $shiftedStart) {
+            $shiftedEnd = $shiftedStart->modify('+1 day')->setTime(10, 0);
+        }
+
+        return [
+            'start' => $shiftedStart,
+            'end' => $shiftedEnd,
+        ];
+    }
+
+    private function normalizeHotelBoundary(\DateTimeImmutable $value): \DateTimeImmutable
+    {
+        $minutes = ((int) $value->format('H') * 60) + (int) $value->format('i');
+
+        if ($minutes < 360) {
+            return $value->setTime(6, 0);
+        }
+
+        if ($minutes > 1320) {
+            return $value->setTime(21, 45);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<int, array{customer: Customer, dogs: Dog[]}> $customers
+     *
+     * @return list<array{customer: Customer, dog: Dog}>
+     */
+    private function buildHotelDogEntries(array $customers): array
+    {
+        $entries = [];
+
+        foreach ($customers as $entry) {
+            foreach ($entry['dogs'] as $dog) {
+                $entries[] = [
+                    'customer' => $entry['customer'],
+                    'dog' => $dog,
+                ];
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param list<array{customer: Customer, dog: Dog}> $hotelDogEntries
+     *
+     * @return array{customer: Customer, dog: Dog}
+     */
+    private function shiftHotelDogEntry(array &$hotelDogEntries): array
+    {
+        $entry = array_shift($hotelDogEntries);
+        if ($entry === null) {
+            throw new \LogicException('Not enough dogs available for hotel demo fixtures.');
+        }
+
+        return $entry;
+    }
+
+    // -----------------------------------------------------------------------
     // Notifications (11 notifications, 3 pinned, using all trainers)
     // -----------------------------------------------------------------------
 
@@ -717,6 +1017,13 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             ['.', 'ae', 'oe', 'ue', 'ss'],
             $lower,
         ).'@example.com';
+    }
+
+    private static function defaultDogShoulderHeight(int $index): int
+    {
+        $heights = [34, 40, 46, 50, 54, 58, 62, 68];
+
+        return $heights[$index % count($heights)];
     }
 
     /** @return list<class-string<Fixture>> */

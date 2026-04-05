@@ -1,4 +1,4 @@
-import type { ContractState, ContractType, CourseLevel, CreditTransactionType, NotificationCourseRef } from '~/types';
+import type { ContractState, ContractType, CourseLevel, CreditTransactionType, HotelBookingState, NotificationCourseRef } from '~/types';
 
 const DAY_NAMES: readonly string[] = ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const DAY_NAMES_SHORT: readonly string[] = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -105,6 +105,24 @@ export const useHelpers = () => {
         return map[state] ?? 'gray';
     }
 
+    function hotelBookingStateLabel(state: HotelBookingState): string {
+        const map: Record<HotelBookingState, string> = {
+            REQUESTED: 'Angefragt',
+            CONFIRMED: 'Bestätigt',
+            DECLINED: 'Abgelehnt',
+        };
+        return map[state] ?? state;
+    }
+
+    function hotelBookingStateColor(state: HotelBookingState): string {
+        const map: Record<HotelBookingState, string> = {
+            REQUESTED: 'amber',
+            CONFIRMED: 'green',
+            DECLINED: 'red',
+        };
+        return map[state] ?? 'gray';
+    }
+
     function creditTypeLabel(type: CreditTransactionType): string {
         const map: Record<CreditTransactionType, string> = {
             WEEKLY_GRANT: 'Wöchentlich',
@@ -136,6 +154,20 @@ export const useHelpers = () => {
             return `${price} € / Monat`;
         }
         return `${price} €`;
+    }
+
+    function formatSquareMeters(value: number): string {
+        return `${value} m²`;
+    }
+
+    function toDateTimeLocalValue(value: string): string {
+        const date = new Date(value);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     }
 
     function formatNotificationCourse(course: Pick<NotificationCourseRef, 'typeName' | 'typeCode' | 'dayOfWeek' | 'startTime'> | null | undefined): string {
@@ -175,9 +207,12 @@ export const useHelpers = () => {
         formatDate, formatDateShort, formatDateTime,
         todayIso, addDaysToIso, toMonthStartIso, toMonthEndIso, isFirstOfMonth, isLastOfMonth, firstDayOfNextMonthIso, getIsoDayOfWeek,
         contractStateLabel, contractStateColor,
+        hotelBookingStateLabel, hotelBookingStateColor,
         creditTypeLabel, levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
+        formatSquareMeters,
+        toDateTimeLocalValue,
         formatCourseTitleWithLevel,
         formatNotificationCourse,
         formatNotificationCourses,

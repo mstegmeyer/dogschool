@@ -58,6 +58,10 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Contract::class, mappedBy: 'customer', cascade: ['persist', 'remove'])]
     private Collection $contracts;
 
+    /** @var Collection<int, HotelBooking> */
+    #[ORM\OneToMany(targetEntity: HotelBooking::class, mappedBy: 'customer', cascade: ['persist', 'remove'])]
+    private Collection $hotelBookings;
+
     /** @var Collection<int, Course> */
     #[ORM\ManyToMany(targetEntity: Course::class, inversedBy: 'subscribedCustomers')]
     #[ORM\JoinTable(name: 'customer_course_subscription')]
@@ -72,6 +76,7 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
         $this->bankAccount = new BankAccount();
         $this->dogs = new ArrayCollection();
         $this->contracts = new ArrayCollection();
+        $this->hotelBookings = new ArrayCollection();
         $this->subscribedCourses = new ArrayCollection();
     }
 
@@ -181,6 +186,12 @@ class Customer implements UserInterface, PasswordAuthenticatedUserInterface
     public function getContracts(): Collection
     {
         return $this->contracts;
+    }
+
+    /** @return Collection<int, HotelBooking> */
+    public function getHotelBookings(): Collection
+    {
+        return $this->hotelBookings;
     }
 
     /** @return Collection<int, Course> */

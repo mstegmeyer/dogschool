@@ -12,11 +12,14 @@ use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
+use App\Entity\HotelBooking;
 use App\Entity\Notification;
+use App\Entity\Room;
 use App\Entity\User;
 use App\Enum\ContractState;
 use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
+use App\Enum\HotelBookingState;
 use App\Repository\CourseTypeRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,10 +33,12 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  *     password: string,
  *     calendarFeedToken: string,
  *     dogIds: list<string>,
- *     dogNames: list<string>
+ *     dogNames: list<string>,
+ *     dogShoulderHeights: list<int>
  * }
  * @phpstan-type ManifestCourseType array{id: string, code: string, name: string}
  * @phpstan-type ManifestCourseDate array{current: string, next: string}
+ * @phpstan-type ManifestRoom array{id: string, name: string, squareMeters: int}
  */
 final class E2eSeedService
 {
@@ -47,6 +52,8 @@ final class E2eSeedService
     private int $creditSequence = 0;
     private int $bookingSequence = 0;
     private int $courseDateSequence = 0;
+    private int $hotelRoomSequence = 0;
+    private int $hotelBookingSequence = 0;
 
     private const PERSONAS = [
         'customer_empty' => [
@@ -58,94 +65,101 @@ final class E2eSeedService
             'name' => 'Single E2E',
             'email' => 'single.e2e@example.com',
             'dogs' => [
-                ['name' => 'Rex', 'race' => 'Golden Retriever', 'gender' => 'male', 'color' => 'Golden'],
+                ['name' => 'Rex', 'race' => 'Golden Retriever', 'gender' => 'male', 'color' => 'Golden', 'shoulderHeightCm' => 57],
             ],
         ],
         'customer_multi_dog' => [
             'name' => 'Multi E2E',
             'email' => 'multi.e2e@example.com',
             'dogs' => [
-                ['name' => 'Luna', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Schwarz'],
-                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle'],
+                ['name' => 'Luna', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Schwarz', 'shoulderHeightCm' => 54],
+                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle', 'shoulderHeightCm' => 56],
             ],
         ],
         'customer_dashboard' => [
             'name' => 'Dashboard E2E',
             'email' => 'dashboard.e2e@example.com',
             'dogs' => [
-                ['name' => 'Luna', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Schwarz'],
-                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle'],
+                ['name' => 'Luna', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Schwarz', 'shoulderHeightCm' => 48],
+                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle', 'shoulderHeightCm' => 55],
             ],
         ],
         'customer_calendar_multi' => [
             'name' => 'Calendar Multi E2E',
             'email' => 'calendar.multi.e2e@example.com',
             'dogs' => [
-                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle'],
-                ['name' => 'Nala', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Gelb'],
+                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle', 'shoulderHeightCm' => 56],
+                ['name' => 'Nala', 'race' => 'Labrador', 'gender' => 'female', 'color' => 'Gelb', 'shoulderHeightCm' => 51],
             ],
         ],
         'customer_calendar_booked' => [
             'name' => 'Calendar Booked E2E',
             'email' => 'calendar.booked.e2e@example.com',
             'dogs' => [
-                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle'],
+                ['name' => 'Balu', 'race' => 'Australian Shepherd', 'gender' => 'male', 'color' => 'Blue Merle', 'shoulderHeightCm' => 56],
             ],
         ],
         'customer_profile' => [
             'name' => 'Profile E2E',
             'email' => 'profile.e2e@example.com',
             'dogs' => [
-                ['name' => 'Milo', 'race' => 'Border Collie', 'gender' => 'male', 'color' => 'Schwarz-Weiss'],
+                ['name' => 'Milo', 'race' => 'Border Collie', 'gender' => 'male', 'color' => 'Schwarz-Weiss', 'shoulderHeightCm' => 50],
             ],
         ],
         'customer_contracts' => [
             'name' => 'Contracts E2E',
             'email' => 'contracts.e2e@example.com',
             'dogs' => [
-                ['name' => 'Kira', 'race' => 'Vizsla', 'gender' => 'female', 'color' => 'Braun'],
+                ['name' => 'Kira', 'race' => 'Vizsla', 'gender' => 'female', 'color' => 'Braun', 'shoulderHeightCm' => 55],
+            ],
+        ],
+        'customer_hotel_booking' => [
+            'name' => 'Hotel Booking E2E',
+            'email' => 'hotel.booking.e2e@example.com',
+            'dogs' => [
+                ['name' => 'Momo', 'race' => 'Labradoodle', 'gender' => 'female', 'color' => 'Apricot', 'shoulderHeightCm' => 58],
             ],
         ],
         'customer_contract_pending' => [
             'name' => 'Pending Contract E2E',
             'email' => 'pending.contract.e2e@example.com',
             'dogs' => [
-                ['name' => 'Maja', 'race' => 'Mischling', 'gender' => 'female', 'color' => 'Braun'],
+                ['name' => 'Maja', 'race' => 'Mischling', 'gender' => 'female', 'color' => 'Braun', 'shoulderHeightCm' => 46],
             ],
         ],
         'customer_contract_approve' => [
             'name' => 'Approve Contract E2E',
             'email' => 'approve.contract.e2e@example.com',
             'dogs' => [
-                ['name' => 'Apollo', 'race' => 'Weimaraner', 'gender' => 'male', 'color' => 'Silber'],
+                ['name' => 'Apollo', 'race' => 'Weimaraner', 'gender' => 'male', 'color' => 'Silber', 'shoulderHeightCm' => 63],
             ],
         ],
         'customer_contract_decline' => [
             'name' => 'Decline Contract E2E',
             'email' => 'decline.contract.e2e@example.com',
             'dogs' => [
-                ['name' => 'Nelly', 'race' => 'Beagle', 'gender' => 'female', 'color' => 'Tricolor'],
+                ['name' => 'Nelly', 'race' => 'Beagle', 'gender' => 'female', 'color' => 'Tricolor', 'shoulderHeightCm' => 38],
             ],
         ],
         'customer_contract_cancel' => [
             'name' => 'Cancel Contract E2E',
             'email' => 'cancel.contract.e2e@example.com',
             'dogs' => [
-                ['name' => 'Otis', 'race' => 'Boxer', 'gender' => 'male', 'color' => 'Rotbraun'],
+                ['name' => 'Otis', 'race' => 'Boxer', 'gender' => 'male', 'color' => 'Rotbraun', 'shoulderHeightCm' => 60],
             ],
         ],
         'customer_archive_booking' => [
             'name' => 'Archive Booking E2E',
             'email' => 'archive.booking.e2e@example.com',
             'dogs' => [
-                ['name' => 'Pepper', 'race' => 'Pudel', 'gender' => 'female', 'color' => 'Weiss'],
+                ['name' => 'Pepper', 'race' => 'Pudel', 'gender' => 'female', 'color' => 'Weiss', 'shoulderHeightCm' => 42],
             ],
         ],
         'customer_calendar_cancel' => [
             'name' => 'Calendar Cancel E2E',
             'email' => 'calendar.cancel.e2e@example.com',
             'dogs' => [
-                ['name' => 'Frieda', 'race' => 'Whippet', 'gender' => 'female', 'color' => 'Gestromt'],
+                ['name' => 'Frieda', 'race' => 'Whippet', 'gender' => 'female', 'color' => 'Gestromt', 'shoulderHeightCm' => 48],
             ],
         ],
     ];
@@ -180,6 +194,8 @@ final class E2eSeedService
             'courseDates' => [],
             'contracts' => [],
             'notifications' => [],
+            'hotelRooms' => [],
+            'hotelBookings' => [],
         ];
 
         $courseTypes = $this->indexCourseTypes();
@@ -205,6 +221,7 @@ final class E2eSeedService
         $contracts = $this->createContracts($customers, $manifest);
         $this->createCreditsAndBookings($customers, $courses, $courseDates, $contracts);
         $this->createNotifications($courses, $trainers, $manifest);
+        $this->createHotelData($customers, $manifest);
 
         $this->em->flush();
 
@@ -313,6 +330,7 @@ final class E2eSeedService
                     'race' => 'Mischling',
                     'gender' => $index % 2 === 0 ? 'female' : 'male',
                     'color' => $index % 2 === 0 ? 'Braun' : 'Schwarz',
+                    'shoulderHeightCm' => 40 + (($index % 7) * 4),
                 ]],
                 $manifestCustomers,
                 $key,
@@ -321,10 +339,10 @@ final class E2eSeedService
     }
 
     /**
-     * @param array<int, array{name: string, race: string, gender: string, color: string}> $dogDefinitions
-     * @param array<string, ManifestCustomer>                                              $manifestCustomers
-     * @param array{street: string, postalCode: string, city: string}|null                 $address
-     * @param array{iban: string, bic: string, accountHolder: string}|null                 $bank
+     * @param array<int, array{name: string, race: string, gender: string, color: string, shoulderHeightCm?: int}> $dogDefinitions
+     * @param array<string, ManifestCustomer>                                                                      $manifestCustomers
+     * @param array{street: string, postalCode: string, city: string}|null                                         $address
+     * @param array{iban: string, bic: string, accountHolder: string}|null                                         $bank
      *
      * @return array{customer: Customer, dogs: array<int, Dog>}
      */
@@ -363,6 +381,7 @@ final class E2eSeedService
             $dog->setRace($definition['race']);
             $dog->setGender($definition['gender']);
             $dog->setColor($definition['color']);
+            $dog->setShoulderHeightCm((int) ($definition['shoulderHeightCm'] ?? 48));
             $customer->addDog($dog);
             $this->em->persist($dog);
             $dogs[] = $dog;
@@ -379,6 +398,7 @@ final class E2eSeedService
             'calendarFeedToken' => $customer->getCalendarFeedToken(),
             'dogIds' => array_map(static fn (Dog $dog): string => $dog->getId(), $dogs),
             'dogNames' => array_map(static fn (Dog $dog): string => $dog->getName(), $dogs),
+            'dogShoulderHeights' => array_map(static fn (Dog $dog): int => $dog->getShoulderHeightCm(), $dogs),
         ];
 
         return ['customer' => $customer, 'dogs' => $dogs];
@@ -787,6 +807,100 @@ final class E2eSeedService
             'edit' => $editNotification->getId(),
             'delete' => $deleteNotification->getId(),
         ];
+    }
+
+    /**
+     * @param array<string, array{customer: Customer, dogs: array<int, Dog>}> $customers
+     * @param array<string, mixed>                                            $manifest
+     */
+    private function createHotelData(array $customers, array &$manifest): void
+    {
+        /** @var array<string, ManifestRoom> $manifestRooms */
+        $manifestRooms = &$manifest['hotelRooms'];
+        /** @var array<string, string> $manifestHotelBookings */
+        $manifestHotelBookings = &$manifest['hotelBookings'];
+
+        $rooms = [];
+        foreach ([
+            'small' => ['name' => 'Waldzimmer', 'squareMeters' => 10],
+            'medium' => ['name' => 'Gartenzimmer', 'squareMeters' => 14],
+            'large' => ['name' => 'Panoramazimmer', 'squareMeters' => 18],
+        ] as $key => $definition) {
+            $room = new Room();
+            $room->setName($definition['name']);
+            $room->setSquareMeters($definition['squareMeters']);
+            $this->em->persist($room);
+            $this->stampCreatedAt($room, $this->sequenceTime($this->hotelRoomSequence, -6));
+            $rooms[$key] = $room;
+            $manifestRooms[$key] = [
+                'id' => $room->getId(),
+                'name' => $room->getName(),
+                'squareMeters' => $room->getSquareMeters(),
+            ];
+        }
+
+        foreach ([
+            'request_review' => [
+                'customerKey' => 'customer_contracts',
+                'dogIndex' => 0,
+                'roomKey' => null,
+                'state' => HotelBookingState::REQUESTED,
+                'startAt' => '2026-04-08T09:00:00+02:00',
+                'endAt' => '2026-04-09T10:00:00+02:00',
+            ],
+            'declined' => [
+                'customerKey' => 'customer_contract_decline',
+                'dogIndex' => 0,
+                'roomKey' => null,
+                'state' => HotelBookingState::DECLINED,
+                'startAt' => '2026-04-09T08:00:00+02:00',
+                'endAt' => '2026-04-09T18:00:00+02:00',
+            ],
+            'small_future' => [
+                'customerKey' => 'customer_contract_approve',
+                'dogIndex' => 0,
+                'roomKey' => 'small',
+                'state' => HotelBookingState::CONFIRMED,
+                'startAt' => '2026-04-07T08:00:00+02:00',
+                'endAt' => '2026-04-07T18:00:00+02:00',
+            ],
+            'medium_first' => [
+                'customerKey' => 'customer_multi_dog',
+                'dogIndex' => 0,
+                'roomKey' => 'medium',
+                'state' => HotelBookingState::CONFIRMED,
+                'startAt' => '2026-04-06T10:00:00+02:00',
+                'endAt' => '2026-04-06T18:00:00+02:00',
+            ],
+            'medium_second' => [
+                'customerKey' => 'customer_dashboard',
+                'dogIndex' => 0,
+                'roomKey' => 'medium',
+                'state' => HotelBookingState::CONFIRMED,
+                'startAt' => '2026-04-06T12:00:00+02:00',
+                'endAt' => '2026-04-06T20:00:00+02:00',
+            ],
+            'large_stay' => [
+                'customerKey' => 'customer_profile',
+                'dogIndex' => 0,
+                'roomKey' => 'large',
+                'state' => HotelBookingState::CONFIRMED,
+                'startAt' => '2026-04-06T11:00:00+02:00',
+                'endAt' => '2026-04-07T07:00:00+02:00',
+            ],
+        ] as $key => $definition) {
+            $entry = $customers[$definition['customerKey']];
+            $booking = new HotelBooking();
+            $booking->setCustomer($entry['customer']);
+            $booking->setDog($entry['dogs'][$definition['dogIndex']]);
+            $booking->setRoom($definition['roomKey'] !== null ? $rooms[$definition['roomKey']] : null);
+            $booking->setState($definition['state']);
+            $booking->setStartAt(new \DateTimeImmutable($definition['startAt']));
+            $booking->setEndAt(new \DateTimeImmutable($definition['endAt']));
+            $this->em->persist($booking);
+            $this->stampCreatedAt($booking, $this->sequenceTime($this->hotelBookingSequence, -8));
+            $manifestHotelBookings[$key] = $booking->getId();
+        }
     }
 
     private function sequenceTime(int &$sequence, int $stepMinutes = -1): \DateTimeImmutable

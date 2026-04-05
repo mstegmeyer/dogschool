@@ -33,12 +33,14 @@ final class DogTest extends TestCase
             ->setColor('Brown')
             ->setGender('male')
             ->setRace('Border Collie')
+            ->setShoulderHeightCm(54)
             ->setCustomer($customer);
 
         self::assertSame('Rex', $dog->getName());
         self::assertSame('Brown', $dog->getColor());
         self::assertSame('male', $dog->getGender());
         self::assertSame('Border Collie', $dog->getRace());
+        self::assertSame(54, $dog->getShoulderHeightCm());
         self::assertSame($customer, $dog->getCustomer());
 
         $dog->setCustomer(null);

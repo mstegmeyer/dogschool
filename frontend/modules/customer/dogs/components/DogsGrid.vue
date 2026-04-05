@@ -34,6 +34,9 @@
                 <p class='mt-0.5 text-sm text-slate-500'>
                     {{ dog.race || 'Rasse unbekannt' }}
                 </p>
+                <p class='mt-1 text-sm text-slate-500'>
+                    Schulterhöhe: {{ dog.shoulderHeightCm }} cm
+                </p>
                 <div class='mt-2 flex gap-2'>
                     <UBadge
                         v-if='dog.gender'

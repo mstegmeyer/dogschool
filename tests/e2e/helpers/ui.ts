@@ -17,14 +17,29 @@ async function clickFirstVisible(candidates: Locator[]): Promise<void> {
 export async function selectMenuOption(page: Page, trigger: Locator, optionLabel: string): Promise<void> {
     await trigger.click();
 
-    await clickFirstVisible([
+    const candidates = [
         page.getByRole('option', { name: optionLabel, exact: true }),
         page.getByRole('button', { name: optionLabel, exact: true }),
         page.locator('[role="option"]').filter({ hasText: optionLabel }),
         page.locator('li').filter({ hasText: optionLabel }),
         page.locator('div[role="menuitem"]').filter({ hasText: optionLabel }),
         page.locator('span').filter({ hasText: optionLabel }),
-    ]);
+    ];
+
+    await expect.poll(async () => {
+        for (const [index, candidate] of candidates.entries()) {
+            const visible = await candidate.first().isVisible().catch(() => false);
+            if (visible) {
+                return index;
+            }
+        }
+
+        return -1;
+    }, {
+        timeout: 5_000,
+    }).not.toBe(-1);
+
+    await clickFirstVisible(candidates);
 }
 
 export async function chooseDropdownAction(page: Page, trigger: Locator, actionLabel: string): Promise<void> {

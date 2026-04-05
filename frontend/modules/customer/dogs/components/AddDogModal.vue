@@ -32,6 +32,16 @@
                     <UInput v-model='form.color' placeholder='z.B. Golden' />
                 </UFormGroup>
             </div>
+            <UFormGroup label='Schulterhöhe / Widerristhöhe (cm)' :error='fieldErrors.shoulderHeightCm'>
+                <UInput
+                    v-model.number='form.shoulderHeightCm'
+                    data-testid='add-dog-height'
+                    type='number'
+                    min='1'
+                    placeholder='z.B. 48'
+                    @update:model-value="emit('clear-field-error', 'shoulderHeightCm')"
+                />
+            </UFormGroup>
             <UAlert
                 v-if='formError'
                 color='red'
@@ -51,7 +61,7 @@
 <script setup lang="ts">
 defineProps<{
     modelValue: boolean,
-    form: { name: string; race: string; gender: string; color: string },
+    form: { name: string; race: string; gender: string; color: string; shoulderHeightCm: number },
     fieldErrors: Record<string, string>,
     formError: string,
     saving: boolean,

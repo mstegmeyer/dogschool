@@ -18,6 +18,9 @@ final class DogCreateDto
         public ?string $gender = null,
         #[Assert\Length(max: 100)]
         public ?string $race = null,
+        #[Assert\Positive]
+        #[Assert\LessThanOrEqual(200)]
+        public int $shoulderHeightCm = 0,
     ) {
     }
 }

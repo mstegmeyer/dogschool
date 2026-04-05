@@ -18,10 +18,10 @@ function extractTotalCount(summary: string, singularLabel: string, pluralLabel: 
 test('creates, edits, and deletes course types', async ({
     page,
     loginAsAdmin,
-    manifest,
 }) => {
     const createdSuffix = Date.now().toString().slice(-6);
     const createdName = `Playwright Kursart ${createdSuffix}`;
+    const updatedName = `${createdName} Editiert`;
 
     await loginAsAdmin();
     await page.goto('/admin/course-types');
@@ -42,14 +42,14 @@ test('creates, edits, and deletes course types', async ({
 
     await expect(visibleByTestId(page, `course-type-row-${createdCourseType.id}`)).toContainText(createdName);
 
-    await page.getByTestId(`edit-course-type-${manifest.courseTypes.course_type_edit.id}`).click();
-    await page.getByLabel('Name').fill('E2E Editiert');
+    await page.getByTestId(`edit-course-type-${createdCourseType.id}`).click();
+    await page.getByLabel('Name').fill(updatedName);
     await page.getByRole('button', { name: 'Speichern' }).click();
-    await expect(visibleByTestId(page, `course-type-row-${manifest.courseTypes.course_type_edit.id}`)).toContainText('E2E Editiert');
+    await expect(visibleByTestId(page, `course-type-row-${createdCourseType.id}`)).toContainText(updatedName);
 
-    await page.getByTestId(`delete-course-type-${manifest.courseTypes.course_type_delete.id}`).click();
-    await expect(page.getByTestId(`delete-course-type-${manifest.courseTypes.course_type_delete.id}`)).toHaveCount(0);
-    await expect(page.getByTestId(`delete-course-type-mobile-${manifest.courseTypes.course_type_delete.id}`)).toHaveCount(0);
+    await page.getByTestId(`delete-course-type-${createdCourseType.id}`).click();
+    await expect(page.getByTestId(`delete-course-type-${createdCourseType.id}`)).toHaveCount(0);
+    await expect(page.getByTestId(`delete-course-type-mobile-${createdCourseType.id}`)).toHaveCount(0);
 });
 
 test('filters, paginates, creates, edits, archives, and unarchives courses', async ({

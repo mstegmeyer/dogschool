@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 
 const postMock = vi.fn();
 const registerMock = vi.fn();
@@ -25,6 +26,7 @@ describe('usePushNotifications', () => {
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
+        setActivePinia(createPinia());
 
         vi.stubGlobal('useApi', () => ({
             post: postMock,

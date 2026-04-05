@@ -21,7 +21,7 @@ Routes live in `frontend/modules/`, NOT `pages/`. Each route is an `index.vue`. 
 
 ## State
 
-Use `useState` in composables (e.g. `useAuth`, `useApi`). No Pinia.
+Pinia.
 
 ## Shared components
 

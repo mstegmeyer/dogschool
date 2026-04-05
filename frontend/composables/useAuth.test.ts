@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ref, computed as vueComputed, type Ref } from 'vue';
+import { createPinia, setActivePinia } from 'pinia';
 
 const fetchMock = vi.fn();
 const navigateToMock = vi.fn();
@@ -18,16 +18,7 @@ const mockLocalStorage = {
     },
 };
 
-const stateStore: Record<string, Ref> = {};
-
 vi.stubGlobal('localStorage', mockLocalStorage);
-vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
-    if (!stateStore[key]) {
-        stateStore[key] = ref(init?.() ?? null);
-    }
-    return stateStore[key];
-});
-vi.stubGlobal('computed', vueComputed);
 vi.stubGlobal('navigateTo', navigateToMock);
 vi.stubGlobal('$fetch', fetchMock);
 
@@ -39,9 +30,7 @@ describe('useAuth', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockLocalStorage.clear();
-        Object.keys(stateStore).forEach(k => {
-            stateStore[k].value = null;
-        });
+        setActivePinia(createPinia());
     });
 
     it('starts unauthenticated', () => {

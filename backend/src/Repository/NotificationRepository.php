@@ -105,13 +105,12 @@ class NotificationRepository extends ServiceEntityRepository
      */
     public function findRecent(int $limit = 100): array
     {
-        /** @var list<Notification> $result */
-        $result = $this->createRecentAdminListQueryBuilder()
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $ids = $this->findAdminListIds(1, $limit);
+        if ($ids === []) {
+            return [];
+        }
 
-        return $result;
+        return $this->findAdminListByIds($ids);
     }
 
     /**
@@ -119,14 +118,12 @@ class NotificationRepository extends ServiceEntityRepository
      */
     public function findPageForAdminList(int $page, int $limit): array
     {
-        /** @var list<Notification> $notifications */
-        $notifications = $this->createRecentAdminListQueryBuilder()
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $ids = $this->findAdminListIds($page, $limit);
+        if ($ids === []) {
+            return [];
+        }
 
-        return $notifications;
+        return $this->findAdminListByIds($ids);
     }
 
     public function countForAdminList(): int
@@ -162,6 +159,55 @@ class NotificationRepository extends ServiceEntityRepository
             ->addSelect('ct')
             ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
             ->orderBy('pinSort', 'DESC')
-            ->addOrderBy('n.createdAt', 'DESC');
+            ->addOrderBy('n.createdAt', 'DESC')
+            ->addOrderBy('n.id', 'DESC');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function findAdminListIds(int $page, int $limit): array
+    {
+        /** @var list<array{id: string}> $rows */
+        $rows = $this->createQueryBuilder('n')
+            ->select('n.id')
+            ->addSelect('CASE WHEN n.pinnedUntil IS NOT NULL AND n.pinnedUntil > CURRENT_TIMESTAMP() THEN 1 ELSE 0 END AS HIDDEN pinSort')
+            ->orderBy('pinSort', 'DESC')
+            ->addOrderBy('n.createdAt', 'DESC')
+            ->addOrderBy('n.id', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getScalarResult();
+
+        $ids = [];
+        foreach ($rows as $row) {
+            $ids[] = $row['id'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return list<Notification>
+     */
+    private function findAdminListByIds(array $ids): array
+    {
+        /** @var list<Notification> $notifications */
+        $notifications = $this->createRecentAdminListQueryBuilder()
+            ->andWhere('n.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+
+        $positions = array_flip($ids);
+        usort(
+            $notifications,
+            static fn (Notification $left, Notification $right): int => $positions[$left->getId()] <=> $positions[$right->getId()],
+        );
+
+        return $notifications;
     }
 }

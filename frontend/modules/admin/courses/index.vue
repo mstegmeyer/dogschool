@@ -67,6 +67,7 @@
         :editing-course='editingCourse !== null'
         :form='form'
         :day-options='dayOptions'
+        :course-type-options='courseTypeOptions'
         :trainer-options='trainerOptions'
         :show-schedule-hint='showScheduleHint'
         :schedule-hint-text='scheduleHintText'
@@ -95,7 +96,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 import type { FetchError } from 'ofetch';
-import type { ApiListResponse, Course, TrainerInfo } from '~/types';
+import type { ApiListResponse, Course, CourseType, TrainerInfo } from '~/types';
 import AdminCourseArchiveModal from './components/ArchiveModal.vue';
 import AdminCourseFormModal from './components/FormModal.vue';
 import AdminCourseListMobile from './components/ListMobile.vue';
@@ -108,6 +109,7 @@ const { todayIso, formatDate } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError } = useFormFeedback();
 
 const courses = ref<Course[]>([]);
+const courseTypes = ref<CourseType[]>([]);
 const trainers = ref<TrainerInfo[]>([]);
 const loading = ref(true);
 const showModal = ref(false);
@@ -143,6 +145,10 @@ const dayOptions = [
 ];
 
 const archiveMinDate = computed(() => todayIso());
+const courseTypeOptions = computed(() => courseTypes.value.map(courseType => ({
+    label: `${courseType.name} (${courseType.code})`,
+    value: courseType.code,
+})));
 const trainerOptions = computed(() => [
     { label: 'Keine Zuordnung', value: '' },
     ...trainers.value.map(trainer => ({
@@ -290,7 +296,7 @@ function resolveArchiveError(cause: unknown): string {
 async function saveCourse(): Promise<void> {
     clearFormErrors();
     if (!form.typeCode.trim()) {
-        setFieldError('typeCode', 'Bitte einen Kurstyp angeben.');
+        setFieldError('typeCode', 'Bitte einen Kurstyp wählen.');
     }
     if (!form.dayOfWeek) {
         setFieldError('dayOfWeek', 'Bitte einen Wochentag wählen.');
@@ -337,6 +343,11 @@ async function saveCourse(): Promise<void> {
 async function loadTrainers(): Promise<void> {
     const response = await api.get<ApiListResponse<TrainerInfo>>('/api/admin/trainers');
     trainers.value = response.items;
+}
+
+async function loadCourseTypes(): Promise<void> {
+    const response = await api.get<ApiListResponse<CourseType>>('/api/admin/course-types');
+    courseTypes.value = response.items;
 }
 
 async function toggleArchive(course: Course): Promise<void> {
@@ -442,6 +453,7 @@ watch(sort, () => {
 onMounted(() => {
     void Promise.all([
         loadCourses(),
+        loadCourseTypes(),
         loadTrainers(),
     ]);
 });

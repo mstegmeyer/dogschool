@@ -296,6 +296,7 @@ final class ApiNormalizerTest extends TestCase
         $course->setStartTime('18:00');
         $course->setEndTime('19:00');
         $course->setCourseType($courseType);
+        $course->setComment('Nachholstunde');
         $course->setTrainer($courseTrainer);
 
         $cd = new CourseDate();
@@ -323,6 +324,7 @@ final class ApiNormalizerTest extends TestCase
         self::assertCount(1, $data['bookings']);
         self::assertSame('Bella', $data['bookings'][0]['dogName']);
         self::assertSame('Anna', $data['bookings'][0]['customerName']);
+        self::assertSame('Nachholstunde', $data['comment']);
         self::assertSame('Caro', $data['trainer']['fullName']);
         self::assertSame('Manuela', $data['courseTrainer']['fullName']);
         self::assertTrue($data['trainerOverridden']);
@@ -339,7 +341,8 @@ final class ApiNormalizerTest extends TestCase
             ->setDayOfWeek(6)
             ->setStartTime('09:00')
             ->setEndTime('10:00')
-            ->setCourseType($courseType);
+            ->setCourseType($courseType)
+            ->setComment('Nachholstunde');
 
         $courseDate = (new CourseDate())
             ->setCourse($course)
@@ -384,6 +387,7 @@ final class ApiNormalizerTest extends TestCase
         self::assertCount(1, $data['bookings']);
         self::assertSame($myBooking->getId(), $data['bookings'][0]['id']);
         self::assertSame('Bella', $data['bookings'][0]['dogName']);
+        self::assertSame('Nachholstunde', $data['comment']);
     }
 
     #[Test]

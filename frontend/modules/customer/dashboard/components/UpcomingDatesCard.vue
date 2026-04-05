@@ -37,6 +37,9 @@
                     <p class='text-xs text-slate-400'>
                         {{ dayName(courseDate.dayOfWeek) }}, {{ formatDate(courseDate.date) }} · {{ courseDate.startTime }} – {{ courseDate.endTime }}
                     </p>
+                    <p v-if='courseDate.comment' class='mt-1 text-xs font-medium text-amber-700'>
+                        {{ courseDate.comment }}
+                    </p>
                 </div>
                 <div v-if='courseDate.cancelled' class='shrink-0'>
                     <UBadge color='red' variant='soft' size='xs'>

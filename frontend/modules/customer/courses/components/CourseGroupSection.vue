@@ -34,7 +34,11 @@
                     <p class='font-medium leading-tight text-slate-800'>
                         {{ course.type?.name || 'Kurs' }}
                     </p>
-                    <p v-if='course.comment' class='mt-1 text-xs text-slate-500'>
+                    <p
+                        v-if='course.comment'
+                        class='mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900'
+                        :title='course.comment'
+                    >
                         {{ course.comment }}
                     </p>
                 </div>
@@ -118,7 +122,11 @@
                                 {{ course.type.code }}
                             </UBadge>
                         </div>
-                        <p v-if='course.comment' class='mt-0.5 max-w-[280px] truncate text-xs text-slate-400' :title='course.comment'>
+                        <p
+                            v-if='course.comment'
+                            class='mt-1 inline-flex max-w-full rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900'
+                            :title='course.comment'
+                        >
                             {{ course.comment }}
                         </p>
                     </td>

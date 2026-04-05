@@ -191,6 +191,7 @@ export interface CourseDate {
     courseId: string,
     courseType: CourseTypeInfo | null,
     level: CourseLevel | null,
+    comment: string | null,
     date: string,
     dayOfWeek: DayOfWeek,
     startTime: string,

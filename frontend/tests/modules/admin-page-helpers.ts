@@ -305,6 +305,7 @@ export const todayCourseDate = {
     courseId: 'course-1',
     courseType: { code: 'AGI', name: 'Agility', recurrenceKind: 'RECURRING' },
     level: 1,
+    comment: null,
     date: '2026-04-04',
     dayOfWeek: 6,
     startTime: '09:00',
@@ -442,7 +443,7 @@ export async function mountCoursesPage() {
                 AdminCourseListMobile: namedStub('AdminCourseListMobile', ['courses'], ['edit', 'toggle-archive']),
                 AdminCourseFormModal: namedStub(
                     'AdminCourseFormModal',
-                    ['modelValue', 'editingCourse', 'form', 'dayOptions', 'trainerOptions', 'showScheduleHint', 'scheduleHintText', 'formError', 'fieldErrors', 'saving'],
+                    ['modelValue', 'editingCourse', 'form', 'dayOptions', 'courseTypeOptions', 'trainerOptions', 'showScheduleHint', 'scheduleHintText', 'formError', 'fieldErrors', 'saving'],
                     ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
                 ),
                 AdminCourseArchiveModal: namedStub(

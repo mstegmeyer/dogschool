@@ -21,6 +21,14 @@
             <div class='rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600'>
                 <p>Trainer: {{ courseDate.trainer?.fullName || 'Wird noch zugewiesen' }}</p>
             </div>
+            <div v-if='courseDate.comment' class='rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'>
+                <p class='text-xs font-semibold uppercase tracking-wide text-amber-700'>
+                    Hinweis
+                </p>
+                <p class='mt-1'>
+                    {{ courseDate.comment }}
+                </p>
+            </div>
 
             <div v-if='dogs.length === 0' class='rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'>
                 Für die Buchung ist zuerst ein Hund erforderlich.

@@ -7,6 +7,7 @@ import {
     course,
     installAdminGlobals,
     mountCoursesPage,
+    recurrenceCourseType,
     trainer,
 } from '~/tests/modules/admin-page-helpers';
 import { flushPromises } from '~/tests/nuxt/page-test-utils';
@@ -28,6 +29,10 @@ describe('admin courses page', () => {
                 return Promise.resolve({ items: [trainer] });
             }
 
+            if (url === '/api/admin/course-types') {
+                return Promise.resolve({ items: [recurrenceCourseType] });
+            }
+
             return Promise.reject(new Error(`Unhandled GET ${url}`));
         });
     });
@@ -41,6 +46,9 @@ describe('admin courses page', () => {
         expect(modal.props('trainerOptions')).toEqual([
             { label: 'Keine Zuordnung', value: '' },
             { label: 'Lea', value: 'trainer-1' },
+        ]);
+        expect(modal.props('courseTypeOptions')).toEqual([
+            { label: 'Agility (AGI)', value: 'AGI' },
         ]);
 
         await wrapper.get('button').trigger('click');

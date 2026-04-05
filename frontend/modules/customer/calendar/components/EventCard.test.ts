@@ -15,7 +15,10 @@ describe('CustomerCalendarEventCard', () => {
     it('renders booked customer calendar cards and emits cancellation', async () => {
         const wrapper = mountComponent(CustomerCalendarEventCard, {
             props: {
-                courseDate: baseBookedCourseDate,
+                courseDate: {
+                    ...baseBookedCourseDate,
+                    comment: 'Nachholstunde',
+                },
                 condensed: false,
                 dogs: [baseDog],
             },
@@ -25,6 +28,7 @@ describe('CustomerCalendarEventCard', () => {
 
         expect(wrapper.text()).toContain('Gebucht');
         expect(wrapper.text()).toContain('Luna');
+        expect(wrapper.text()).toContain('Nachholstunde');
         expect(wrapper.emitted('cancel-booking')).toHaveLength(1);
     });
 });

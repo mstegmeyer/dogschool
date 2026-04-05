@@ -205,6 +205,7 @@ final class ApiNormalizer
                 ]
                 : null,
             'level' => $course?->getLevel(),
+            'comment' => $course?->getComment(),
             'date' => $cd->getDate()->format('Y-m-d'),
             'dayOfWeek' => (int) $cd->getDate()->format('N'),
             'startTime' => $cd->getStartTime(),

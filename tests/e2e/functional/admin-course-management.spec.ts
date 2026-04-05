@@ -70,7 +70,7 @@ test('filters, paginates, creates, edits, archives, and unarchives courses', asy
 
     await page.getByRole('button', { name: 'Neuer Kurs' }).click();
     await expect(page.getByTestId('course-form-modal')).toBeVisible();
-    await page.getByTestId('course-form-type-code').fill('E2EEDIT');
+    await selectMenuOption(page, page.getByTestId('course-form-type-code'), 'E2E Editierbar (E2EEDIT)');
     await selectMenuOption(page, page.getByTestId('course-form-day-of-week'), 'Samstag');
     await page.getByTestId('course-form-level').fill('3');
     await page.getByTestId('course-form-start-time').fill('08:00');

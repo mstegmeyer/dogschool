@@ -24,9 +24,14 @@
                             {{ course.type.code }}
                         </UBadge>
                     </div>
-                    <p v-if='course?.comment' class='mt-2 text-sm text-slate-500'>
-                        {{ course.comment }}
-                    </p>
+                    <div v-if='course?.comment' class='mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900'>
+                        <p class='text-xs font-semibold uppercase tracking-wide text-amber-700'>
+                            Hinweis
+                        </p>
+                        <p class='mt-1'>
+                            {{ course.comment }}
+                        </p>
+                    </div>
                 </div>
                 <UButton
                     icon='i-heroicons-x-mark'

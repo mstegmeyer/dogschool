@@ -18,7 +18,10 @@ describe('UpcomingDatesCard', () => {
             props: {
                 loading: false,
                 upcomingDates: [
-                    baseBookedCourseDate,
+                    {
+                        ...baseBookedCourseDate,
+                        comment: 'Nachholstunde',
+                    },
                     makeCourseDate({ id: 'course-date-open', booked: false, subscribed: true, bookingWindowClosed: false }),
                 ],
                 dogs: [baseDog],
@@ -31,6 +34,7 @@ describe('UpcomingDatesCard', () => {
         await wrapper.get('[data-testid="dashboard-book-course-date-open"]').trigger('click');
 
         expect(wrapper.text()).toContain('Gebucht für Luna');
+        expect(wrapper.text()).toContain('Nachholstunde');
         expect(wrapper.emitted('book')).toHaveLength(1);
     });
 });

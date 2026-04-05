@@ -130,6 +130,7 @@ export const courseDate = {
     courseId: 'course-1',
     courseType: { code: 'AGI', name: 'Agility', recurrenceKind: 'RECURRING' },
     level: 1,
+    comment: null,
     date: '2026-04-04',
     dayOfWeek: 6,
     startTime: '09:00',

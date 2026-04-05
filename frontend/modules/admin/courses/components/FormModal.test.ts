@@ -19,6 +19,7 @@ describe('AdminCourseFormModal', () => {
                 editingCourse: true,
                 form: { ...courseForm },
                 dayOptions: [{ label: 'Dienstag', value: 2 }],
+                courseTypeOptions: [{ label: 'Agility (AGI)', value: 'AGI' }],
                 trainerOptions: [{ label: 'Lea', value: baseTrainer.id }],
                 showScheduleHint: true,
                 scheduleHintText: 'Terminserie wird angepasst.',

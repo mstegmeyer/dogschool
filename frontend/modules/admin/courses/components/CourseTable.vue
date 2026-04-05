@@ -17,6 +17,9 @@
                 >
                     {{ row.type?.code }}
                 </UBadge>
+                <p v-if='row.comment' class='mt-1 max-w-[18rem] text-xs text-slate-500' :title='row.comment'>
+                    {{ row.comment }}
+                </p>
             </div>
         </template>
         <template #dayOfWeek-data='{ row }'>

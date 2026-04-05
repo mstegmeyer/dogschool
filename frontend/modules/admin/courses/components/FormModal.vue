@@ -7,12 +7,13 @@
             </h3>
         </template>
         <form class='space-y-4' @submit.prevent="emit('submit')">
-            <UFormGroup label='Kurstyp (Code)' :error='fieldErrors.typeCode'>
-                <UInput
+            <UFormGroup label='Kurstyp' :error='fieldErrors.typeCode'>
+                <USelectMenu
                     v-model='form.typeCode'
                     data-testid='course-form-type-code'
-                    placeholder='z.B. MH, JUHU, AGI'
-                    required
+                    :options='courseTypeOptions'
+                    value-attribute='value'
+                    placeholder='Kurstyp auswählen'
                     @update:model-value="emit('clear-field-error', 'typeCode')"
                 />
             </UFormGroup>
@@ -110,6 +111,7 @@ defineProps<{
     editingCourse: boolean,
     form: CourseFormState,
     dayOptions: Array<{ label: string; value: number }>,
+    courseTypeOptions: Array<{ label: string; value: string }>,
     trainerOptions: Array<{ label: string; value: string }>,
     showScheduleHint: boolean,
     scheduleHintText: string,

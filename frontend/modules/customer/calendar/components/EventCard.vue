@@ -44,6 +44,14 @@
             Trainer: {{ courseDate.trainer?.fullName || 'Wird noch zugewiesen' }}
         </p>
     </template>
+    <p
+        v-if='courseDate.comment'
+        class='rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-medium leading-4 text-amber-900'
+        :class="condensed ? 'truncate' : ''"
+        :title='courseDate.comment'
+    >
+        {{ courseDate.comment }}
+    </p>
 
     <div v-if='courseDate.cancelled && !condensed' class='mt-auto text-[11px] font-medium text-red-600'>
         Dieser Termin findet nicht statt.

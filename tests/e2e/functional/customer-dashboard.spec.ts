@@ -16,6 +16,7 @@ test('renders dashboard stats, opens notification details, and quick-books a sub
     await expect(page.getByText('Guthaben (Credits)')).toBeVisible();
     await expect(page.getByText('Abonnierte Kurse')).toBeVisible();
     await expect(page.getByText('Registrierte Hunde')).toBeVisible();
+    await expect(page.getByText('Dashboard quick booking').first()).toBeVisible();
 
     await page.getByTestId(`dashboard-notification-${manifest.notifications.pinnedGlobal}`).click();
     const notificationModal = page.getByTestId('dashboard-notification-modal');

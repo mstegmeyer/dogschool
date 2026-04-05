@@ -16,6 +16,7 @@ test('keeps the single-dog booking action inside the weekly card bounds', async 
     const trigger = calendarPage.bookingTrigger(courseDateId);
 
     await expect(card).toBeVisible();
+    await expect(card).toContainText('Single booking flow');
     await expect(trigger).toBeVisible();
     await expect(trigger).toHaveText('Buchen');
 
@@ -41,6 +42,7 @@ test('books a multi-dog course through the modal flow', async ({
     await calendarPage.goto();
     await calendarPage.openBooking(courseDateId);
 
+    await expect(page.getByTestId('booking-modal')).toContainText('Multi booking flow');
     await page.getByTestId('booking-dog-select').selectOption({ label: 'Balu' });
     await page.getByTestId('confirm-booking').click();
 

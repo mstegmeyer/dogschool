@@ -16,7 +16,7 @@ describe('CustomerCalendarBookingModal', () => {
         const wrapper = mountComponent(CustomerCalendarBookingModal, {
             props: {
                 modelValue: true,
-                courseDate: makeCourseDate(),
+                courseDate: makeCourseDate({ comment: 'Nachholstunde' }),
                 dogs: [baseDog, { ...baseDog, id: 'dog-2', name: 'Milo' }],
                 bookingDogId: '',
                 selectedDogId: 'dog-2',
@@ -28,6 +28,7 @@ describe('CustomerCalendarBookingModal', () => {
         await wrapper.get('[data-testid="confirm-booking"]').trigger('click');
 
         expect(wrapper.text()).toContain('Buchung');
+        expect(wrapper.text()).toContain('Nachholstunde');
         expect(wrapper.emitted('update:bookingDogId')?.[0]).toEqual(['dog-2']);
         expect(wrapper.emitted('confirm')).toHaveLength(1);
     });

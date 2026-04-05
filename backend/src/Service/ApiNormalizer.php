@@ -12,10 +12,13 @@ use App\Entity\CourseType;
 use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
+use App\Entity\HotelBooking;
 use App\Entity\Notification;
 use App\Entity\PushDevice;
+use App\Entity\Room;
 use App\Entity\User;
 use App\Enum\ContractType;
+use App\Support\LocalDateTime;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 final class ApiNormalizer
@@ -51,6 +54,7 @@ final class ApiNormalizer
             'color' => $dog->getColor(),
             'gender' => $dog->getGender(),
             'race' => $dog->getRace(),
+            'shoulderHeightCm' => $dog->getShoulderHeightCm(),
         ];
     }
 
@@ -295,6 +299,36 @@ final class ApiNormalizer
             'active' => $booking->isActive(),
             'createdAt' => $booking->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'cancelledAt' => $booking->getCancelledAt()?->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function normalizeRoom(Room $room): array
+    {
+        return [
+            'id' => $room->getId(),
+            'name' => $room->getName(),
+            'squareMeters' => $room->getSquareMeters(),
+            'createdAt' => $room->getCreatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function normalizeHotelBooking(HotelBooking $booking): array
+    {
+        return [
+            'id' => $booking->getId(),
+            'customerId' => $booking->getCustomer()?->getId(),
+            'customerName' => $booking->getCustomer()?->getName(),
+            'dogId' => $booking->getDog()?->getId(),
+            'dogName' => $booking->getDog()?->getName(),
+            'dogShoulderHeightCm' => $booking->getDog()?->getShoulderHeightCm(),
+            'roomId' => $booking->getRoom()?->getId(),
+            'roomName' => $booking->getRoom()?->getName(),
+            'startAt' => LocalDateTime::formatWallTime($booking->getStartAt()),
+            'endAt' => LocalDateTime::formatWallTime($booking->getEndAt()),
+            'state' => $booking->getState()->value,
+            'createdAt' => $booking->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }
 

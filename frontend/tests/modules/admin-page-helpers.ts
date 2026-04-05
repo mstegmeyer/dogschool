@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { vi } from 'vitest';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
 import { flushPromises, installNuxtGlobals, namedStub } from '../nuxt/page-test-utils';
 
@@ -57,6 +58,83 @@ export const notification = {
     pinnedUntil: '2026-04-10T23:59:59',
     isPinned: true,
     createdAt: '2026-04-01T10:00:00+02:00',
+};
+
+export const room = {
+    id: 'room-1',
+    name: 'Waldzimmer',
+    squareMeters: 14,
+    createdAt: '2026-04-01T10:00:00+02:00',
+};
+
+export const hotelBooking = {
+    id: 'hotel-booking-1',
+    customerId: 'customer-1',
+    customerName: 'Max',
+    dogId: 'dog-1',
+    dogName: 'Rex',
+    dogShoulderHeightCm: 62,
+    roomId: null,
+    roomName: null,
+    startAt: '2026-04-05T08:00:00+02:00',
+    endAt: '2026-04-06T10:00:00+02:00',
+    state: 'REQUESTED',
+    createdAt: '2026-04-01T10:00:00+02:00',
+    availableRooms: [
+        {
+            roomId: 'room-1',
+            roomName: 'Waldzimmer',
+            squareMeters: 14,
+            available: true,
+            requiredSquareMeters: 8,
+            peakRequiredSquareMeters: 8,
+            remainingSquareMeters: 6,
+            segments: [],
+        },
+    ],
+};
+
+export const hotelOccupancyResponse = {
+    from: '2026-04-05T09:00:00+02:00',
+    to: '2026-04-06T09:00:00+02:00',
+    items: [
+        {
+            room,
+            peakRequiredSquareMeters: 11,
+            segments: [
+                {
+                    startAt: '2026-04-05T10:00:00+02:00',
+                    endAt: '2026-04-05T12:00:00+02:00',
+                    usedSquareMeters: 11,
+                    freeSquareMeters: 3,
+                    bookingCount: 2,
+                    dogNames: ['Rex', 'Luna'],
+                },
+            ],
+            bookings: [hotelBooking],
+        },
+    ],
+};
+
+export const hotelMovementsResponse = {
+    from: '2026-04-05T09:00:00+02:00',
+    to: '2026-04-06T09:00:00+02:00',
+    arrivals: [
+        {
+            ...hotelBooking,
+            roomId: 'room-1',
+            roomName: 'Waldzimmer',
+            state: 'CONFIRMED',
+        },
+    ],
+    departures: [
+        {
+            ...hotelBooking,
+            roomId: 'room-1',
+            roomName: 'Waldzimmer',
+            state: 'CONFIRMED',
+        },
+    ],
 };
 
 export const activeContract = {
@@ -129,9 +207,15 @@ export function installAdminGlobals() {
         dayName: (dayOfWeek: number) => ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][dayOfWeek] || '',
         todayIso: () => '2026-04-04',
         formatDate: (value: string) => `formatted:${value}`,
+        formatDateTime: (value: string) => `formatted:${value}`,
         toMonthEndIso: (value: string) => value.slice(0, 8) + '30',
         isLastOfMonth: (value: string) => value.endsWith('-30'),
         getWeekMonday: () => '2026-03-30',
+        hotelBookingStateLabel: (value: string) => value,
+        hotelBookingStateColor: () => 'amber',
+        formatSquareMeters: (value: number) => `${value} m²`,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
     }));
     vi.stubGlobal('useFormFeedback', () => createFormFeedbackState());
     vi.stubGlobal('extractApiErrorMessage', (cause: unknown, fallback: string) =>
@@ -257,6 +341,74 @@ export async function mountDashboardPage() {
                 StatsGrid: namedStub('StatsGrid', ['loading', 'stats']),
                 PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts']),
                 TodayScheduleCard: namedStub('TodayScheduleCard', ['loading', 'courseDates']),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountHotelRoomsPage() {
+    const Page = (await import('~/modules/admin/hotel/rooms/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                RoomList: namedStub('RoomList', ['loading', 'rooms'], ['edit']),
+                RoomFormModal: namedStub(
+                    'RoomFormModal',
+                    ['modelValue', 'editing', 'form', 'fieldErrors', 'formError', 'saving'],
+                    ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountHotelAdminBookingsPage() {
+    const Page = (await import('~/modules/admin/hotel/bookings/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                HotelBookingsTable: namedStub(
+                    'HotelBookingsTable',
+                    ['loading', 'bookings', 'resultSummary', 'showPagination', 'currentPage', 'pageSize', 'totalBookings'],
+                    ['open', 'update:currentPage'],
+                ),
+                HotelBookingDetailModal: namedStub(
+                    'HotelBookingDetailModal',
+                    ['modelValue', 'booking', 'selectedRoomId', 'roomOptions', 'assigning', 'confirming', 'declining'],
+                    ['assign-room', 'confirm', 'decline', 'cancel', 'update:selectedRoomId', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountHotelOccupancyPage() {
+    const Page = (await import('~/modules/admin/hotel/occupancy/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountHotelMovementsPage() {
+    const Page = (await import('~/modules/admin/hotel/movements/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
             },
         },
     });

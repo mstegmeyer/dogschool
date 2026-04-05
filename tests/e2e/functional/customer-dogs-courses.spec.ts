@@ -21,10 +21,12 @@ test('shows the empty dog state, validates the form, and adds a dog', async ({
     await page.getByLabel('Rasse').fill('Labrador');
     await selectMenuOption(page, page.getByText('Auswählen'), 'Hündin');
     await page.getByLabel('Farbe').fill('Schwarz');
+    await page.getByTestId('add-dog-height').fill('47');
     await addDogModal.getByRole('button', { name: 'Hinzufügen' }).click();
 
     await expect(addDogModal).toHaveCount(0);
     await expect(page.getByText('Nori')).toBeVisible();
+    await expect(page.getByText('Schulterhöhe: 47 cm')).toBeVisible();
 });
 
 test('opens course details and can unsubscribe and resubscribe a subscribed course', async ({

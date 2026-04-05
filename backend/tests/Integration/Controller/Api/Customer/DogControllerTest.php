@@ -43,6 +43,7 @@ final class DogControllerTest extends WebTestCase
             'color' => 'brown',
             'gender' => 'male',
             'race' => 'Labrador',
+            'shoulderHeightCm' => 48,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
@@ -50,12 +51,14 @@ final class DogControllerTest extends WebTestCase
         self::assertSame('Rex', $data['name']);
         self::assertSame('brown', $data['color']);
         self::assertSame('Labrador', $data['race']);
+        self::assertSame(48, $data['shoulderHeightCm']);
 
         $container = static::getContainer();
         $dogRepo = $container->get(DogRepository::class);
         $dogs = $dogRepo->findByCustomer($customer);
         self::assertCount(1, $dogs);
         self::assertSame('Rex', $dogs[0]->getName());
+        self::assertSame(48, $dogs[0]->getShoulderHeightCm());
     }
 
     public function testCreateDogFailsWithoutName(): void
@@ -66,7 +69,43 @@ final class DogControllerTest extends WebTestCase
 
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/dogs', $token, json_encode([
             'color' => 'black',
+            'shoulderHeightCm' => 42,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testCreateDogFailsWithoutShoulderHeight(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createCustomerAndLogin();
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/dogs', $token, json_encode([
+            'name' => 'Rex',
+            'color' => 'black',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        self::assertStringContainsString(
+            'Die Schulterhöhe ist erforderlich.',
+            $client->getResponse()->getContent() ?: '',
+        );
+    }
+
+    public function testCreateDogFailsWithOutOfRangeShoulderHeight(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createCustomerAndLogin();
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/dogs', $token, json_encode([
+            'name' => 'Rex',
+            'color' => 'black',
+            'shoulderHeightCm' => 250,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_UNPROCESSABLE_ENTITY);
+        self::assertStringContainsString(
+            'Die Schulterhöhe muss zwischen 1 und 200 cm liegen.',
+            $client->getResponse()->getContent() ?: '',
+        );
     }
 }

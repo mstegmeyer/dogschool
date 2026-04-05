@@ -72,3 +72,15 @@ test('admin notifications page stays visually stable', async ({
 
     await expect(page).toHaveScreenshot('admin/notifications.png', { fullPage: true });
 });
+
+test('admin hotel occupancy page stays visually stable', async ({
+    page,
+    loginAsAdmin,
+    waitForVisualReady,
+}) => {
+    await loginAsAdmin();
+    await page.goto('/admin/hotel/occupancy');
+    await waitForVisualReady();
+
+    await expect(page).toHaveScreenshot('admin/hotel-occupancy.png', { fullPage: true });
+});

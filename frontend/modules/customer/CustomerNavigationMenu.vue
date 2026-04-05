@@ -61,7 +61,9 @@ const navSections: NavSection[] = [
     },
     {
         label: 'Hundehotel',
-        links: [],
+        links: [
+            { label: 'Buchungen', icon: 'i-heroicons-home-modern', to: '/customer/hotel/bookings' },
+        ],
     },
 ];
 

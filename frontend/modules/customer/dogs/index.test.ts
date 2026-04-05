@@ -31,6 +31,7 @@ describe('customer dogs page', () => {
         form.race = 'Labrador';
         form.gender = 'female';
         form.color = 'black';
+        form.shoulderHeightCm = 52;
 
         apiPostMock.mockResolvedValue({});
         await modal.vm.$emit('submit');
@@ -41,6 +42,7 @@ describe('customer dogs page', () => {
             race: 'Labrador',
             gender: 'female',
             color: 'black',
+            shoulderHeightCm: 52,
         });
     });
 });

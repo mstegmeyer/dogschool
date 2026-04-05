@@ -41,12 +41,18 @@ final class DogController extends AbstractController
         Customer $customer,
         #[MapRequestPayload(acceptFormat: 'json')] DogCreateDto $dto,
     ): JsonResponse {
+        $dtoErrors = $this->validator->validate($dto);
+        if (count($dtoErrors) > 0) {
+            return $this->json(['errors' => $this->normalizer->violationsToArray($dtoErrors)], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $dog = new Dog();
         $dog->setCustomer($customer);
         $dog->setName($dto->name);
         $dog->setColor($dto->color);
         $dog->setGender($dto->gender);
         $dog->setRace($dto->race);
+        $dog->setShoulderHeightCm($dto->shoulderHeightCm ?? throw new \LogicException('Validated shoulder height is required.'));
 
         $errors = $this->validator->validate($dog);
         if (count($errors) > 0) {

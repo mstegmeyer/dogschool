@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { computed, ref } from 'vue';
 import { vi } from 'vitest';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
 import { createCalendarTimelineStub, flushPromises, installNuxtGlobals, namedStub } from '../nuxt/page-test-utils';
 
@@ -25,6 +26,23 @@ export const dog = {
     color: 'brown',
     gender: 'female',
     race: 'Mix',
+    shoulderHeightCm: 48,
+};
+
+export const hotelBooking = {
+    id: 'hotel-booking-1',
+    customerId: 'customer-1',
+    customerName: 'Max',
+    dogId: 'dog-1',
+    dogName: 'Luna',
+    dogShoulderHeightCm: 48,
+    roomId: 'room-1',
+    roomName: 'Waldzimmer',
+    startAt: '2026-04-05T08:00:00+02:00',
+    endAt: '2026-04-06T18:00:00+02:00',
+    state: 'REQUESTED',
+    createdAt: '2026-04-01T10:00:00+02:00',
+    availableRooms: [],
 };
 
 export const course = {
@@ -136,9 +154,15 @@ export function installCustomerGlobals() {
     vi.stubGlobal('useHelpers', () => ({
         todayIso: () => '2026-04-04',
         formatDate: (value: string) => `formatted:${value}`,
+        formatDateTime: (value: string) => `formatted:${value}`,
         toMonthStartIso: (value: string) => value.slice(0, 8) + '01',
         isFirstOfMonth: (value: string) => value.endsWith('-01'),
         firstDayOfNextMonthIso: () => '2026-05-01',
+        hotelBookingStateLabel: (value: string) => value,
+        hotelBookingStateColor: () => 'amber',
+        formatSquareMeters: (value: number) => `${value} m²`,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
     }));
     vi.stubGlobal('useRuntimeConfig', () => ({
         public: { apiBaseUrl: 'https://api.example.test' },
@@ -271,6 +295,25 @@ export async function mountCalendarPage() {
                     'CustomerCalendarSubscriptionModal',
                     ['modelValue', 'calendarSubscriptionUrl', 'calendarSubscriptionWebcalUrl'],
                     ['copy', 'open', 'update:modelValue'],
+                ),
+            },
+        },
+    });
+    await flushPromises();
+    return wrapper;
+}
+
+export async function mountHotelBookingsPage() {
+    const Page = (await import('~/modules/customer/hotel/bookings/index.vue')).default;
+    const wrapper = mount(Page, {
+        global: {
+            stubs: {
+                ...uiPageStubs,
+                HotelBookingsList: namedStub('HotelBookingsList', ['loading', 'bookings']),
+                HotelBookingRequestModal: namedStub(
+                    'HotelBookingRequestModal',
+                    ['modelValue', 'dogOptions', 'selectedDogName', 'storedShoulderHeightCm', 'form', 'fieldErrors', 'formError', 'saving'],
+                    ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
                 ),
             },
         },

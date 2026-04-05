@@ -38,13 +38,14 @@ const loading = ref(true);
 const showAdd = ref(false);
 const saving = ref(false);
 
-const newDog = reactive({ name: '', race: '', gender: '', color: '' });
+const newDog = reactive({ name: '', race: '', gender: '', color: '', shoulderHeightCm: 0 });
 
 function resetDogForm() {
     newDog.name = '';
     newDog.race = '';
     newDog.gender = '';
     newDog.color = '';
+    newDog.shoulderHeightCm = 0;
 }
 
 function closeAddModal() {
@@ -56,6 +57,11 @@ async function addDog() {
     clearFormErrors();
     if (!newDog.name.trim()) {
         setFieldError('name', 'Bitte einen Namen angeben.');
+    }
+    if (!newDog.shoulderHeightCm || newDog.shoulderHeightCm <= 0) {
+        setFieldError('shoulderHeightCm', 'Bitte eine Schulterhöhe in cm angeben.');
+    }
+    if (Object.keys(fieldErrors.value).length > 0) {
         setFormError('Bitte prüfe die markierten Felder.');
         return;
     }
@@ -67,6 +73,7 @@ async function addDog() {
             race: newDog.race || null,
             gender: newDog.gender || null,
             color: newDog.color || null,
+            shoulderHeightCm: newDog.shoulderHeightCm,
         });
         toast.add({ title: `${newDog.name} wurde hinzugefügt`, color: 'green' });
         closeAddModal();

@@ -11,6 +11,7 @@ export type CustomerPersona =
   | 'customer_calendar_booked'
   | 'customer_profile'
   | 'customer_contracts'
+  | 'customer_hotel_booking'
   | 'customer_contract_pending'
   | 'customer_contract_approve'
   | 'customer_contract_decline'
@@ -40,6 +41,13 @@ export interface SeedCustomer {
     password: string,
     dogIds: string[],
     dogNames: string[],
+    dogShoulderHeights: number[],
+}
+
+export interface SeedRoom {
+    id: string,
+    name: string,
+    squareMeters: number,
 }
 
 export interface E2eManifest {
@@ -59,6 +67,8 @@ export interface E2eManifest {
     courseDates: Record<string, { current: string; next: string }>,
     contracts: Record<string, string>,
     notifications: Record<string, string>,
+    hotelRooms: Record<string, SeedRoom>,
+    hotelBookings: Record<string, string>,
 }
 
 const FIXTURE_ROOT = path.dirname(fileURLToPath(import.meta.url));

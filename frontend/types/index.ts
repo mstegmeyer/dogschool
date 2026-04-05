@@ -23,6 +23,7 @@ export type CourseLevel = 0 | 1 | 2 | 3 | 4;
 export type ContractState = 'REQUESTED' | 'ACTIVE' | 'DECLINED' | 'CANCELLED';
 export type ContractType = 'PERPETUAL';
 export type CreditTransactionType = 'WEEKLY_GRANT' | 'BOOKING' | 'CANCELLATION' | 'MANUAL_ADJUSTMENT';
+export type HotelBookingState = 'REQUESTED' | 'CONFIRMED' | 'DECLINED';
 export type RecurrenceKind = 'RECURRING' | 'ONE_TIME' | 'DROP_IN';
 export type DogGender = 'male' | 'female';
 export type AuthRole = 'admin' | 'customer';
@@ -63,6 +64,57 @@ export interface Dog {
     color: string | null,
     gender: DogGender | null,
     race: string | null,
+    shoulderHeightCm: number,
+}
+
+export interface Room {
+    id: string,
+    name: string,
+    squareMeters: number,
+    createdAt: string,
+}
+
+export interface RoomOccupancySegment {
+    startAt: string,
+    endAt: string,
+    usedSquareMeters: number,
+    freeSquareMeters: number,
+    bookingCount: number,
+    dogNames: string[],
+}
+
+export interface RoomAvailability {
+    roomId: string,
+    roomName: string,
+    squareMeters: number,
+    available: boolean,
+    requiredSquareMeters: number,
+    peakRequiredSquareMeters: number,
+    remainingSquareMeters: number,
+    segments: RoomOccupancySegment[],
+}
+
+export interface HotelBooking {
+    id: string,
+    customerId: string | null,
+    customerName: string | null,
+    dogId: string | null,
+    dogName: string | null,
+    dogShoulderHeightCm: number | null,
+    roomId: string | null,
+    roomName: string | null,
+    startAt: string,
+    endAt: string,
+    state: HotelBookingState,
+    createdAt: string,
+    availableRooms?: RoomAvailability[],
+}
+
+export interface HotelOccupancyRoom {
+    room: Room,
+    peakRequiredSquareMeters: number,
+    segments: RoomOccupancySegment[],
+    bookings: HotelBooking[],
 }
 
 export interface CourseTypeInfo {
@@ -226,6 +278,19 @@ export interface CustomerCreditsResponse {
 
 export interface BookingResponse {
     creditBalance: number,
+}
+
+export interface HotelOccupancyResponse {
+    from: string,
+    to: string,
+    items: HotelOccupancyRoom[],
+}
+
+export interface HotelMovementsResponse {
+    from: string,
+    to: string,
+    arrivals: HotelBooking[],
+    departures: HotelBooking[],
 }
 
 export interface CalendarSubscriptionResponse {

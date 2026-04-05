@@ -19,6 +19,7 @@ describe('AddDogModal', () => {
                     race: '',
                     gender: '',
                     color: '',
+                    shoulderHeightCm: 0,
                 },
                 fieldErrors: { name: 'Pflichtfeld' },
                 formError: '',
@@ -27,6 +28,7 @@ describe('AddDogModal', () => {
         });
 
         await wrapper.get('input[placeholder="z.B. Bella"]').setValue('Nala');
+        await wrapper.get('[data-testid="add-dog-height"]').setValue('47');
         await wrapper.get('form').trigger('submit.prevent');
 
         expect(wrapper.text()).toContain('Hund hinzufügen');

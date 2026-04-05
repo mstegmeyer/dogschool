@@ -55,10 +55,12 @@ final class ApiNormalizerTest extends TestCase
         $dog = new Dog();
         $dog->setName('Rex');
         $dog->setColor('brown');
+        $dog->setShoulderHeightCm(47);
         $data = $this->normalizer->normalizeDog($dog);
         self::assertArrayHasKey('id', $data);
         self::assertSame('Rex', $data['name']);
         self::assertSame('brown', $data['color']);
+        self::assertSame(47, $data['shoulderHeightCm']);
     }
 
     #[Test]

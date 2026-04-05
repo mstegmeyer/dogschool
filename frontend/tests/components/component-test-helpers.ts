@@ -22,6 +22,7 @@ import {
     createFormFeedbackState,
     uiPageStubs,
 } from '../nuxt/ui-test-stubs';
+import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 
 type ComponentMountOptions = Omit<MountingOptions<any>, 'global'> & {
     global?: MountingOptions<any>['global'],
@@ -499,8 +500,14 @@ export function installComponentGlobals(options: {
             courses.map(courseValue => `${courseValue.typeName ?? 'Kurs'}-${courseValue.dayOfWeek}-${courseValue.startTime}`).join(', '),
         contractStateLabel: (state: string) => state,
         contractStateColor: (state: string) => state === 'ACTIVE' ? 'green' : 'gray',
+        hotelBookingStateLabel: (state: string) => state,
+        hotelBookingStateColor: (state: string) => state === 'CONFIRMED' ? 'green' : state === 'REQUESTED' ? 'amber' : 'red',
         formatContractMonthlyPrice: (price: string) => `${price} EUR`,
+        formatSquareMeters: (value: number) => `${value} m²`,
+        hotelAreaRequirementForHeight: (heightCm: number) => heightCm <= 50 ? 6 : heightCm <= 65 ? 8 : 10,
         creditTypeLabel: (type: string) => type,
+        toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
+        futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
         toMonthEndIso: (value: string) => value.slice(0, 8) + '30',
         isLastOfMonth: (value: string) => value.endsWith('-30'),
         toMonthStartIso: (value: string) => value.slice(0, 8) + '01',

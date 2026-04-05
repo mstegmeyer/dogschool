@@ -4,7 +4,13 @@ import { ref } from 'vue';
 interface ApiErrorData {
     error?: string,
     errors?: Record<string, string | string[]>,
+    detail?: string,
     message?: string,
+    violations?: Array<{
+        propertyPath?: string,
+        title?: string,
+        message?: string,
+    }>,
 }
 
 function normalizeFieldErrors(input: ApiErrorData['errors']): Record<string, string> {
@@ -19,10 +25,31 @@ function normalizeFieldErrors(input: ApiErrorData['errors']): Record<string, str
     );
 }
 
+function normalizeViolationErrors(input: ApiErrorData['violations']): Record<string, string> {
+    if (!input) {
+        return {};
+    }
+
+    return Object.fromEntries(
+        input
+            .filter(violation =>
+                typeof violation.propertyPath === 'string'
+                && violation.propertyPath !== ''
+                && typeof (violation.title ?? violation.message) === 'string'
+                && (violation.title ?? violation.message) !== '',
+            )
+            .map(violation => [violation.propertyPath as string, (violation.title ?? violation.message) as string]),
+    );
+}
+
 export function extractApiFieldErrors(cause: unknown): Record<string, string> {
     const error = cause as FetchError<ApiErrorData>;
+    const directFieldErrors = normalizeFieldErrors(error?.data?.errors);
+    if (Object.keys(directFieldErrors).length > 0) {
+        return directFieldErrors;
+    }
 
-    return normalizeFieldErrors(error?.data?.errors);
+    return normalizeViolationErrors(error?.data?.violations);
 }
 
 export function extractApiErrorMessage(
@@ -44,6 +71,10 @@ export function extractApiErrorMessage(
 
     if (typeof error?.data?.message === 'string' && error.data.message !== '') {
         return error.data.message;
+    }
+
+    if (typeof error?.data?.detail === 'string' && error.data.detail !== '') {
+        return error.data.detail;
     }
 
     if (status && status >= 500) {

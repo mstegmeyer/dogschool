@@ -32,6 +32,12 @@ class Dog
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     private ?string $race = null;
 
+    #[ORM\Column(type: Types::INTEGER)]
+    #[Assert\NotNull]
+    #[Assert\Positive]
+    #[Assert\LessThanOrEqual(200)]
+    private int $shoulderHeightCm = 1;
+
     #[ORM\ManyToOne(targetEntity: Customer::class, inversedBy: 'dogs')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Customer $customer = null;
@@ -90,6 +96,18 @@ class Dog
     public function setRace(?string $race): static
     {
         $this->race = $race;
+
+        return $this;
+    }
+
+    public function getShoulderHeightCm(): int
+    {
+        return $this->shoulderHeightCm;
+    }
+
+    public function setShoulderHeightCm(int $shoulderHeightCm): static
+    {
+        $this->shoulderHeightCm = $shoulderHeightCm;
 
         return $this;
     }

@@ -29,6 +29,12 @@
         @open='openCalendarUrl'
     />
 
+    <CustomerCalendarDetailModal
+        v-model='detailModalOpen'
+        :course-date='detailCourseDate'
+        :dogs='dogs'
+    />
+
     <CustomerCalendarBookingModal
         v-model='bookingModalOpen'
         :course-date='bookingCourseDate'
@@ -52,6 +58,7 @@
         v-else
         :days='visibleDays'
         :view-mode='viewMode'
+        density='compact'
         empty-label='–'
         :event-class='calendarCardClass'
     >
@@ -60,6 +67,7 @@
                 :course-date='courseDate'
                 :condensed='condensed'
                 :dogs='dogs'
+                @open-details='openDetailModal'
                 @open-booking='openBookingModal'
                 @cancel-booking='cancelBooking'
             />
@@ -72,6 +80,7 @@
 import { computed, ref, watch } from 'vue';
 import type { ApiListResponse, CalendarSubscriptionResponse, CourseDate, Dog } from '~/types';
 import CustomerCalendarBookingModal from './components/BookingModal.vue';
+import CustomerCalendarDetailModal from './components/DetailModal.vue';
 import CustomerCalendarEventCard from './components/EventCard.vue';
 import CustomerCalendarSubscriptionModal from './components/SubscriptionModal.vue';
 import CalendarToolbar from '~/components/calendar/CalendarToolbar.vue';
@@ -86,6 +95,8 @@ const courseDates = ref<CourseDate[]>([]);
 const dogs = ref<Dog[]>([]);
 const calendarSubscriptionPath = ref('');
 const showCalendarSubscription = ref(false);
+const showDetailModal = ref(false);
+const detailCourseDate = ref<CourseDate | null>(null);
 const showBookingModal = ref(false);
 const bookingCourseDate = ref<CourseDate | null>(null);
 const bookingDogId = ref('');
@@ -152,6 +163,16 @@ const bookingModalOpen = computed({
     },
 });
 
+const detailModalOpen = computed({
+    get: () => showDetailModal.value,
+    set: (open: boolean) => {
+        showDetailModal.value = open;
+        if (!open) {
+            detailCourseDate.value = null;
+        }
+    },
+});
+
 function calendarCardClass(courseDate: CourseDate): string {
     if (courseDate.cancelled) {
         return 'bg-red-50 border-red-200 opacity-60';
@@ -160,6 +181,11 @@ function calendarCardClass(courseDate: CourseDate): string {
         return 'bg-komm-50/90 border-komm-200';
     }
     return 'bg-white/95 border-slate-200';
+}
+
+function openDetailModal(courseDate: CourseDate): void {
+    detailCourseDate.value = courseDate;
+    showDetailModal.value = true;
 }
 
 function openBookingModal(courseDate: CourseDate): void {
@@ -241,6 +267,7 @@ async function loadCalendar(): Promise<void> {
     try {
         const response = await api.get<ApiListResponse<CourseDate>>(`/api/customer/calendar?week=${currentMonday.value}`);
         courseDates.value = response.items;
+        syncSelectedCourseDates(response.items);
     } finally {
         loading.value = false;
     }
@@ -271,8 +298,40 @@ function openCalendarUrl(): void {
     window.location.href = calendarSubscriptionWebcalUrl.value;
 }
 
+function syncSelectedCourseDates(items: CourseDate[]): void {
+    if (detailCourseDate.value) {
+        const nextDetailCourseDate = items.find(item => item.id === detailCourseDate.value?.id) ?? null;
+        detailCourseDate.value = nextDetailCourseDate;
+        if (!nextDetailCourseDate) {
+            showDetailModal.value = false;
+        }
+    }
+
+    if (!bookingCourseDate.value) {
+        return;
+    }
+
+    const nextBookingCourseDate = items.find(item => item.id === bookingCourseDate.value?.id) ?? null;
+    if (!nextBookingCourseDate) {
+        if (!bookingInFlight.value) {
+            closeBookingModal();
+        }
+        return;
+    }
+
+    bookingCourseDate.value = nextBookingCourseDate;
+}
+
 watch(currentMonday, () => {
     void loadCalendar();
+});
+
+watch(showDetailModal, (open) => {
+    if (open) {
+        return;
+    }
+
+    detailCourseDate.value = null;
 });
 
 watch(showBookingModal, (open) => {

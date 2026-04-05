@@ -98,7 +98,7 @@
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
 import type { CourseDate } from '~/types';
-import type { CalendarTimelineDay, CalendarTimelineItem } from '~/composables/useCalendarTimeline';
+import type { CalendarTimelineDay, CalendarTimelineItem, CalendarTimelineOptions } from '~/composables/useCalendarTimeline';
 import { buildCalendarTimeline } from '~/composables/useCalendarTimeline';
 
 const props = defineProps({
@@ -122,13 +122,34 @@ const props = defineProps({
         type: Function as PropType<(courseDate: CourseDate, item: CalendarTimelineItem) => string>,
         default: () => '',
     },
+    density: {
+        type: String as PropType<'default' | 'compact'>,
+        default: 'default',
+    },
 });
 
 const emit = defineEmits<{
     (event: 'select', value: CourseDate): void,
 }>();
 
-const timeline = computed(() => buildCalendarTimeline(props.days, { viewMode: props.viewMode }));
+const densityConfig = computed(() => ({
+    timeAxisWidthRem: props.density === 'compact' ? 4 : 4.5,
+    weekDayMinWidthRem: props.density === 'compact' ? 10 : 12,
+    weekDayAdditionalColumnWidthRem: props.density === 'compact' ? 3 : 4,
+    pixelsPerHourDay: props.density === 'compact' ? 100 : 108,
+    pixelsPerHourWeek: props.density === 'compact' ? 84 : 96,
+    verticalPadding: props.viewMode === 'day'
+        ? (props.density === 'compact' ? 12 : 14)
+        : (props.density === 'compact' ? 8 : 12),
+}));
+
+const timelineOptions = computed((): CalendarTimelineOptions => ({
+    viewMode: props.viewMode,
+    pixelsPerHourDay: densityConfig.value.pixelsPerHourDay,
+    pixelsPerHourWeek: densityConfig.value.pixelsPerHourWeek,
+}));
+
+const timeline = computed(() => buildCalendarTimeline(props.days, timelineOptions.value));
 
 const gridTemplateColumns = computed(() => {
     const dayColumns = timeline.value.days.map((day) => {
@@ -136,11 +157,12 @@ const gridTemplateColumns = computed(() => {
             return 'minmax(0, 1fr)';
         }
 
-        const minWidthRem = 12 + (Math.max(1, day.maxColumns) - 1) * 4;
+        const minWidthRem = densityConfig.value.weekDayMinWidthRem
+            + (Math.max(1, day.maxColumns) - 1) * densityConfig.value.weekDayAdditionalColumnWidthRem;
         return `minmax(${minWidthRem}rem, 1fr)`;
     });
 
-    return `4.5rem ${dayColumns.join(' ')}`;
+    return `${densityConfig.value.timeAxisWidthRem}rem ${dayColumns.join(' ')}`;
 });
 
 const containerMinWidth = computed(() => {
@@ -148,12 +170,15 @@ const containerMinWidth = computed(() => {
         return '100%';
     }
 
-    const dayWidths = timeline.value.days.map(day => 12 + (Math.max(1, day.maxColumns) - 1) * 4);
-    const totalWidthRem = 4.5 + dayWidths.reduce((sum, width) => sum + width, 0);
+    const dayWidths = timeline.value.days.map((day) => (
+        densityConfig.value.weekDayMinWidthRem
+            + (Math.max(1, day.maxColumns) - 1) * densityConfig.value.weekDayAdditionalColumnWidthRem
+    ));
+    const totalWidthRem = densityConfig.value.timeAxisWidthRem + dayWidths.reduce((sum, width) => sum + width, 0);
     return `${totalWidthRem}rem`;
 });
 
-const timelineVerticalPadding = computed(() => props.viewMode === 'day' ? 14 : 12);
+const timelineVerticalPadding = computed(() => densityConfig.value.verticalPadding);
 const timelineFrameHeight = computed(() => timeline.value.timelineHeight + (timelineVerticalPadding.value * 2));
 
 function markStyle(top: number) {

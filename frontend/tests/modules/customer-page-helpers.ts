@@ -358,7 +358,12 @@ export async function mountCalendarPage() {
                 CustomerCalendarEventCard: namedStub(
                     'CustomerCalendarEventCard',
                     ['courseDate', 'condensed', 'dogs'],
-                    ['open-booking', 'cancel-booking'],
+                    ['open-details', 'open-booking', 'cancel-booking'],
+                ),
+                CustomerCalendarDetailModal: namedStub(
+                    'CustomerCalendarDetailModal',
+                    ['modelValue', 'courseDate', 'dogs'],
+                    ['update:modelValue'],
                 ),
                 CustomerCalendarBookingModal: namedStub(
                     'CustomerCalendarBookingModal',

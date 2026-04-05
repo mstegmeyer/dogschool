@@ -96,4 +96,31 @@ describe('AppCalendarTimeline', () => {
         expect(wrapper.classes()).toContain('relative');
         expect(wrapper.classes()).toContain('isolate');
     });
+
+    it('supports a more compact density for week view', () => {
+        const defaultWrapper = mount(AppCalendarTimeline, {
+            props: {
+                days: [makeDay([makeCourseDate({ startTime: '10:00', endTime: '11:00' })])],
+                viewMode: 'week',
+            },
+            slots: {
+                event: ({ courseDate }: { courseDate: CourseDate }) => h('span', courseDate.courseType?.name ?? 'Kurs'),
+            },
+        });
+
+        const compactWrapper = mount(AppCalendarTimeline, {
+            props: {
+                days: [makeDay([makeCourseDate({ startTime: '10:00', endTime: '11:00' })])],
+                viewMode: 'week',
+                density: 'compact',
+            },
+            slots: {
+                event: ({ courseDate }: { courseDate: CourseDate }) => h('span', courseDate.courseType?.name ?? 'Kurs'),
+            },
+        });
+
+        expect(defaultWrapper.find('.min-w-full').attributes('style')).toContain('min-width: 16.5rem;');
+        expect(compactWrapper.find('.min-w-full').attributes('style')).toContain('min-width: 14rem;');
+        expect(compactWrapper.find('[data-testid="calendar-event"]').attributes('style')).toContain('height: 80px;');
+    });
 });

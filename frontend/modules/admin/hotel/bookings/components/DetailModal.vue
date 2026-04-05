@@ -29,8 +29,8 @@
             <PricingBreakdown
                 :snapshot='booking.pricingSnapshot'
                 title='Preisübersicht'
-                total-label='Automatischer Gesamtpreis'
-                :total-value='booking.quotedTotalPrice'
+                total-label='Aktueller Gesamtpreis'
+                :total-value='booking.totalPrice'
             />
 
             <div class='grid gap-3 sm:grid-cols-2'>

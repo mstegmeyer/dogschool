@@ -20,7 +20,7 @@ class PricingConfigRepository extends ServiceEntityRepository
 
     public function findCurrent(): ?PricingConfig
     {
-        return $this->findOneBy([], ['createdAt' => 'ASC']);
+        return $this->findOneBy([], ['createdAt' => 'DESC']);
     }
 
     public function save(PricingConfig $entity, bool $flush = true): void

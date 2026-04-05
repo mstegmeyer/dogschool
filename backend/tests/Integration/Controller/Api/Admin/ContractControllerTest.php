@@ -116,6 +116,16 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame('184.00', $data['price']);
         self::assertSame('160.00', $data['quotedMonthlyPrice']);
         self::assertSame('Zusatzwünsche erhöhen den Preis.', $data['adminComment']);
+        self::assertSame('184.00', $data['pricingSnapshot']['monthlyPrice'] ?? null);
+        self::assertSame('333.00', $data['pricingSnapshot']['firstInvoiceTotal'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'manual_adjustment',
+            'label' => 'Manuelle Preisanpassung',
+            'quantity' => 1,
+            'unitPrice' => '24.00',
+            'amount' => '24.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
     }
 
     public function testListContractsSupportsPaginationAndStateFilter(): void

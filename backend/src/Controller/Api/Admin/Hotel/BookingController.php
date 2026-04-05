@@ -147,18 +147,20 @@ final class BookingController extends AbstractController
             $booking->getEndAt(),
             $booking->includesTravelProtection(),
         );
+        $finalPrice = $payload['totalPrice'] ?? $quote['quotedTotalPrice'];
+        $quotedTotalCents = PricingEngine::amountToCents($quote['quotedTotalPrice']);
+        $finalTotalCents = PricingEngine::amountToCents($finalPrice);
+
         $booking->setPricingKind($quote['pricingKind']);
         $booking->setBillableDays($quote['billableDays']);
         $booking->setQuotedTotalPrice($quote['quotedTotalPrice']);
         $booking->setServiceFee($quote['serviceFee']);
         $booking->setTravelProtectionPrice($quote['travelProtectionPrice']);
-        $booking->setPricingSnapshot($quote['snapshot']);
-
-        $finalPrice = $payload['totalPrice'] ?? $quote['quotedTotalPrice'];
+        $booking->setPricingSnapshot(PricingEngine::finalizeHotelBookingSnapshot($quote['snapshot'], $finalPrice));
         $booking->setTotalPrice($finalPrice);
         $booking->setAdminComment($payload['adminComment'] ?? $booking->getAdminComment());
         $booking->setState(
-            PricingEngine::amountToCents($finalPrice) > PricingEngine::amountToCents($quote['quotedTotalPrice'])
+            $finalTotalCents > $quotedTotalCents
                 ? HotelBookingState::PENDING_CUSTOMER_APPROVAL
                 : HotelBookingState::CONFIRMED
         );

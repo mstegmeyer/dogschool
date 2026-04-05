@@ -53,7 +53,6 @@ final class ContractControllerTest extends WebTestCase
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
             'dogId' => $dog->getId(),
             'startDate' => '2025-06-01',
-            'price' => '120.00',
             'coursesPerWeek' => 2,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -87,7 +86,6 @@ final class ContractControllerTest extends WebTestCase
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
             'dogId' => $dog->getId(),
             'startDate' => '2025-06-01',
-            'price' => '120.00',
             'coursesPerWeek' => 2,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -119,7 +117,6 @@ final class ContractControllerTest extends WebTestCase
             'dogId' => $dog->getId(),
             'startDate' => '2025-06-01',
             'endDate' => '2025-12-31',
-            'price' => '120.00',
             'coursesPerWeek' => 2,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -143,12 +140,36 @@ final class ContractControllerTest extends WebTestCase
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
             'dogId' => $dog->getId(),
             'startDate' => '2025-06-15',
-            'price' => '120.00',
             'coursesPerWeek' => 2,
         ]));
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
         self::assertSame('Startdatum muss der erste Tag eines Monats sein.', $data['errors']['startDate'] ?? null);
+    }
+
+    public function testRequestContractRejectsClientSuppliedPrice(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepo = $container->get(DogRepository::class);
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Manual Price Dog');
+        $dogRepo->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/contracts', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startDate' => '2025-06-01',
+            'price' => '120.00',
+            'coursesPerWeek' => 2,
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der Preis wird serverseitig berechnet und darf nicht gesendet werden.', $data['errors']['price'] ?? null);
     }
 
     public function testPreviewContractReturnsCalculatedPricing(): void

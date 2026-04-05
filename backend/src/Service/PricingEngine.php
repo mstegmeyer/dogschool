@@ -34,13 +34,7 @@ final class PricingEngine
     public function previewContract(Customer $customer, int $coursesPerWeek): array
     {
         $pricingConfig = $this->pricingConfigProvider->getCurrent();
-        $monthlyUnitPrice = match (true) {
-            $coursesPerWeek <= 1 => $pricingConfig->getSchoolOneCoursePrice(),
-            $coursesPerWeek === 2 => $pricingConfig->getSchoolTwoCoursesUnitPrice(),
-            $coursesPerWeek === 3 => $pricingConfig->getSchoolThreeCoursesUnitPrice(),
-            $coursesPerWeek === 4 => $pricingConfig->getSchoolFourCoursesUnitPrice(),
-            default => $pricingConfig->getSchoolAdditionalCoursesUnitPrice(),
-        };
+        $monthlyUnitPrice = self::schoolUnitPriceForCourseCount($pricingConfig, $coursesPerWeek);
 
         $monthlyPrice = self::formatAmount(self::amountToCents($monthlyUnitPrice) * $coursesPerWeek);
         $requiresRegistrationFee = !$this->contractRepository->customerHasActivatedContract($customer);
@@ -99,13 +93,7 @@ final class PricingEngine
         $customer = $contract->getCustomer() ?? throw new \LogicException('Contract customer is required for pricing.');
         $coursesPerWeek = $contract->getCoursesPerWeek();
         $pricingConfig = $this->pricingConfigProvider->getCurrent();
-        $monthlyUnitPrice = match (true) {
-            $coursesPerWeek <= 1 => $pricingConfig->getSchoolOneCoursePrice(),
-            $coursesPerWeek === 2 => $pricingConfig->getSchoolTwoCoursesUnitPrice(),
-            $coursesPerWeek === 3 => $pricingConfig->getSchoolThreeCoursesUnitPrice(),
-            $coursesPerWeek === 4 => $pricingConfig->getSchoolFourCoursesUnitPrice(),
-            default => $pricingConfig->getSchoolAdditionalCoursesUnitPrice(),
-        };
+        $monthlyUnitPrice = self::schoolUnitPriceForCourseCount($pricingConfig, $coursesPerWeek);
         $monthlyPrice = self::formatAmount(self::amountToCents($monthlyUnitPrice) * $coursesPerWeek);
 
         $requiresRegistrationFee = !$this->contractRepository->customerHasActivatedContract(
@@ -249,6 +237,17 @@ final class PricingEngine
         ];
     }
 
+    public static function schoolUnitPriceForCourseCount(PricingConfig $pricingConfig, int $coursesPerWeek): string
+    {
+        return match (true) {
+            $coursesPerWeek <= 1 => $pricingConfig->getSchoolOneCoursePrice(),
+            $coursesPerWeek === 2 => $pricingConfig->getSchoolTwoCoursesUnitPrice(),
+            $coursesPerWeek === 3 => $pricingConfig->getSchoolThreeCoursesUnitPrice(),
+            $coursesPerWeek === 4 => $pricingConfig->getSchoolFourCoursesUnitPrice(),
+            default => $pricingConfig->getSchoolAdditionalCoursesUnitPrice(),
+        };
+    }
+
     public static function amountToCents(string $amount): int
     {
         $normalized = trim(str_replace(',', '.', $amount));
@@ -285,8 +284,85 @@ final class PricingEngine
         return ((int) $startDate->diff($endDate)->days) + 1;
     }
 
+    /**
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, mixed>
+     */
+    public static function normalizeSnapshot(array $snapshot, string $type): array
+    {
+        $normalized = $snapshot;
+        $normalized['type'] = $type;
+
+        $rawLineItems = $snapshot['lineItems'] ?? $snapshot['items'] ?? [];
+        $lineItems = [];
+        if (is_array($rawLineItems)) {
+            foreach ($rawLineItems as $item) {
+                if (is_array($item)) {
+                    $lineItems[] = $item;
+                }
+            }
+        }
+        $normalized['lineItems'] = $lineItems;
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, mixed>
+     */
+    public static function finalizeContractSnapshot(array $snapshot, string $finalMonthlyPrice, string $registrationFee): array
+    {
+        $normalized = self::normalizeSnapshot($snapshot, 'contract');
+        $quotedMonthlyPrice = is_string($normalized['quotedMonthlyPrice'] ?? null)
+            ? $normalized['quotedMonthlyPrice']
+            : (is_string($normalized['monthlyPrice'] ?? null) ? $normalized['monthlyPrice'] : $finalMonthlyPrice);
+        $adjustmentCents = self::amountToCents($finalMonthlyPrice) - self::amountToCents($quotedMonthlyPrice);
+
+        if ($adjustmentCents !== 0) {
+            $normalized = self::appendManualAdjustmentLineItem($normalized, $adjustmentCents);
+        }
+
+        $normalized['quotedMonthlyPrice'] = $quotedMonthlyPrice;
+        $normalized['monthlyPrice'] = $finalMonthlyPrice;
+        $normalized['registrationFee'] = $registrationFee;
+        $normalized['firstInvoiceTotal'] = self::formatAmount(
+            self::amountToCents($finalMonthlyPrice) + self::amountToCents($registrationFee)
+        );
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, mixed>
+     */
+    public static function finalizeHotelBookingSnapshot(array $snapshot, string $finalTotalPrice): array
+    {
+        $normalized = self::normalizeSnapshot($snapshot, 'hotelBooking');
+        $quotedTotalPrice = is_string($normalized['quotedTotalPrice'] ?? null)
+            ? $normalized['quotedTotalPrice']
+            : (is_string($normalized['totalPrice'] ?? null) ? $normalized['totalPrice'] : $finalTotalPrice);
+        $adjustmentCents = self::amountToCents($finalTotalPrice) - self::amountToCents($quotedTotalPrice);
+
+        if ($adjustmentCents !== 0) {
+            $normalized = self::appendManualAdjustmentLineItem($normalized, $adjustmentCents);
+        }
+
+        $normalized['quotedTotalPrice'] = $quotedTotalPrice;
+        $normalized['totalPrice'] = $finalTotalPrice;
+        $normalized['finalTotalPrice'] = $finalTotalPrice;
+
+        return $normalized;
+    }
+
     private function isPeakSeasonDate(PricingConfig $pricingConfig, \DateTimeImmutable $date): bool
     {
+        $comparisonDate = $date->setTime(0, 0);
+
         /** @var HotelPeakSeason $season */
         foreach ($pricingConfig->getHotelPeakSeasons() as $season) {
             $startDate = $season->getStartDate();
@@ -295,14 +371,34 @@ final class PricingEngine
                 continue;
             }
 
-            $period = new \DatePeriod($startDate, new \DateInterval('P1D'), $endDate->modify('+1 day'));
-            foreach ($period as $periodDate) {
-                if ($periodDate->format('Y-m-d') === $date->format('Y-m-d')) {
-                    return true;
-                }
+            if ($comparisonDate >= $startDate->setTime(0, 0) && $comparisonDate <= $endDate->setTime(0, 0)) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, mixed>
+     */
+    private static function appendManualAdjustmentLineItem(array $snapshot, int $adjustmentCents): array
+    {
+        $lineItems = isset($snapshot['lineItems']) && is_array($snapshot['lineItems'])
+            ? $snapshot['lineItems']
+            : [];
+        $lineItems[] = [
+            'key' => 'manual_adjustment',
+            'label' => 'Manuelle Preisanpassung',
+            'quantity' => 1,
+            'unitPrice' => self::formatAmount($adjustmentCents),
+            'amount' => self::formatAmount($adjustmentCents),
+            'billingPeriod' => 'ONCE',
+        ];
+        $snapshot['lineItems'] = $lineItems;
+
+        return $snapshot;
     }
 }

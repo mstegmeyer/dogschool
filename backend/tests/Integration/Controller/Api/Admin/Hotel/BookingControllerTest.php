@@ -152,6 +152,15 @@ final class BookingControllerTest extends WebTestCase
         self::assertSame('148.50', $data['totalPrice']);
         self::assertSame('123.50', $data['quotedTotalPrice']);
         self::assertSame('Zusatzleistungen manuell eingepreist.', $data['adminComment']);
+        self::assertSame('148.50', $data['pricingSnapshot']['totalPrice'] ?? null);
+        self::assertContainsEquals([
+            'key' => 'manual_adjustment',
+            'label' => 'Manuelle Preisanpassung',
+            'quantity' => 1,
+            'unitPrice' => '25.00',
+            'amount' => '25.00',
+            'billingPeriod' => 'ONCE',
+        ], $data['pricingSnapshot']['lineItems'] ?? []);
     }
 
     public function testDeclineHotelBookingClearsRoom(): void

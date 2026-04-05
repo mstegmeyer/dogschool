@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\HotelPeakSeason;
 use App\Entity\PricingConfig;
 use App\Repository\PricingConfigRepository;
+use App\Support\AppClock;
 
 final class PricingConfigProvider
 {
@@ -47,12 +48,15 @@ final class PricingConfigProvider
      */
     public static function defaultPeakSeasonRanges(): array
     {
+        $year = (int) AppClock::today()->format('Y');
+        $nextYear = $year + 1;
+
         return [
-            ['2026-01-01', '2026-01-11'],
-            ['2026-03-27', '2026-04-14'],
-            ['2026-06-29', '2026-09-13'],
-            ['2026-10-16', '2026-11-02'],
-            ['2026-12-21', '2027-01-10'],
+            [sprintf('%d-01-01', $year), sprintf('%d-01-11', $year)],
+            [sprintf('%d-03-27', $year), sprintf('%d-04-14', $year)],
+            [sprintf('%d-06-29', $year), sprintf('%d-09-13', $year)],
+            [sprintf('%d-10-16', $year), sprintf('%d-11-02', $year)],
+            [sprintf('%d-12-21', $year), sprintf('%d-01-10', $nextYear)],
         ];
     }
 }

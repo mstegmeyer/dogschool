@@ -13,6 +13,7 @@ use App\Repository\DogRepository;
 use App\Repository\HotelBookingRepository;
 use App\Service\ApiNormalizer;
 use App\Service\PricingEngine;
+use App\Service\RoomOccupancyService;
 use App\Support\LocalDateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,6 +31,7 @@ final class HotelBookingController extends AbstractController
         private readonly DogRepository $dogRepository,
         private readonly ApiNormalizer $normalizer,
         private readonly PricingEngine $pricingEngine,
+        private readonly RoomOccupancyService $roomOccupancyService,
     ) {
     }
 
@@ -113,6 +115,11 @@ final class HotelBookingController extends AbstractController
 
         if ($booking->getRoom() === null) {
             return $this->json(['errors' => ['roomId' => 'Vor dem Bestätigen muss ein Raum zugewiesen werden.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        $availability = $this->roomOccupancyService->buildAvailabilityForRoom($booking->getRoom(), $booking);
+        if (!$availability['available']) {
+            return $this->json(['errors' => ['roomId' => 'Der zugewiesene Raum ist nicht mehr verfügbar.']], Response::HTTP_BAD_REQUEST);
         }
 
         $booking->setState(HotelBookingState::CONFIRMED);

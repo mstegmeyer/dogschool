@@ -92,11 +92,11 @@ final class ContractController extends AbstractController
     {
         $contract = $this->contractRepository->findOneByIdAndCustomer($id, $customer);
         if (!$contract instanceof Contract) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($contract->getState() !== ContractState::PENDING_CUSTOMER_APPROVAL) {
-            return $this->json(['error' => 'Only revised contracts can be accepted'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur Verträge mit Preisprüfung können angenommen werden'], Response::HTTP_BAD_REQUEST);
         }
 
         $contract->setState(ContractState::ACTIVE);
@@ -110,11 +110,11 @@ final class ContractController extends AbstractController
     {
         $contract = $this->contractRepository->findOneByIdAndCustomer($id, $customer);
         if (!$contract instanceof Contract) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($contract->getState() !== ContractState::PENDING_CUSTOMER_APPROVAL) {
-            return $this->json(['error' => 'Only revised contracts can be declined'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur Verträge mit Preisprüfung können abgelehnt werden'], Response::HTTP_BAD_REQUEST);
         }
 
         $contract->setState(ContractState::DECLINED);
@@ -131,11 +131,11 @@ final class ContractController extends AbstractController
     ): JsonResponse {
         $contract = $this->contractRepository->findOneByIdAndCustomer($id, $customer);
         if (!$contract instanceof Contract) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+            return $this->json(['error' => 'Vertrag nicht gefunden'], Response::HTTP_NOT_FOUND);
         }
 
         if ($contract->getState() !== ContractState::PENDING_CUSTOMER_APPROVAL) {
-            return $this->json(['error' => 'Only revised contracts can be resubmitted'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['error' => 'Nur Verträge mit Preisprüfung können erneut eingereicht werden'], Response::HTTP_BAD_REQUEST);
         }
 
         $contract->setState(ContractState::REQUESTED);
@@ -152,6 +152,10 @@ final class ContractController extends AbstractController
      */
     private function validateContractRequest(Customer $customer, ContractRequestDto $dto): array
     {
+        if ($dto->price !== null && trim($dto->price) !== '') {
+            return [null, null, $this->json(['errors' => ['price' => 'Der Preis wird serverseitig berechnet und darf nicht gesendet werden.']], Response::HTTP_BAD_REQUEST)];
+        }
+
         if ($dto->endDate !== null && $dto->endDate !== '') {
             return [null, null, $this->json(['errors' => ['endDate' => 'Enddatum darf bei Vertragsanfragen nicht gesetzt werden.']], Response::HTTP_BAD_REQUEST)];
         }
@@ -176,7 +180,7 @@ final class ContractController extends AbstractController
 
         $dog = $this->dogRepository->findOneByIdAndCustomer($dto->dogId, $customer);
         if ($dog === null) {
-            return [null, null, $this->json(['errors' => ['dogId' => 'Invalid or not your dog']], Response::HTTP_BAD_REQUEST)];
+            return [null, null, $this->json(['errors' => ['dogId' => 'Ungültiger Hund oder gehört nicht zu deinem Konto.']], Response::HTTP_BAD_REQUEST)];
         }
 
         return [$startDate, $dog, null];

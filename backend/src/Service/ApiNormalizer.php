@@ -88,7 +88,7 @@ final class ApiNormalizer
             'state' => $contract->getState()->value,
             'customerComment' => $contract->getCustomerComment(),
             'adminComment' => $contract->getAdminComment(),
-            'pricingSnapshot' => $contract->getPricingSnapshot(),
+            'pricingSnapshot' => $this->normalizePricingSnapshot($contract->getPricingSnapshot(), 'contract'),
             'createdAt' => $contract->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }
@@ -346,7 +346,7 @@ final class ApiNormalizer
             'state' => $booking->getState()->value,
             'customerComment' => $booking->getCustomerComment(),
             'adminComment' => $booking->getAdminComment(),
-            'pricingSnapshot' => $booking->getPricingSnapshot(),
+            'pricingSnapshot' => $this->normalizePricingSnapshot($booking->getPricingSnapshot(), 'hotelBooking'),
             'createdAt' => $booking->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }
@@ -409,5 +409,15 @@ final class ApiNormalizer
             'fullName' => $trainer->getFullName(),
             'phone' => $trainer->getPhone(),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizePricingSnapshot(array $snapshot, string $type): array
+    {
+        return PricingEngine::normalizeSnapshot($snapshot, $type);
     }
 }

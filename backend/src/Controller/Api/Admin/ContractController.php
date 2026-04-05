@@ -100,14 +100,17 @@ final class ContractController extends AbstractController
         }
 
         $quote = $this->pricingEngine->previewExistingContract($contract);
+        $finalPrice = $payload['price'] ?? $quote['monthlyPrice'];
+        $quotedMonthlyPriceCents = PricingEngine::amountToCents($quote['monthlyPrice']);
+        $finalPriceCents = PricingEngine::amountToCents($finalPrice);
+
         $contract->setQuotedMonthlyPrice($quote['monthlyPrice']);
         $contract->setRegistrationFee($quote['registrationFee']);
-        $contract->setPricingSnapshot($quote['snapshot']);
-        $finalPrice = $payload['price'] ?? $quote['monthlyPrice'];
+        $contract->setPricingSnapshot(PricingEngine::finalizeContractSnapshot($quote['snapshot'], $finalPrice, $quote['registrationFee']));
         $contract->setPrice($finalPrice);
         $contract->setAdminComment($payload['adminComment'] ?? $contract->getAdminComment());
         $contract->setState(
-            PricingEngine::amountToCents($finalPrice) > PricingEngine::amountToCents($quote['monthlyPrice'])
+            $finalPriceCents > $quotedMonthlyPriceCents
                 ? ContractState::PENDING_CUSTOMER_APPROVAL
                 : ContractState::ACTIVE
         );

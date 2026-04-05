@@ -478,7 +478,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $contract->setCustomerComment('Bitte Trainingszeiten flexibel halten.');
         $this->applyContractPricing($contract, $state === ContractState::PENDING_CUSTOMER_APPROVAL ? 24_00 : 0, true);
         if ($state === ContractState::PENDING_CUSTOMER_APPROVAL) {
-            $contract->setAdminComment('Preis angepasst wegen zusaetzlicher Einzelbetreuung.');
+            $contract->setAdminComment('Preis angepasst wegen zusätzlicher Einzelbetreuung.');
         }
 
         return $contract;
@@ -800,7 +800,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setStartAt($startAt);
         $booking->setEndAt($endAt);
         $booking->setIncludesTravelProtection($includesTravelProtection);
-        $booking->setCustomerComment('Bitte moeglichst ruhige Unterbringung.');
+        $booking->setCustomerComment('Bitte möglichst ruhige Unterbringung.');
         $this->applyHotelPricing($booking, $extraPriceCents);
         if ($state === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
             $booking->setAdminComment('Preis angepasst wegen manueller Zusatzwuensche.');
@@ -861,38 +861,28 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             return;
         }
 
-        $pricingConfig = new PricingConfig();
-        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
-            $season = new HotelPeakSeason();
-            $season->setStartDate(new \DateTimeImmutable($startDate));
-            $season->setEndDate(new \DateTimeImmutable($endDate));
-            $pricingConfig->addHotelPeakSeason($season);
-        }
-
-        $manager->persist($pricingConfig);
+        $manager->persist($this->createDefaultPricingConfigEntity());
     }
 
     private function applyContractPricing(Contract $contract, int $extraMonthlyCents = 0, bool $hasRegistrationFee = true): void
     {
-        $monthlyPriceCents = match (true) {
-            $contract->getCoursesPerWeek() <= 1 => 89_00,
-            $contract->getCoursesPerWeek() === 2 => 2 * 80_00,
-            $contract->getCoursesPerWeek() === 3 => 3 * 76_00,
-            $contract->getCoursesPerWeek() === 4 => 4 * 71_00,
-            default => $contract->getCoursesPerWeek() * 67_00,
-        };
+        $monthlyPriceCents = $this->resolveDefaultSchoolMonthlyPriceCents($contract->getCoursesPerWeek());
         $quotedMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents);
         $finalMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents + $extraMonthlyCents);
-        $registrationFee = $hasRegistrationFee ? '149.00' : '0.00';
+        $registrationFee = PricingEngine::formatAmount($hasRegistrationFee ? $this->resolveDefaultRegistrationFeeCents() : 0);
 
         $contract->setQuotedMonthlyPrice($quotedMonthlyPrice);
         $contract->setPrice($finalMonthlyPrice);
         $contract->setRegistrationFee($registrationFee);
-        $contract->setPricingSnapshot([
+        $contract->setPricingSnapshot(PricingEngine::finalizeContractSnapshot([
             'type' => 'contract',
             'coursesPerWeek' => $contract->getCoursesPerWeek(),
+            'monthlyUnitPrice' => PricingEngine::schoolUnitPriceForCourseCount(new PricingConfig(), $contract->getCoursesPerWeek()),
             'monthlyPrice' => $quotedMonthlyPrice,
             'registrationFee' => $registrationFee,
+            'firstInvoiceTotal' => PricingEngine::formatAmount(
+                PricingEngine::amountToCents($quotedMonthlyPrice) + PricingEngine::amountToCents($registrationFee),
+            ),
             'lineItems' => [
                 [
                     'key' => 'school_contract_monthly',
@@ -911,7 +901,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                     'billingPeriod' => 'ONCE',
                 ],
             ],
-        ]);
+        ], $finalMonthlyPrice, $registrationFee));
     }
 
     private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
@@ -937,7 +927,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
         $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
         $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
-        $booking->setPricingSnapshot([
+        $booking->setPricingSnapshot(PricingEngine::finalizeHotelBookingSnapshot([
             'type' => 'hotelBooking',
             'pricingKind' => $pricingKind->value,
             'billableDays' => $billableDays,
@@ -970,7 +960,34 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                     'billingPeriod' => 'ONCE',
                 ],
             ],
-        ]);
+        ], $booking->getTotalPrice()));
+    }
+
+    private function createDefaultPricingConfigEntity(): PricingConfig
+    {
+        $pricingConfig = new PricingConfig();
+        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
+            $season = new HotelPeakSeason();
+            $season->setStartDate(new \DateTimeImmutable($startDate));
+            $season->setEndDate(new \DateTimeImmutable($endDate));
+            $pricingConfig->addHotelPeakSeason($season);
+        }
+
+        return $pricingConfig;
+    }
+
+    private function resolveDefaultSchoolMonthlyPriceCents(int $coursesPerWeek): int
+    {
+        $normalizedCoursesPerWeek = max(1, $coursesPerWeek);
+        $pricingConfig = new PricingConfig();
+        $unitPrice = PricingEngine::schoolUnitPriceForCourseCount($pricingConfig, $normalizedCoursesPerWeek);
+
+        return PricingEngine::amountToCents($unitPrice) * $normalizedCoursesPerWeek;
+    }
+
+    private function resolveDefaultRegistrationFeeCents(): int
+    {
+        return PricingEngine::amountToCents((new PricingConfig())->getSchoolRegistrationFee());
     }
 
     private function isPeakSeasonDate(\DateTimeImmutable $date): bool

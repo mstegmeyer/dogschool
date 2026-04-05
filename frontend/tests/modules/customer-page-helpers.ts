@@ -29,6 +29,61 @@ export const dog = {
     shoulderHeightCm: 48,
 };
 
+const hotelPricingSnapshot = {
+    type: 'hotelBooking',
+    pricingKind: 'HOTEL',
+    billableDays: 2,
+    baseDailyPrice: '58.00',
+    serviceFee: '7.50',
+    travelProtectionPrice: '0.00',
+    quotedTotalPrice: '123.50',
+    lineItems: [
+        {
+            key: 'hotel_base',
+            label: 'Hundehotel',
+            quantity: 2,
+            unitPrice: '58.00',
+            amount: '116.00',
+            billingPeriod: 'DAY',
+        },
+        {
+            key: 'hotel_service_fee',
+            label: 'Servicepauschale',
+            quantity: 1,
+            unitPrice: '7.50',
+            amount: '7.50',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
+const contractPricingSnapshot = {
+    type: 'contract',
+    coursesPerWeek: 2,
+    monthlyUnitPrice: '39.50',
+    monthlyPrice: '79.00',
+    registrationFee: '149.00',
+    firstInvoiceTotal: '228.00',
+    lineItems: [
+        {
+            key: 'school_contract_monthly',
+            label: '2x Training pro Woche',
+            quantity: 2,
+            unitPrice: '39.50',
+            amount: '79.00',
+            billingPeriod: 'MONTH',
+        },
+        {
+            key: 'school_registration_fee',
+            label: 'Anmeldegebühr',
+            quantity: 1,
+            unitPrice: '149.00',
+            amount: '149.00',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
 export const hotelBooking = {
     id: 'hotel-booking-1',
     customerId: 'customer-1',
@@ -50,9 +105,7 @@ export const hotelBooking = {
     state: 'REQUESTED',
     customerComment: null,
     adminComment: null,
-    pricingSnapshot: {
-        lineItems: [],
-    },
+    pricingSnapshot: hotelPricingSnapshot,
     createdAt: '2026-04-01T10:00:00+02:00',
     availableRooms: [],
 };
@@ -132,9 +185,7 @@ export const contract = {
     state: 'REQUESTED',
     customerComment: null,
     adminComment: null,
-    pricingSnapshot: {
-        lineItems: [],
-    },
+    pricingSnapshot: contractPricingSnapshot,
     createdAt: '2026-04-01T10:00:00+02:00',
 };
 

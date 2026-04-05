@@ -288,6 +288,69 @@ final class HotelBookingControllerTest extends WebTestCase
         self::assertSame($managedRoom->getId(), $reloaded->getRoom()?->getId());
     }
 
+    public function testAcceptPriceRejectsBookingWhenAssignedRoomIsNoLongerAvailable(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $pendingDog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Pending Review')
+            ->setShoulderHeightCm(45);
+        $dogRepository->save($pendingDog);
+
+        $existingDog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Existing Occupant')
+            ->setShoulderHeightCm(60);
+        $dogRepository->save($existingDog);
+
+        $room = new Room();
+        $room->setName('Tight Room');
+        $room->setSquareMeters(10);
+        $entityManager->persist($room);
+        $entityManager->flush();
+
+        $pendingBooking = (new HotelBooking())
+            ->setCustomer($customer)
+            ->setDog($pendingDog)
+            ->setRoom($room)
+            ->setState(HotelBookingState::PENDING_CUSTOMER_APPROVAL)
+            ->setStartAt(new \DateTimeImmutable('2026-04-16T08:00:00+02:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-17T10:00:00+02:00'))
+            ->setQuotedTotalPrice('123.50')
+            ->setTotalPrice('148.50')
+            ->setAdminComment('Preis erhöht wegen Zusatzwünschen.');
+        $hotelBookingRepository->save($pendingBooking);
+
+        $existingBooking = (new HotelBooking())
+            ->setCustomer($customer)
+            ->setDog($existingDog)
+            ->setRoom($room)
+            ->setState(HotelBookingState::CONFIRMED)
+            ->setStartAt(new \DateTimeImmutable('2026-04-16T09:00:00+02:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-17T09:00:00+02:00'));
+        $hotelBookingRepository->save($existingBooking);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/hotel-bookings/%s/accept-price', $pendingBooking->getId()), $token);
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der zugewiesene Raum ist nicht mehr verfügbar.', $data['errors']['roomId'] ?? null);
+
+        $reloaded = $hotelBookingRepository->find($pendingBooking->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(HotelBookingState::PENDING_CUSTOMER_APPROVAL, $reloaded->getState());
+    }
+
     public function testCreateHotelBookingDoesNotPersistHeightWhenOverlapRejectsRequest(): void
     {
         $client = static::createClient();

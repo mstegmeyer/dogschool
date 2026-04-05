@@ -67,6 +67,86 @@ export const room = {
     createdAt: '2026-04-01T10:00:00+02:00',
 };
 
+const hotelPricingSnapshot = {
+    type: 'hotelBooking',
+    pricingKind: 'HOTEL',
+    billableDays: 2,
+    baseDailyPrice: '58.00',
+    serviceFee: '7.50',
+    travelProtectionPrice: '0.00',
+    quotedTotalPrice: '123.50',
+    lineItems: [
+        {
+            key: 'hotel_base',
+            label: 'Hundehotel',
+            quantity: 2,
+            unitPrice: '58.00',
+            amount: '116.00',
+            billingPeriod: 'DAY',
+        },
+        {
+            key: 'hotel_service_fee',
+            label: 'Servicepauschale',
+            quantity: 1,
+            unitPrice: '7.50',
+            amount: '7.50',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
+const activeContractPricingSnapshot = {
+    type: 'contract',
+    coursesPerWeek: 1,
+    monthlyUnitPrice: '89.00',
+    monthlyPrice: '89.00',
+    registrationFee: '149.00',
+    firstInvoiceTotal: '238.00',
+    lineItems: [
+        {
+            key: 'school_contract_monthly',
+            label: '1x Training pro Woche',
+            quantity: 1,
+            unitPrice: '89.00',
+            amount: '89.00',
+            billingPeriod: 'MONTH',
+        },
+        {
+            key: 'school_registration_fee',
+            label: 'Anmeldegebühr',
+            quantity: 1,
+            unitPrice: '149.00',
+            amount: '149.00',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
+const pendingContractPricingSnapshot = {
+    ...activeContractPricingSnapshot,
+    monthlyUnitPrice: '79.00',
+    monthlyPrice: '79.00',
+    firstInvoiceTotal: '228.00',
+    lineItems: [
+        {
+            key: 'school_contract_monthly',
+            label: '1x Training pro Woche',
+            quantity: 1,
+            unitPrice: '79.00',
+            amount: '79.00',
+            billingPeriod: 'MONTH',
+        },
+        {
+            key: 'school_registration_fee',
+            label: 'Anmeldegebühr',
+            quantity: 1,
+            unitPrice: '149.00',
+            amount: '149.00',
+            billingPeriod: 'ONCE',
+        },
+    ],
+} as const;
+
 export const hotelBooking = {
     id: 'hotel-booking-1',
     customerId: 'customer-1',
@@ -88,9 +168,7 @@ export const hotelBooking = {
     state: 'REQUESTED',
     customerComment: null,
     adminComment: null,
-    pricingSnapshot: {
-        lineItems: [],
-    },
+    pricingSnapshot: hotelPricingSnapshot,
     createdAt: '2026-04-01T10:00:00+02:00',
     availableRooms: [
         {
@@ -195,9 +273,7 @@ export const activeContract = {
     state: 'ACTIVE',
     customerComment: null,
     adminComment: null,
-    pricingSnapshot: {
-        lineItems: [],
-    },
+    pricingSnapshot: activeContractPricingSnapshot,
     createdAt: '2026-03-01T10:00:00+02:00',
 };
 
@@ -209,6 +285,7 @@ export const pendingContract = {
     quotedMonthlyPrice: '79.00',
     priceMonthly: '79.00',
     firstInvoiceTotal: '228.00',
+    pricingSnapshot: pendingContractPricingSnapshot,
 };
 
 export const customerRecord = {

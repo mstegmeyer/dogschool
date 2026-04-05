@@ -34,13 +34,10 @@ final class ContractController extends AbstractController
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
-        $stateParam = $request->query->get('state');
-        $state = is_string($stateParam) && $stateParam !== '' && $stateParam !== 'all'
-            ? ContractState::tryFrom($stateParam)
-            : null;
+        $states = $this->resolveListStates($request->query->get('state'));
         $hasPaginatedRequest = $request->query->has('page')
             || $request->query->has('limit')
-            || $state !== null;
+            || $states !== null;
 
         if ($hasPaginatedRequest) {
             $page = max(1, $request->query->getInt('page', 1));
@@ -52,8 +49,8 @@ final class ContractController extends AbstractController
             $sortDirection = strtolower((string) $request->query->get('direction', 'desc')) === 'asc'
                 ? 'ASC'
                 : 'DESC';
-            $total = $this->contractRepository->countForAdminList($state);
-            $contracts = $this->contractRepository->findPageForAdminList($page, $limit, $state, $sortBy, $sortDirection);
+            $total = $this->contractRepository->countForAdminList($states);
+            $contracts = $this->contractRepository->findPageForAdminList($page, $limit, $states, $sortBy, $sortDirection);
 
             return $this->json([
                 'items' => array_map(fn (Contract $c) => $this->normalizer->normalizeContract($c), $contracts),
@@ -238,5 +235,26 @@ final class ContractController extends AbstractController
         }
 
         return $result;
+    }
+
+    /**
+     * @return list<ContractState>|null
+     */
+    private function resolveListStates(mixed $stateParam): ?array
+    {
+        if (!is_string($stateParam) || $stateParam === '' || $stateParam === 'all') {
+            return null;
+        }
+
+        if ($stateParam === 'open') {
+            return [
+                ContractState::REQUESTED,
+                ContractState::PENDING_CUSTOMER_APPROVAL,
+            ];
+        }
+
+        $state = ContractState::tryFrom($stateParam);
+
+        return $state instanceof ContractState ? [$state] : null;
     }
 }

@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils';
+import { ref } from 'vue';
 import { vi } from 'vitest';
 import { futureDateTimeLocalStubValue, toDateTimeLocalStubValue } from '../helpers/date-time-local';
 import { createFormFeedbackState, uiPageStubs } from '../nuxt/ui-test-stubs';
@@ -10,6 +11,8 @@ export const apiPutMock = vi.fn();
 export const apiDelMock = vi.fn();
 export const toastAddMock = vi.fn();
 export const navigateToMock = vi.fn();
+export const routerReplaceMock = vi.fn();
+export const routeQueryMock = ref<Record<string, unknown>>({});
 
 export const recurrenceCourseType = {
     id: 'course-type-1',
@@ -318,6 +321,8 @@ export const todayCourseDate = {
 
 export function installAdminGlobals() {
     installNuxtGlobals();
+    routeQueryMock.value = {};
+    routerReplaceMock.mockReset();
     vi.stubGlobal('useApi', () => ({
         get: apiGetMock,
         post: apiPostMock,
@@ -328,6 +333,10 @@ export function installAdminGlobals() {
         add: toastAddMock,
     }));
     vi.stubGlobal('navigateTo', navigateToMock);
+    vi.stubGlobal('useRoute', () => ({ query: routeQueryMock.value }));
+    vi.stubGlobal('useRouter', () => ({
+        replace: routerReplaceMock,
+    }));
     vi.stubGlobal('useHelpers', () => ({
         dayName: (dayOfWeek: number) => ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'][dayOfWeek] || '',
         todayIso: () => '2026-04-04',
@@ -411,6 +420,11 @@ export async function mountContractsPage() {
                     ['modelValue', 'contract', 'endDate', 'endDateError', 'formError', 'saving'],
                     ['cancel', 'submit', 'normalize-end-date', 'clear-end-date-error', 'update:end-date', 'update:modelValue'],
                 ),
+                ReviewModal: namedStub(
+                    'ReviewModal',
+                    ['modelValue', 'contract', 'price', 'registrationFee', 'adminComment', 'approving', 'declining'],
+                    ['approve', 'decline', 'update:modelValue', 'update:price', 'update:registrationFee', 'update:adminComment'],
+                ),
             },
         },
     });
@@ -469,8 +483,13 @@ export async function mountDashboardPage() {
             stubs: {
                 ...uiPageStubs,
                 StatsGrid: namedStub('StatsGrid', ['loading', 'stats']),
-                PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts']),
+                PendingContractsCard: namedStub('PendingContractsCard', ['loading', 'count', 'contracts'], ['review']),
                 TodayScheduleCard: namedStub('TodayScheduleCard', ['loading', 'courseDates']),
+                ReviewModal: namedStub(
+                    'ReviewModal',
+                    ['modelValue', 'contract', 'price', 'registrationFee', 'adminComment', 'approving', 'declining'],
+                    ['approve', 'decline', 'update:modelValue', 'update:price', 'update:registrationFee', 'update:adminComment'],
+                ),
             },
         },
     });

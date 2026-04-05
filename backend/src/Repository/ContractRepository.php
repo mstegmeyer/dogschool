@@ -95,16 +95,17 @@ class ContractRepository extends ServiceEntityRepository
 
     /**
      * @return array<int, Contract>
+     * @param list<ContractState>|null $states
      */
     public function findPageForAdminList(
         int $page,
         int $limit,
-        ?ContractState $state = null,
+        ?array $states = null,
         string $sortBy = 'createdAt',
         string $sortDirection = 'DESC',
     ): array {
         /** @var list<Contract> $contracts */
-        $contracts = $this->createAdminListQueryBuilder($state)
+        $contracts = $this->createAdminListQueryBuilder($states)
             ->orderBy('contract.'.$sortBy, $sortDirection)
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
@@ -114,9 +115,12 @@ class ContractRepository extends ServiceEntityRepository
         return $contracts;
     }
 
-    public function countForAdminList(?ContractState $state = null): int
+    /**
+     * @param list<ContractState>|null $states
+     */
+    public function countForAdminList(?array $states = null): int
     {
-        return (int) $this->createAdminListQueryBuilder($state)
+        return (int) $this->createAdminListQueryBuilder($states)
             ->select('COUNT(contract.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -148,14 +152,17 @@ class ContractRepository extends ServiceEntityRepository
         return (int) $query->getQuery()->getSingleScalarResult() > 0;
     }
 
-    private function createAdminListQueryBuilder(?ContractState $state = null): QueryBuilder
+    /**
+     * @param list<ContractState>|null $states
+     */
+    private function createAdminListQueryBuilder(?array $states = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('contract');
 
-        if ($state !== null) {
+        if ($states !== null && $states !== []) {
             $qb
-                ->andWhere('contract.state = :state')
-                ->setParameter('state', $state);
+                ->andWhere('contract.state IN (:states)')
+                ->setParameter('states', $states);
         }
 
         return $qb;

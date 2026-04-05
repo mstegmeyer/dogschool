@@ -272,6 +272,46 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame((int) ceil(($activeTotalBefore + 2) / 1), $data['pagination']['pages']);
     }
 
+    public function testListContractsSupportsCombinedOpenFilter(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-open-filter-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Open Filter Dog');
+        $dogRepo->save($dog);
+
+        foreach ([ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL, ContractState::ACTIVE] as $index => $state) {
+            $contract = new Contract();
+            $contract->setCustomer($customer);
+            $contract->setDog($dog);
+            $contract->setState($state);
+            $contract->setStartDate(new \DateTimeImmutable('2025-02-0'.($index + 1)));
+            $contract->setPrice('59.00');
+            $contract->setCoursesPerWeek(1);
+            $contractRepo->save($contract);
+        }
+
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=20&state=open', $token);
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame(2, $data['pagination']['total']);
+        self::assertCount(2, $data['items']);
+        self::assertContains($data['items'][0]['state'], ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
+        self::assertContains($data['items'][1]['state'], ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
+    }
+
     public function testDeclineContract(): void
     {
         $client = static::createClient();

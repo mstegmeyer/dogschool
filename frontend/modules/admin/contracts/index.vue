@@ -43,80 +43,21 @@
         @update:end-date='cancelForm.endDate = $event'
     />
 
-    <UModal :model-value='showReviewModal' @update:model-value='showReviewModal = $event'>
-        <UCard v-if='selectedContract' data-testid='contract-review-modal'>
-            <template #header>
-                <div class='flex items-start justify-between gap-3'>
-                    <div>
-                        <h3 class='font-semibold text-slate-800'>
-                            Vertrag prüfen
-                        </h3>
-                        <p class='text-sm text-slate-500'>
-                            {{ selectedContract.dogName || 'Hund' }} · {{ selectedContract.customerName || 'Kunde' }}
-                        </p>
-                    </div>
-                    <UBadge :color='contractStateColor(selectedContract.state)' variant='soft'>
-                        {{ contractStateLabel(selectedContract.state) }}
-                    </UBadge>
-                </div>
-            </template>
-
-            <div class='space-y-4'>
-                <PricingBreakdown
-                    :snapshot='selectedContract.pricingSnapshot'
-                    title='Aktuelle Preisübersicht'
-                    total-label='Erste Rechnung'
-                    :total-value='reviewFirstInvoiceTotal'
-                />
-
-                <div v-if='selectedContract.customerComment' class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
-                    <span class='font-medium text-slate-700'>Kundenkommentar:</span>
-                    {{ selectedContract.customerComment }}
-                </div>
-
-                <UFormGroup label='Monatspreis'>
-                    <UInput v-model='reviewForm.price' type='number' step='0.01' />
-                    <template #hint>
-                        Automatischer Vorschlag: {{ formatContractMonthlyPrice(selectedContract.quotedMonthlyPrice, selectedContract.type) }}
-                    </template>
-                </UFormGroup>
-
-                <UFormGroup label='Anmeldegebühr'>
-                    <UInput v-model='reviewForm.registrationFee' type='number' step='0.01' />
-                    <template #hint>
-                        Automatischer Vorschlag: {{ formatMoney(reviewSuggestedRegistrationFee) }}
-                    </template>
-                </UFormGroup>
-
-                <UFormGroup label='Admin-Kommentar'>
-                    <UTextarea
-                        v-model='reviewForm.adminComment'
-                        :rows='4'
-                        placeholder='Begründung für Preisänderungen oder Hinweise zur Anfrage.'
-                    />
-                </UFormGroup>
-
-                <div class='flex justify-end gap-2'>
-                    <UButton variant='ghost' label='Schließen' @click='closeReviewModal' />
-                    <UButton
-                        data-testid='decline-contract-review'
-                        color='red'
-                        variant='soft'
-                        :loading='reviewDeclining'
-                        label='Ablehnen'
-                        @click='declineSelectedContract'
-                    />
-                    <UButton
-                        data-testid='approve-contract-review'
-                        color='green'
-                        :loading='reviewApproving'
-                        label='Bestätigen'
-                        @click='approveSelectedContract'
-                    />
-                </div>
-            </div>
-        </UCard>
-    </UModal>
+    <ReviewModal
+        :model-value='showReviewModal'
+        :contract='selectedContract'
+        :price='reviewForm.price'
+        :registration-fee='reviewForm.registrationFee'
+        :admin-comment='reviewForm.adminComment'
+        :approving='reviewApproving'
+        :declining='reviewDeclining'
+        @update:model-value='handleReviewModalModelUpdate'
+        @update:price='reviewForm.price = $event'
+        @update:registration-fee='reviewForm.registrationFee = $event'
+        @update:admin-comment='reviewForm.adminComment = $event'
+        @approve='approveSelectedContract'
+        @decline='declineSelectedContract'
+    />
 </div>
 </template>
 
@@ -124,17 +65,23 @@
 import type { ApiListResponse, Contract } from '~/types';
 import CancelModal from './components/CancelModal.vue';
 import ContractsTable from './components/ContractsTable.vue';
+import ReviewModal from './components/ReviewModal.vue';
 
 definePageMeta({ layout: 'admin' });
 
 const api = useApi();
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
-const { toMonthEndIso, isLastOfMonth, contractStateLabel, contractStateColor, formatContractMonthlyPrice, formatMoney } = useHelpers();
+const { toMonthEndIso, isLastOfMonth } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback();
+
+const allowedStateFilters = ['ACTIVE', 'open', 'all', 'REQUESTED', 'PENDING_CUSTOMER_APPROVAL', 'DECLINED', 'CANCELLED'] as const;
+type ContractStateFilter = typeof allowedStateFilters[number];
 
 const contracts = ref<Contract[]>([]);
 const loading = ref(true);
-const stateFilter = ref('ACTIVE');
+const stateFilter = ref<ContractStateFilter>(resolveStateFilter(route.query.state));
 const currentPage = ref(1);
 const totalContracts = ref(0);
 const totalPages = ref(1);
@@ -158,6 +105,7 @@ const pageSize = 20;
 
 const stateOptions = [
     { label: 'Aktiv', value: 'ACTIVE' },
+    { label: 'Offen', value: 'open' },
     { label: 'Alle', value: 'all' },
     { label: 'Angefragt', value: 'REQUESTED' },
     { label: 'Preisprüfung', value: 'PENDING_CUSTOMER_APPROVAL' },
@@ -189,22 +137,34 @@ const resultSummary = computed(() => {
     return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`;
 });
 
-const reviewSuggestedRegistrationFee = computed(() => {
-    if (!selectedContract.value) {
-        return '0.00';
+function resolveStateFilter(value: unknown): ContractStateFilter {
+    return typeof value === 'string' && allowedStateFilters.includes(value as ContractStateFilter)
+        ? value as ContractStateFilter
+        : 'ACTIVE';
+}
+
+function syncStateFilterQuery(): void {
+    const nextQuery = { ...route.query };
+
+    if (stateFilter.value === 'ACTIVE') {
+        delete nextQuery.state;
+    } else {
+        nextQuery.state = stateFilter.value;
     }
 
-    const snapshotRegistrationFee = selectedContract.value.pricingSnapshot.quotedRegistrationFee;
+    const currentQueryState = typeof route.query.state === 'string'
+        ? route.query.state
+        : undefined;
+    const nextQueryState = stateFilter.value === 'ACTIVE'
+        ? undefined
+        : stateFilter.value;
 
-    return typeof snapshotRegistrationFee === 'string'
-        ? snapshotRegistrationFee
-        : selectedContract.value.registrationFee;
-});
+    if (currentQueryState === nextQueryState) {
+        return;
+    }
 
-const reviewFirstInvoiceTotal = computed(() => formatAmount(
-    amountToCents(reviewForm.price || selectedContract.value?.price || '0.00')
-    + amountToCents(reviewForm.registrationFee || selectedContract.value?.registrationFee || '0.00'),
-));
+    void router.replace({ query: nextQuery });
+}
 
 function openCancelConfirm(contract: Contract): void {
     contractToCancel.value = contract;
@@ -226,6 +186,15 @@ function closeReviewModal(): void {
     reviewForm.price = '';
     reviewForm.registrationFee = '';
     reviewForm.adminComment = '';
+}
+
+function handleReviewModalModelUpdate(value: boolean): void {
+    if (value) {
+        showReviewModal.value = true;
+        return;
+    }
+
+    closeReviewModal();
 }
 
 async function openReview(contract: Contract): Promise<void> {
@@ -338,6 +307,8 @@ watch(currentPage, () => {
 });
 
 watch(stateFilter, () => {
+    syncStateFilterQuery();
+
     if (currentPage.value !== 1) {
         currentPage.value = 1;
         return;
@@ -356,24 +327,7 @@ watch(sort, () => {
 }, { deep: true });
 
 onMounted(() => {
+    syncStateFilterQuery();
     void loadContracts();
 });
-
-function amountToCents(value: string): number {
-    const normalized = value.trim().replace(',', '.');
-    if (normalized === '') {
-        return 0;
-    }
-
-    const numericValue = Number.parseFloat(normalized);
-    if (Number.isNaN(numericValue)) {
-        return 0;
-    }
-
-    return Math.round(numericValue * 100);
-}
-
-function formatAmount(cents: number): string {
-    return (cents / 100).toFixed(2);
-}
 </script>

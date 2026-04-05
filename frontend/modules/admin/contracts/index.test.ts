@@ -5,6 +5,7 @@ import {
     apiPostMock,
     installAdminGlobals,
     mountContractsPage,
+    routeQueryMock,
 } from '~/tests/modules/admin-page-helpers';
 import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
@@ -29,21 +30,26 @@ describe('admin contracts page', () => {
     });
 
     it('loads contracts, approves, declines, validates cancellation, and cancels with a month end', async () => {
+        routeQueryMock.value = { state: 'open' };
         const wrapper = await mountContractsPage();
         const table = wrapper.getComponent({ name: 'ContractsTable' });
         const modal = wrapper.getComponent({ name: 'CancelModal' });
+        const reviewModal = wrapper.getComponent({ name: 'ReviewModal' });
 
         expect(table.props('contracts')).toHaveLength(1);
+        expect(apiGetMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts?page=1&limit=20&state=open&sort=createdAt&direction=desc');
 
         apiPostMock.mockResolvedValue({});
         await table.vm.$emit('review', activeContract);
         await flushPromises();
-        await wrapper.findAll('button').find(button => button.text() === 'Bestätigen')?.trigger('click');
+        expect(reviewModal.props('modelValue')).toBe(true);
+        expect(reviewModal.props('contract')).toMatchObject({ id: 'contract-1' });
+        await reviewModal.vm.$emit('approve');
         await flushPromises();
 
         await table.vm.$emit('review', activeContract);
         await flushPromises();
-        await wrapper.findAll('button').find(button => button.text() === 'Ablehnen')?.trigger('click');
+        await reviewModal.vm.$emit('decline');
         await flushPromises();
 
         expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve', {

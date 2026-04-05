@@ -138,55 +138,77 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     ];
 
     // -----------------------------------------------------------------------
-    // Weekly course schedule — [typeCode, dayOfWeek, startTime, endTime, level]
-    //
-    // 36 courses across Mon–Sat using all 13 course types.
-    //   Mon: 5 | Tue: 6 | Wed: 5 | Thu: 6 | Fri: 6 | Sat: 8
+    // Exported course schedule from Termin_Export_2026-04-05_15_48_53.xlsx
     // -----------------------------------------------------------------------
 
+    /**
+     * @var list<array{code: string, date: string, start: string, end: string, level: int, location?: string}>
+     */
     private const COURSE_DEFS = [
-        // --- Monday (5) ---
-        ['MH',   1, '10:00', '11:00', 1],  //  0
-        ['MT',   1, '14:00', '15:00', 0],  //  1
-        ['DIA',  1, '16:00', '17:00', 1],  //  2
-        ['AGI',  1, '18:00', '19:00', 1],  //  3
-        ['JUHU', 1, '19:00', '20:00', 0],  //  4
-        // --- Tuesday (6) ---
-        ['APP',  2, '10:00', '11:00', 1],  //  5
-        ['MH',   2, '11:00', '12:00', 2],  //  6
-        ['RO',   2, '16:00', '17:00', 1],  //  7
-        ['JUHU', 2, '17:00', '18:00', 0],  //  8
-        ['DF',   2, '18:00', '19:00', 0],  //  9
-        ['AGI',  2, '19:00', '20:00', 2],  // 10
-        // --- Wednesday (5) ---
-        ['MH',   3, '10:00', '11:00', 0],  // 11
-        ['MT',   3, '14:00', '15:00', 1],  // 12
-        ['CC',   3, '16:00', '17:00', 1],  // 13
-        ['TK',   3, '18:00', '19:00', 0],  // 14
-        ['AGI',  3, '19:00', '20:00', 3],  // 15
-        // --- Thursday (6) ---
-        ['APP',  4, '10:00', '11:00', 2],  // 16
-        ['MH',   4, '11:00', '12:00', 1],  // 17
-        ['DIA',  4, '16:00', '17:00', 2],  // 18
-        ['JUHU', 4, '17:00', '18:00', 0],  // 19
-        ['TK',   4, '18:00', '19:00', 1],  // 20
-        ['THS',  4, '19:00', '20:00', 1],  // 21
-        // --- Friday (6) ---
-        ['TK',   5, '09:00', '10:00', 2],  // 22
-        ['MH',   5, '10:00', '11:00', 2],  // 23
-        ['THS',  5, '12:00', '13:00', 2],  // 24
-        ['FSTS', 5, '14:00', '15:00', 2],  // 25
-        ['AGI',  5, '16:00', '17:00', 1],  // 26
-        ['MT',   5, '18:00', '19:00', 2],  // 27
-        // --- Saturday (8) ---
-        ['MT',   6, '08:00', '09:00', 0],  // 28
-        ['MH',   6, '09:00', '10:00', 4],  // 29
-        ['JUHU', 6, '10:00', '11:00', 0],  // 30
-        ['CC',   6, '10:00', '11:00', 2],  // 31
-        ['RO',   6, '11:00', '12:00', 2],  // 32
-        ['DS',   6, '12:00', '13:00', 1],  // 33
-        ['AGI',  6, '14:00', '15:00', 2],  // 34
-        ['DF',   6, '15:00', '16:00', 1],  // 35
+        ['code' => 'MH', 'date' => '2026-04-13', 'start' => '08:00', 'end' => '09:00', 'level' => 2],
+        ['code' => 'MH', 'date' => '2026-04-13', 'start' => '09:00', 'end' => '10:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-13', 'start' => '10:00', 'end' => '11:00', 'level' => 2],
+        ['code' => 'JUHU', 'date' => '2026-04-13', 'start' => '16:00', 'end' => '17:00', 'level' => 2],
+        ['code' => 'RO', 'date' => '2026-04-13', 'start' => '17:00', 'end' => '18:00', 'level' => 0],
+        ['code' => 'AGI', 'date' => '2026-04-13', 'start' => '18:00', 'end' => '19:00', 'level' => 0],
+        ['code' => 'TK', 'date' => '2026-04-13', 'start' => '18:00', 'end' => '19:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-13', 'start' => '19:00', 'end' => '20:00', 'level' => 2],
+        ['code' => 'AGI', 'date' => '2026-04-13', 'start' => '19:00', 'end' => '20:00', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-13', 'start' => '20:00', 'end' => '21:00', 'level' => 3],
+        ['code' => 'JUHU', 'date' => '2026-04-13', 'start' => '20:00', 'end' => '21:00', 'level' => 2],
+        ['code' => 'FSTS', 'date' => '2026-04-13', 'start' => '21:30', 'end' => '23:30', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '09:00', 'end' => '10:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '16:00', 'end' => '17:00', 'level' => 2],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '17:00', 'end' => '18:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '17:00', 'end' => '18:00', 'level' => 3],
+        ['code' => 'TK', 'date' => '2026-04-14', 'start' => '18:00', 'end' => '19:00', 'level' => 2],
+        ['code' => 'TK', 'date' => '2026-04-14', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '19:00', 'end' => '20:00', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '20:00', 'end' => '21:00', 'level' => 2],
+        ['code' => 'JUHU', 'date' => '2026-04-14', 'start' => '20:00', 'end' => '21:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-14', 'start' => '21:00', 'end' => '22:00', 'level' => 4, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'TK', 'date' => '2026-04-15', 'start' => '17:00', 'end' => '18:00', 'level' => 2],
+        ['code' => 'WELPEN', 'date' => '2026-04-15', 'start' => '18:00', 'end' => '19:00', 'level' => 0, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'TK', 'date' => '2026-04-15', 'start' => '18:00', 'end' => '19:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
+        ['code' => 'TK', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-15', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-15', 'start' => '20:00', 'end' => '21:00', 'level' => 4, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'MH', 'date' => '2026-04-15', 'start' => '21:00', 'end' => '22:00', 'level' => 4],
+        ['code' => 'FSTS', 'date' => '2026-04-15', 'start' => '22:00', 'end' => '23:30', 'level' => 0],
+        ['code' => 'MT', 'date' => '2026-04-16', 'start' => '08:00', 'end' => '09:00', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '17:00', 'end' => '18:00', 'level' => 2, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '17:00', 'end' => '18:00', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '18:00', 'end' => '19:00', 'level' => 3, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '18:00', 'end' => '19:00', 'level' => 1],
+        ['code' => 'TK', 'date' => '2026-04-16', 'start' => '19:00', 'end' => '20:00', 'level' => 2],
+        ['code' => 'JUHU', 'date' => '2026-04-16', 'start' => '19:00', 'end' => '20:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-16', 'start' => '20:00', 'end' => '21:00', 'level' => 1, 'location' => 'Brock 17, 48308 Senden'],
+        ['code' => 'AGI', 'date' => '2026-04-16', 'start' => '20:00', 'end' => '21:00', 'level' => 0],
+        ['code' => 'FSTS', 'date' => '2026-04-16', 'start' => '21:30', 'end' => '23:30', 'level' => 0],
+        ['code' => 'MT', 'date' => '2026-04-17', 'start' => '15:00', 'end' => '16:00', 'level' => 0],
+        ['code' => 'JUHU', 'date' => '2026-04-17', 'start' => '16:00', 'end' => '17:00', 'level' => 2],
+        ['code' => 'JUHU', 'date' => '2026-04-17', 'start' => '16:00', 'end' => '17:00', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-17', 'start' => '17:00', 'end' => '18:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-17', 'start' => '17:00', 'end' => '18:00', 'level' => 1],
+        ['code' => 'AGI', 'date' => '2026-04-17', 'start' => '18:00', 'end' => '19:00', 'level' => 0],
+        ['code' => 'JUHU', 'date' => '2026-04-17', 'start' => '18:00', 'end' => '19:00', 'level' => 2],
+        ['code' => 'TK', 'date' => '2026-04-17', 'start' => '19:00', 'end' => '19:56', 'level' => 1],
+        ['code' => 'FSTS', 'date' => '2026-04-17', 'start' => '20:00', 'end' => '23:59', 'level' => 0],
+        ['code' => 'MH', 'date' => '2026-04-18', 'start' => '07:00', 'end' => '08:00', 'level' => 3],
+        ['code' => 'MH', 'date' => '2026-04-18', 'start' => '08:00', 'end' => '09:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '08:00', 'end' => '09:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-18', 'start' => '09:00', 'end' => '10:00', 'level' => 3],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '09:00', 'end' => '10:00', 'level' => 3],
+        ['code' => 'MH', 'date' => '2026-04-18', 'start' => '10:00', 'end' => '11:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '10:00', 'end' => '11:00', 'level' => 1],
+        ['code' => 'MH', 'date' => '2026-04-18', 'start' => '11:00', 'end' => '12:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '11:00', 'end' => '12:00', 'level' => 2],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '11:00', 'end' => '12:00', 'level' => 1],
+        ['code' => 'WELPEN', 'date' => '2026-04-18', 'start' => '12:00', 'end' => '13:00', 'level' => 0],
+        ['code' => 'TK', 'date' => '2026-04-18', 'start' => '12:00', 'end' => '13:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '13:00', 'end' => '14:00', 'level' => 1],
+        ['code' => 'JUHU', 'date' => '2026-04-18', 'start' => '14:00', 'end' => '15:00', 'level' => 0],
     ];
 
     /** @var Contract[] */
@@ -313,7 +335,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     }
 
     // -----------------------------------------------------------------------
-    // Courses (36 weekly slots)
+    // Courses from the exported training week
     // -----------------------------------------------------------------------
 
     /**
@@ -326,16 +348,20 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     {
         $courses = [];
         $trainerPool = array_values($trainers);
-        foreach (self::COURSE_DEFS as [$typeCode, $dow, $start, $end, $level]) {
+        foreach (self::COURSE_DEFS as $definition) {
+            $typeCode = $definition['code'];
             if (!isset($courseTypes[$typeCode])) {
                 continue;
             }
+
+            $courseDate = new \DateTimeImmutable($definition['date']);
             $c = new Course();
             $c->setCourseType($courseTypes[$typeCode]);
-            $c->setDayOfWeek($dow);
-            $c->setStartTime($start);
-            $c->setEndTime($end);
-            $c->setLevel($level);
+            $c->setDayOfWeek((int) $courseDate->format('N'));
+            $c->setStartTime($definition['start']);
+            $c->setEndTime($definition['end']);
+            $c->setLevel($definition['level']);
+            $c->setComment(self::buildCourseComment($definition['location'] ?? null));
             if ($trainerPool !== []) {
                 $c->setTrainer($trainerPool[count($courses) % count($trainerPool)]);
             }
@@ -348,7 +374,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     }
 
     // -----------------------------------------------------------------------
-    // Course dates (current week ± 1 week, + 1 week ahead)
+    // Exact course dates from the exported training week
     // -----------------------------------------------------------------------
 
     /**
@@ -358,34 +384,21 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
      */
     private function createCourseDates(ObjectManager $manager, array $courses): array
     {
-        $now = new \DateTimeImmutable('monday this week');
-        $from = $now->modify('-1 week');
-        $until = $now->modify('+2 weeks');
-
         $allDates = [];
         foreach ($courses as $idx => $course) {
-            $dow = $course->getDayOfWeek();
-            $phpDayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][$dow - 1];
-
-            $current = $from;
-            $currentDow = (int) $current->format('N');
-            if ($currentDow !== $dow) {
-                $current = $current->modify("next {$phpDayName}");
+            $definition = self::COURSE_DEFS[$idx] ?? null;
+            if ($definition === null) {
+                continue;
             }
 
-            $dates = [];
-            while ($current <= $until) {
-                $cd = new CourseDate();
-                $cd->setCourse($course);
-                $cd->setTrainer($course->getTrainer());
-                $cd->setDate($current);
-                $cd->setStartTime($course->getStartTime());
-                $cd->setEndTime($course->getEndTime());
-                $manager->persist($cd);
-                $dates[] = $cd;
-                $current = $current->modify('+1 week');
-            }
-            $allDates[$idx] = $dates;
+            $cd = new CourseDate();
+            $cd->setCourse($course);
+            $cd->setTrainer($course->getTrainer());
+            $cd->setDate(new \DateTimeImmutable($definition['date']));
+            $cd->setStartTime($definition['start']);
+            $cd->setEndTime($definition['end']);
+            $manager->persist($cd);
+            $allDates[$idx] = [$cd];
         }
 
         return $allDates;
@@ -542,7 +555,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 if (($i * 31 + $courseIdx * 17) % 100 >= $threshold) {
                     continue;
                 }
-                $this->book($manager, $entry['customer'], $dog, $courseDates[$courseIdx][1] ?? null);
+                $this->book($manager, $entry['customer'], $dog, $courseDates[$courseIdx][0] ?? null);
             }
         }
     }
@@ -1027,14 +1040,12 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             return;
         }
 
-        // MH Mon: Trainingsplatz-Änderung
+        // External training ground: location update
         $n = new Notification();
         $n->setTitle('Trainingsplatz-Änderung');
-        $n->setMessage("Liebe Kursteilnehmer,\n\nab nächster Woche trainieren wir auf dem neuen Platz hinter dem Hundehotel. Bitte parkt wie gewohnt auf dem Hauptparkplatz.\n\nViele Grüße,\nFlorian");
+        $n->setMessage("Liebe Kursteilnehmer,\n\nfür alle Gruppen mit Trainingsort-Hinweis trainieren wir in der kommenden Woche am Platz Brock 17 in 48308 Senden. Bitte plant ein paar Minuten extra für die Anfahrt ein.\n\nViele Grüße,\nFlorian");
         $n->setAuthor($florian);
-        if (isset($courses[0])) {
-            $n->addCourse($courses[0]);
-        }
+        $this->addCoursesWithLocation($n, $courses);
         $manager->persist($n);
 
         // All AGI: Parcours erneuert
@@ -1042,11 +1053,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $n->setTitle('Agility-Parcours erneuert');
         $n->setMessage("Hallo zusammen,\n\nwir haben neue Hindernisse für den Agility-Parcours bekommen! Tunnel, Wippe und Slalom sind alle brandneu. Freut euch auf das nächste Training!\n\nEuer Komm!-Team");
         $n->setAuthor($manuela ?? $florian);
-        foreach ([3, 10, 15, 26, 34] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
+        $this->addCoursesByType($n, $courses, ['AGI']);
         $manager->persist($n);
 
         // JUHU + TK: Sommerpause-Info
@@ -1054,21 +1061,15 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $n->setTitle('Sommerpause-Info');
         $n->setMessage("Liebe Hundefreunde,\n\nin der letzten Juli-Woche und den ersten zwei August-Wochen findet kein regulärer Kurs statt. Das Hundehotel bleibt geöffnet.\n\nSchöne Grüße,\nEuer Komm!-Team");
         $n->setAuthor($florian);
-        foreach ([4, 8, 19, 30, 14, 20, 22] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
+        $this->addCoursesByType($n, $courses, ['JUHU', 'TK']);
         $manager->persist($n);
 
-        // TK Wed: Willkommen
+        // All TK: Willkommen
         $n = new Notification();
-        $n->setTitle('Willkommen beim Trickkurs!');
-        $n->setMessage("Hallo und herzlich willkommen im Trickkurs!\n\nBringt bitte Leckerlis und ein Lieblingsspielzeug eures Hundes mit. Wir starten mit einfachen Tricks wie Pfote geben und Drehen.\n\nBis Mittwoch!");
+        $n->setTitle('Willkommen im Teamkurs!');
+        $n->setMessage("Hallo und herzlich willkommen im Teamkurs!\n\nBringt bitte Leckerlis und ein Lieblingsspielzeug eures Hundes mit. Wir starten mit lockeren Kooperationsübungen und kleinen Aufgaben für den Alltag.\n\nBis bald!");
         $n->setAuthor($manuela ?? $florian);
-        if (isset($courses[14])) {
-            $n->addCourse($courses[14]);
-        }
+        $this->addCoursesByType($n, $courses, ['TK']);
         $manager->persist($n);
 
         // Global: Frohe Ostern!
@@ -1091,67 +1092,89 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $n->setTitle('Mantrailing: Neues Suchgebiet');
         $n->setMessage("Liebe Mantrailer,\n\nwir haben ein neues Übungsgebiet am Kanal erschlossen! Ab sofort starten wir abwechselnd dort und am gewohnten Platz. Bitte achtet auf die Ansage vor dem jeweiligen Termin.\n\nViele Grüße,\nCaro");
         $n->setAuthor($caro ?? $florian);
-        foreach ([1, 12, 27, 28] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
+        $this->addCoursesByType($n, $courses, ['MT']);
         $manager->persist($n);
 
-        // CC + DS: Streckenänderung
+        // All WELPEN: Erste Stunde
         $n = new Notification();
-        $n->setTitle('Canicross & Dogscooter: Neue Strecke');
-        $n->setMessage("Hallo Sportler,\n\ndie Laufstrecke im Wald wurde frisch markiert und leicht verändert. Außerdem haben wir zwei neue Scooter angeschafft, die ihr gerne testen könnt.\n\nViel Spaß beim Training!\nFlorian");
-        $n->setAuthor($florian);
-        foreach ([13, 31, 33] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
+        $n->setTitle('Welpengruppe: Bitte Decke mitbringen');
+        $n->setMessage("Hallo zusammen,\n\nfür die Welpengruppe bringt bitte eine kleine Decke, weiche Leckerchen und gern ein ruhiges Lieblingsspielzeug mit. So können wir die erste Stunde entspannt aufbauen.\n\nLiebe Grüße,\nLea");
+        $n->setAuthor($lea ?? $florian);
+        $this->addCoursesByType($n, $courses, ['WELPEN']);
         $manager->persist($n);
 
         // All AGI pinned: Turnier-Ankündigung
         $n = new Notification();
         $n->setTitle('Agility-Turnier am 12. April');
-        $n->setMessage("Liebe Agility-Teilnehmer,\n\nam 12. April findet unser vereinsinternes Agility-Turnier statt! Anmeldungen bitte bis zum 5. April bei Manuela. Es gibt Pokale in allen Leistungsklassen.\n\nStart: 10:00 Uhr\nOrt: Trainingsgelände\n\nWir freuen uns auf euch!");
+        $n->setMessage("Liebe Agility-Teilnehmer,\n\nam 12. April findet unser vereinsinternes Agility-Turnier statt! Anmeldungen bitte bis zum 10. April bei Manuela. Es gibt Pokale in allen Leistungsklassen.\n\nStart: 10:00 Uhr\nOrt: Trainingsgelände\n\nWir freuen uns auf euch!");
         $n->setAuthor($manuela ?? $florian);
-        foreach ([3, 10, 15, 26, 34] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
-        $n->setPinnedUntil(new \DateTimeImmutable('+30 days'));
+        $this->addCoursesByType($n, $courses, ['AGI']);
+        $n->setPinnedUntil(new \DateTimeImmutable('2026-04-12T23:59:59'));
         $manager->persist($n);
 
-        // APP: Neue Dummies
+        // All FSTS: Abendtraining
         $n = new Notification();
-        $n->setTitle('Apportier-Kurs: Neue Dummies eingetroffen');
-        $n->setMessage("Hallo zusammen,\n\nwir haben endlich die neuen Canvas-Dummies in verschiedenen Gewichten bekommen. Bringt gerne auch eure eigenen Dummies mit, dann können wir vergleichen.\n\nBis bald,\nLea");
-        $n->setAuthor($lea ?? $florian);
-        foreach ([5, 16] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
+        $n->setTitle('Abendtraining: Stirnlampe mitbringen');
+        $n->setMessage("Hallo zusammen,\n\ndie späteren FS/TS-Einheiten finden diese Woche teilweise in der Dämmerung statt. Bringt bitte eine Stirnlampe und wetterfeste Kleidung mit.\n\nViele Grüße,\nCaro");
+        $n->setAuthor($caro ?? $florian);
+        $this->addCoursesByType($n, $courses, ['FSTS']);
         $manager->persist($n);
 
         // All JUHU pinned: Schnuppertag
         $n = new Notification();
-        $n->setTitle('Junghunde-Schnuppertag am 5. April');
-        $n->setMessage("Liebe Junghunde-Besitzer,\n\nam 5. April laden wir zum kostenlosen Schnuppertag ein! Bringt gerne Freunde mit Junghunden (bis 12 Monate) mit. Wir zeigen Grundübungen und beantworten eure Fragen.\n\nAnmeldung per E-Mail genügt.\n\nEuer Komm!-Team");
+        $n->setTitle('Junghunde-Schnuppertag am 12. April');
+        $n->setMessage("Liebe Junghunde-Besitzer,\n\nam 12. April laden wir zum kostenlosen Schnuppertag ein! Bringt gerne Freunde mit Junghunden bis 12 Monate mit. Wir zeigen Grundübungen und beantworten eure Fragen.\n\nAnmeldung per E-Mail genügt.\n\nEuer Komm!-Team");
         $n->setAuthor($florian);
-        foreach ([4, 8, 19, 30] as $ci) {
-            if (isset($courses[$ci])) {
-                $n->addCourse($courses[$ci]);
-            }
-        }
-        $n->setPinnedUntil(new \DateTimeImmutable('2026-04-05T23:59:59'));
+        $this->addCoursesByType($n, $courses, ['JUHU']);
+        $n->setPinnedUntil(new \DateTimeImmutable('2026-04-12T23:59:59'));
         $manager->persist($n);
     }
 
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * @param Course[]     $courses
+     * @param list<string> $codes
+     */
+    private function addCoursesByType(Notification $notification, array $courses, array $codes): void
+    {
+        foreach ($courses as $course) {
+            $courseTypeCode = $course->getCourseType()?->getCode();
+            if ($courseTypeCode !== null && in_array($courseTypeCode, $codes, true)) {
+                $notification->addCourse($course);
+            }
+        }
+    }
+
+    /** @param Course[] $courses */
+    private function addCoursesWithLocation(Notification $notification, array $courses): void
+    {
+        foreach ($courses as $course) {
+            $comment = $course->getComment();
+            if ($comment !== null && str_starts_with($comment, 'Trainingsort: ')) {
+                $notification->addCourse($course);
+            }
+        }
+    }
+
+    private static function buildCourseComment(?string $location): ?string
+    {
+        if ($location === null || $location === '') {
+            return null;
+        }
+
+        return sprintf('Trainingsort: %s', self::normalizeLocation($location));
+    }
+
+    private static function normalizeLocation(string $location): string
+    {
+        $normalized = trim($location);
+        $normalized = preg_replace('/\bsenden\b/i', 'Senden', $normalized) ?? $normalized;
+
+        return $normalized;
+    }
 
     private static function nameToEmail(string $name): string
     {

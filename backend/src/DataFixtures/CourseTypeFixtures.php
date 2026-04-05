@@ -26,8 +26,9 @@ final class CourseTypeFixtures extends Fixture
         ['code' => 'DF', 'name' => 'Dog-Frisbee'],
         ['code' => 'MT', 'name' => 'Mantrailing'],
         ['code' => 'RO', 'name' => 'Rally Obedience'],
-        ['code' => 'TK', 'name' => 'Trickkurs'],
+        ['code' => 'TK', 'name' => 'Teamkurs'],
         ['code' => 'THS', 'name' => 'Turnierhundsport'],
+        ['code' => 'WELPEN', 'name' => 'Welpen'],
     ];
 
     public function load(ObjectManager $manager): void

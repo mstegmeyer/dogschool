@@ -33,6 +33,7 @@ final class SeedCourseTypesCommand extends Command
         ['code' => 'RO', 'name' => 'Rally Obedience'],
         ['code' => 'TK', 'name' => 'Trickkurs'],
         ['code' => 'THS', 'name' => 'Turnierhundsport'],
+        ['code' => 'WELPEN', 'name' => 'Welpen'],
     ];
 
     public function __construct(

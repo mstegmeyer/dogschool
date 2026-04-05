@@ -26,6 +26,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "@vitest/eslint-plugin": "^1.6.14",
     "@vue/test-utils": "^2.4.6",
+    "commander": "^13.1.0",
     "eslint": "^10.2.0",
     "eslint-plugin-vue": "^10.8.0",
     "happy-dom": "^20.8.4",

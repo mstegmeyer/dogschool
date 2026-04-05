@@ -50,6 +50,8 @@ describe('customer hotel bookings page', () => {
             startAt: '2026-04-05T08:00',
             endAt: '2026-04-06T10:00',
             currentShoulderHeightCm: 52,
+            includesTravelProtection: false,
+            customerComment: null,
         });
     });
 

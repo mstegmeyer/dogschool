@@ -76,6 +76,48 @@ final class ContractControllerTest extends WebTestCase
         self::assertSame(ContractState::ACTIVE, $reloaded->getState());
     }
 
+    public function testApproveWithHigherPriceRequiresCustomerApproval(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-review-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Review Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(2);
+        $contract->setPrice('160.00');
+        $contract->setQuotedMonthlyPrice('160.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '184.00',
+            'adminComment' => 'Zusatzwünsche erhöhen den Preis.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('PENDING_CUSTOMER_APPROVAL', $data['state']);
+        self::assertSame('184.00', $data['price']);
+        self::assertSame('160.00', $data['quotedMonthlyPrice']);
+        self::assertSame('Zusatzwünsche erhöhen den Preis.', $data['adminComment']);
+    }
+
     public function testListContractsSupportsPaginationAndStateFilter(): void
     {
         $client = static::createClient();

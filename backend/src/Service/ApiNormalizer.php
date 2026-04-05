@@ -14,6 +14,7 @@ use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\HotelBooking;
 use App\Entity\Notification;
+use App\Entity\PricingConfig;
 use App\Entity\PushDevice;
 use App\Entity\Room;
 use App\Entity\User;
@@ -74,12 +75,20 @@ final class ApiNormalizer
             'startDate' => $contract->getStartDate()?->format('Y-m-d'),
             'endDate' => $contract->getEndDate()?->format('Y-m-d'),
             'price' => $contract->getPrice(),
+            'quotedMonthlyPrice' => $contract->getQuotedMonthlyPrice(),
             'priceMonthly' => match ($type) {
                 ContractType::PERPETUAL => $contract->getPrice(),
             },
+            'registrationFee' => $contract->getRegistrationFee(),
+            'firstInvoiceTotal' => PricingEngine::formatAmount(
+                PricingEngine::amountToCents($contract->getPrice()) + PricingEngine::amountToCents($contract->getRegistrationFee())
+            ),
             'type' => $type->value,
             'coursesPerWeek' => $contract->getCoursesPerWeek(),
             'state' => $contract->getState()->value,
+            'customerComment' => $contract->getCustomerComment(),
+            'adminComment' => $contract->getAdminComment(),
+            'pricingSnapshot' => $contract->getPricingSnapshot(),
             'createdAt' => $contract->getCreatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }
@@ -327,8 +336,50 @@ final class ApiNormalizer
             'roomName' => $booking->getRoom()?->getName(),
             'startAt' => LocalDateTime::formatWallTime($booking->getStartAt()),
             'endAt' => LocalDateTime::formatWallTime($booking->getEndAt()),
+            'pricingKind' => $booking->getPricingKind()->value,
+            'billableDays' => $booking->getBillableDays(),
+            'includesTravelProtection' => $booking->includesTravelProtection(),
+            'totalPrice' => $booking->getTotalPrice(),
+            'quotedTotalPrice' => $booking->getQuotedTotalPrice(),
+            'serviceFee' => $booking->getServiceFee(),
+            'travelProtectionPrice' => $booking->getTravelProtectionPrice(),
             'state' => $booking->getState()->value,
+            'customerComment' => $booking->getCustomerComment(),
+            'adminComment' => $booking->getAdminComment(),
+            'pricingSnapshot' => $booking->getPricingSnapshot(),
             'createdAt' => $booking->getCreatedAt()->format(\DateTimeInterface::ATOM),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public function normalizePricingConfig(PricingConfig $pricingConfig): array
+    {
+        return [
+            'id' => $pricingConfig->getId(),
+            'schoolOneCoursePrice' => $pricingConfig->getSchoolOneCoursePrice(),
+            'schoolTwoCoursesUnitPrice' => $pricingConfig->getSchoolTwoCoursesUnitPrice(),
+            'schoolThreeCoursesUnitPrice' => $pricingConfig->getSchoolThreeCoursesUnitPrice(),
+            'schoolFourCoursesUnitPrice' => $pricingConfig->getSchoolFourCoursesUnitPrice(),
+            'schoolAdditionalCoursesUnitPrice' => $pricingConfig->getSchoolAdditionalCoursesUnitPrice(),
+            'schoolRegistrationFee' => $pricingConfig->getSchoolRegistrationFee(),
+            'daycareOffSeasonDailyPrice' => $pricingConfig->getDaycareOffSeasonDailyPrice(),
+            'daycarePeakSeasonDailyPrice' => $pricingConfig->getDaycarePeakSeasonDailyPrice(),
+            'hotelDailyPrice' => $pricingConfig->getHotelDailyPrice(),
+            'hotelServiceFee' => $pricingConfig->getHotelServiceFee(),
+            'hotelTravelProtectionBaseFee' => $pricingConfig->getHotelTravelProtectionBaseFee(),
+            'hotelTravelProtectionAdditionalDailyFee' => $pricingConfig->getHotelTravelProtectionAdditionalDailyFee(),
+            'hotelSingleRoomDaycareDailyPrice' => $pricingConfig->getHotelSingleRoomDaycareDailyPrice(),
+            'hotelSingleRoomHotelDailyPrice' => $pricingConfig->getHotelSingleRoomHotelDailyPrice(),
+            'hotelHeatCycleDailyPrice' => $pricingConfig->getHotelHeatCycleDailyPrice(),
+            'hotelMedicationPerAdministrationPrice' => $pricingConfig->getHotelMedicationPerAdministrationPrice(),
+            'hotelSupplementPerAdministrationPrice' => $pricingConfig->getHotelSupplementPerAdministrationPrice(),
+            'hotelPeakSeasons' => array_map(static fn (\App\Entity\HotelPeakSeason $season): array => [
+                'id' => $season->getId(),
+                'startDate' => $season->getStartDate()?->format('Y-m-d'),
+                'endDate' => $season->getEndDate()?->format('Y-m-d'),
+            ], $pricingConfig->getHotelPeakSeasons()->toArray()),
+            'createdAt' => $pricingConfig->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $pricingConfig->getUpdatedAt()->format(\DateTimeInterface::ATOM),
         ];
     }
 

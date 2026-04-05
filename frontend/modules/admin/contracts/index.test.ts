@@ -20,6 +20,9 @@ describe('admin contracts page', () => {
                     pagination: { total: 1, pages: 1, page: 1, limit: 20 },
                 });
             }
+            if (url === '/api/admin/contracts/contract-1') {
+                return Promise.resolve(activeContract);
+            }
 
             return Promise.reject(new Error(`Unhandled GET ${url}`));
         });
@@ -33,13 +36,23 @@ describe('admin contracts page', () => {
         expect(table.props('contracts')).toHaveLength(1);
 
         apiPostMock.mockResolvedValue({});
-        await table.vm.$emit('approve', activeContract);
+        await table.vm.$emit('review', activeContract);
         await flushPromises();
-        await table.vm.$emit('decline', activeContract);
+        await wrapper.findAll('button').find(button => button.text() === 'Bestätigen')?.trigger('click');
         await flushPromises();
 
-        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve');
-        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/contracts/contract-1/decline');
+        await table.vm.$emit('review', activeContract);
+        await flushPromises();
+        await wrapper.findAll('button').find(button => button.text() === 'Ablehnen')?.trigger('click');
+        await flushPromises();
+
+        expect(apiPostMock).toHaveBeenNthCalledWith(1, '/api/admin/contracts/contract-1/approve', {
+            price: '89.00',
+            adminComment: null,
+        });
+        expect(apiPostMock).toHaveBeenNthCalledWith(2, '/api/admin/contracts/contract-1/decline', {
+            adminComment: null,
+        });
 
         await table.vm.$emit('cancel', activeContract);
         await flushPromises();

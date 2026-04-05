@@ -1,4 +1,4 @@
-import type { ContractState, ContractType, CourseLevel, CreditTransactionType, HotelBookingState, NotificationCourseRef } from '~/types';
+import type { ContractState, ContractType, CourseLevel, CreditTransactionType, HotelBookingPricingKind, HotelBookingState, NotificationCourseRef } from '~/types';
 
 const DAY_NAMES: readonly string[] = ['', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const DAY_NAMES_SHORT: readonly string[] = ['', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -88,6 +88,7 @@ export const useHelpers = () => {
     function contractStateLabel(state: ContractState): string {
         const map: Record<ContractState, string> = {
             REQUESTED: 'Angefragt',
+            PENDING_CUSTOMER_APPROVAL: 'Preis prüfen',
             ACTIVE: 'Aktiv',
             DECLINED: 'Abgelehnt',
             CANCELLED: 'Gekündigt',
@@ -98,6 +99,7 @@ export const useHelpers = () => {
     function contractStateColor(state: ContractState): string {
         const map: Record<ContractState, string> = {
             REQUESTED: 'amber',
+            PENDING_CUSTOMER_APPROVAL: 'blue',
             ACTIVE: 'primary',
             DECLINED: 'red',
             CANCELLED: 'gray',
@@ -108,6 +110,7 @@ export const useHelpers = () => {
     function hotelBookingStateLabel(state: HotelBookingState): string {
         const map: Record<HotelBookingState, string> = {
             REQUESTED: 'Angefragt',
+            PENDING_CUSTOMER_APPROVAL: 'Preis prüfen',
             CONFIRMED: 'Bestätigt',
             DECLINED: 'Abgelehnt',
         };
@@ -117,10 +120,15 @@ export const useHelpers = () => {
     function hotelBookingStateColor(state: HotelBookingState): string {
         const map: Record<HotelBookingState, string> = {
             REQUESTED: 'amber',
+            PENDING_CUSTOMER_APPROVAL: 'blue',
             CONFIRMED: 'green',
             DECLINED: 'red',
         };
         return map[state] ?? 'gray';
+    }
+
+    function hotelPricingKindLabel(kind: HotelBookingPricingKind): string {
+        return kind === 'DAYCARE' ? 'HUTA' : 'Hotel';
     }
 
     function creditTypeLabel(type: CreditTransactionType): string {
@@ -154,6 +162,26 @@ export const useHelpers = () => {
             return `${price} € / Monat`;
         }
         return `${price} €`;
+    }
+
+    function formatMoney(amount: string | number | null | undefined): string {
+        if (amount === null || amount === undefined || amount === '') {
+            return '–';
+        }
+
+        const numeric = typeof amount === 'number'
+            ? amount
+            : Number.parseFloat(amount);
+        if (!Number.isFinite(numeric)) {
+            return `${amount} €`;
+        }
+
+        return new Intl.NumberFormat('de-DE', {
+            style: 'currency',
+            currency: 'EUR',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(numeric);
     }
 
     function formatSquareMeters(value: number): string {
@@ -230,9 +258,11 @@ export const useHelpers = () => {
         todayIso, addDaysToIso, toMonthStartIso, toMonthEndIso, isFirstOfMonth, isLastOfMonth, firstDayOfNextMonthIso, getIsoDayOfWeek,
         contractStateLabel, contractStateColor,
         hotelBookingStateLabel, hotelBookingStateColor,
+        hotelPricingKindLabel,
         creditTypeLabel, levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
+        formatMoney,
         formatSquareMeters,
         hotelAreaRequirementForHeight,
         toDateTimeLocalValue,

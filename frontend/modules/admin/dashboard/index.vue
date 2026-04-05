@@ -35,7 +35,9 @@ const calendarItems = ref<CourseDate[]>([]);
 const loading = ref(true);
 
 const activeContracts = computed(() => contracts.value.filter(contract => contract.state === 'ACTIVE'));
-const pendingContractRequests = computed(() => contracts.value.filter(contract => contract.state === 'REQUESTED'));
+const pendingContractRequests = computed(() => contracts.value.filter(contract =>
+    contract.state === 'REQUESTED' || contract.state === 'PENDING_CUSTOMER_APPROVAL',
+));
 const pendingContracts = computed(() => pendingContractRequests.value.slice(0, 5));
 const todaySchedule = computed(() => calendarItems.value
     .filter(courseDate => courseDate.date === todayIso())

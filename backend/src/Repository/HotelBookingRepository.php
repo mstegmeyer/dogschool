@@ -99,7 +99,11 @@ class HotelBookingRepository extends ServiceEntityRepository
             ->andWhere('hotelBooking.startAt < :endAt')
             ->andWhere('hotelBooking.endAt > :startAt')
             ->setParameter('dog', $dog)
-            ->setParameter('states', [HotelBookingState::REQUESTED, HotelBookingState::CONFIRMED])
+            ->setParameter('states', [
+                HotelBookingState::REQUESTED,
+                HotelBookingState::PENDING_CUSTOMER_APPROVAL,
+                HotelBookingState::CONFIRMED,
+            ])
             ->setParameter('startAt', $startAt)
             ->setParameter('endAt', $endAt);
 

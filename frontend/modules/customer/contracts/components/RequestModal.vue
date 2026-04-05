@@ -35,6 +35,23 @@
                     @update:model-value="emit('clear-field-error', 'startDate')"
                 />
             </UFormGroup>
+            <UFormGroup label='Kommentar für Zusatzwünsche'>
+                <UTextarea
+                    v-model='form.customerComment'
+                    :rows='4'
+                    placeholder='Zum Beispiel Wunschzeiten, besondere Betreuung oder organisatorische Hinweise.'
+                />
+            </UFormGroup>
+            <div v-if='previewLoading' class='rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500'>
+                Preisvorschau wird berechnet…
+            </div>
+            <PricingBreakdown
+                v-else-if='preview'
+                :snapshot='preview.snapshot'
+                title='Voraussichtlicher Preis'
+                total-label='Erste Rechnung'
+                :total-value='preview.firstInvoiceTotal'
+            />
             <UAlert
                 v-if='formError'
                 color='red'
@@ -52,13 +69,17 @@
 </template>
 
 <script setup lang="ts">
+import type { ContractQuotePreview } from '~/types';
+
 defineProps<{
     modelValue: boolean,
     dogOptions: Array<{ label: string; value: string }>,
-    form: { dogId: string; coursesPerWeek: number; startDate: string },
+    form: { dogId: string; coursesPerWeek: number; startDate: string; customerComment: string },
     fieldErrors: Record<string, string>,
     formError: string,
     saving: boolean,
+    previewLoading: boolean,
+    preview: ContractQuotePreview | null,
 }>();
 
 const emit = defineEmits<{

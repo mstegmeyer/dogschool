@@ -9,7 +9,7 @@
             data-testid='contract-state-filter'
             :options='stateOptions'
             value-attribute='value'
-            class='w-full sm:w-44'
+            class='w-full sm:w-52'
         />
     </div>
 
@@ -23,8 +23,7 @@
         :current-page='currentPage'
         :page-size='pageSize'
         :total-contracts='totalContracts'
-        @approve='approve'
-        @decline='decline'
+        @review='openReview'
         @cancel='openCancelConfirm'
         @update:sort='sort = $event'
         @update:current-page='currentPage = $event'
@@ -43,6 +42,74 @@
         @clear-end-date-error="clearFieldError('endDate')"
         @update:end-date='cancelForm.endDate = $event'
     />
+
+    <UModal :model-value='showReviewModal' @update:model-value='showReviewModal = $event'>
+        <UCard v-if='selectedContract' data-testid='contract-review-modal'>
+            <template #header>
+                <div class='flex items-start justify-between gap-3'>
+                    <div>
+                        <h3 class='font-semibold text-slate-800'>
+                            Vertrag prüfen
+                        </h3>
+                        <p class='text-sm text-slate-500'>
+                            {{ selectedContract.dogName || 'Hund' }} · {{ selectedContract.customerName || 'Kunde' }}
+                        </p>
+                    </div>
+                    <UBadge :color='contractStateColor(selectedContract.state)' variant='soft'>
+                        {{ contractStateLabel(selectedContract.state) }}
+                    </UBadge>
+                </div>
+            </template>
+
+            <div class='space-y-4'>
+                <PricingBreakdown
+                    :snapshot='selectedContract.pricingSnapshot'
+                    title='Aktuelle Preisübersicht'
+                    total-label='Erste Rechnung'
+                    :total-value='selectedContract.firstInvoiceTotal'
+                />
+
+                <div v-if='selectedContract.customerComment' class='rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600'>
+                    <span class='font-medium text-slate-700'>Kundenkommentar:</span>
+                    {{ selectedContract.customerComment }}
+                </div>
+
+                <UFormGroup label='Monatspreis'>
+                    <UInput v-model='reviewForm.price' type='number' step='0.01' />
+                    <template #hint>
+                        Automatischer Vorschlag: {{ formatContractMonthlyPrice(selectedContract.quotedMonthlyPrice, selectedContract.type) }}
+                    </template>
+                </UFormGroup>
+
+                <UFormGroup label='Admin-Kommentar'>
+                    <UTextarea
+                        v-model='reviewForm.adminComment'
+                        :rows='4'
+                        placeholder='Begründung für Preisänderungen oder Hinweise zur Anfrage.'
+                    />
+                </UFormGroup>
+
+                <div class='flex justify-end gap-2'>
+                    <UButton variant='ghost' label='Schließen' @click='closeReviewModal' />
+                    <UButton
+                        data-testid='decline-contract-review'
+                        color='red'
+                        variant='soft'
+                        :loading='reviewDeclining'
+                        label='Ablehnen'
+                        @click='declineSelectedContract'
+                    />
+                    <UButton
+                        data-testid='approve-contract-review'
+                        color='green'
+                        :loading='reviewApproving'
+                        label='Bestätigen'
+                        @click='approveSelectedContract'
+                    />
+                </div>
+            </div>
+        </UCard>
+    </UModal>
 </div>
 </template>
 
@@ -55,7 +122,7 @@ definePageMeta({ layout: 'admin' });
 
 const api = useApi();
 const toast = useToast();
-const { toMonthEndIso, isLastOfMonth } = useHelpers();
+const { toMonthEndIso, isLastOfMonth, contractStateLabel, contractStateColor, formatContractMonthlyPrice } = useHelpers();
 const { formError, fieldErrors, clearFormErrors, clearFieldError, setFieldError, setFormError, applyApiError, errorFor } = useFormFeedback();
 
 const contracts = ref<Contract[]>([]);
@@ -73,12 +140,20 @@ const showCancelModal = ref(false);
 const contractToCancel = ref<Contract | null>(null);
 const cancelling = ref(false);
 const cancelForm = reactive({ endDate: '' });
+
+const showReviewModal = ref(false);
+const selectedContract = ref<Contract | null>(null);
+const reviewApproving = ref(false);
+const reviewDeclining = ref(false);
+const reviewForm = reactive({ price: '', adminComment: '' });
+
 const pageSize = 20;
 
 const stateOptions = [
     { label: 'Aktiv', value: 'ACTIVE' },
     { label: 'Alle', value: 'all' },
     { label: 'Angefragt', value: 'REQUESTED' },
+    { label: 'Preisprüfung', value: 'PENDING_CUSTOMER_APPROVAL' },
     { label: 'Abgelehnt', value: 'DECLINED' },
     { label: 'Gekündigt', value: 'CANCELLED' },
 ];
@@ -107,30 +182,45 @@ const resultSummary = computed(() => {
     return `${pageStart.value}–${pageEnd.value} von ${totalContracts.value} Verträgen`;
 });
 
-function openCancelConfirm(contract: Contract) {
+function openCancelConfirm(contract: Contract): void {
     contractToCancel.value = contract;
     cancelForm.endDate = contract.endDate ?? '';
     clearFormErrors();
     showCancelModal.value = true;
 }
 
-function closeCancelModal() {
+function closeCancelModal(): void {
     showCancelModal.value = false;
     contractToCancel.value = null;
     cancelForm.endDate = '';
     clearFormErrors();
 }
 
-function normalizeCancelEndDate() {
+function closeReviewModal(): void {
+    showReviewModal.value = false;
+    selectedContract.value = null;
+    reviewForm.price = '';
+    reviewForm.adminComment = '';
+}
+
+async function openReview(contract: Contract): Promise<void> {
+    selectedContract.value = await api.get<Contract>(`/api/admin/contracts/${contract.id}`);
+    reviewForm.price = selectedContract.value.price;
+    reviewForm.adminComment = selectedContract.value.adminComment || '';
+    showReviewModal.value = true;
+}
+
+function normalizeCancelEndDate(): void {
     if (cancelForm.endDate) {
         cancelForm.endDate = toMonthEndIso(cancelForm.endDate);
     }
 }
 
-async function confirmCancel() {
+async function confirmCancel(): Promise<void> {
     if (!contractToCancel.value) {
         return;
     }
+
     clearFormErrors();
     if (!cancelForm.endDate) {
         setFieldError('endDate', 'Bitte ein Enddatum wählen.');
@@ -141,6 +231,7 @@ async function confirmCancel() {
         setFormError('Bitte prüfe die markierten Felder.');
         return;
     }
+
     cancelling.value = true;
     try {
         await api.post(`/api/admin/contracts/${contractToCancel.value.id}/cancel`, {
@@ -156,23 +247,44 @@ async function confirmCancel() {
     }
 }
 
-async function approve(contract: Contract) {
+async function approveSelectedContract(): Promise<void> {
+    if (!selectedContract.value) {
+        return;
+    }
+
+    reviewApproving.value = true;
     try {
-        await api.post(`/api/admin/contracts/${contract.id}/approve`);
-        toast.add({ title: 'Vertrag genehmigt', color: 'green' });
+        await api.post(`/api/admin/contracts/${selectedContract.value.id}/approve`, {
+            price: reviewForm.price || null,
+            adminComment: reviewForm.adminComment || null,
+        });
+        toast.add({ title: 'Vertrag geprüft', color: 'green' });
+        closeReviewModal();
         await loadContracts();
     } catch (cause) {
-        toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht genehmigt werden.', { preferFieldSummary: false }), color: 'red' });
+        toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht geprüft werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewApproving.value = false;
     }
 }
 
-async function decline(contract: Contract) {
+async function declineSelectedContract(): Promise<void> {
+    if (!selectedContract.value) {
+        return;
+    }
+
+    reviewDeclining.value = true;
     try {
-        await api.post(`/api/admin/contracts/${contract.id}/decline`);
+        await api.post(`/api/admin/contracts/${selectedContract.value.id}/decline`, {
+            adminComment: reviewForm.adminComment || null,
+        });
         toast.add({ title: 'Vertrag abgelehnt', color: 'amber' });
+        closeReviewModal();
         await loadContracts();
     } catch (cause) {
         toast.add({ title: extractApiErrorMessage(cause, 'Der Vertrag konnte nicht abgelehnt werden.', { preferFieldSummary: false }), color: 'red' });
+    } finally {
+        reviewDeclining.value = false;
     }
 }
 

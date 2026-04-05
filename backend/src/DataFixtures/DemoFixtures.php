@@ -13,13 +13,18 @@ use App\Entity\CreditTransaction;
 use App\Entity\Customer;
 use App\Entity\Dog;
 use App\Entity\HotelBooking;
+use App\Entity\HotelPeakSeason;
 use App\Entity\Notification;
+use App\Entity\PricingConfig;
 use App\Entity\Room;
 use App\Entity\User;
 use App\Enum\ContractState;
 use App\Enum\ContractType;
 use App\Enum\CreditTransactionType;
+use App\Enum\HotelBookingPricingKind;
 use App\Enum\HotelBookingState;
+use App\Service\PricingConfigProvider;
+use App\Service\PricingEngine;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -195,6 +200,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
 
     public function load(ObjectManager $manager): void
     {
+        $this->createPricingConfig($manager);
         $courseTypes = $this->indexCourseTypes($manager);
         $trainers = $this->indexTrainers($manager);
 
@@ -411,7 +417,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
     }
 
     // -----------------------------------------------------------------------
-    // Contracts (40 ACTIVE, 5 REQUESTED, 3 DECLINED, 2 CANCELLED)
+    // Contracts (40 ACTIVE, 1 PENDING REVIEW, 4 REQUESTED, 3 DECLINED, 2 CANCELLED)
     // -----------------------------------------------------------------------
 
     /**
@@ -424,17 +430,13 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         foreach ($customers as $i => $entry) {
             $state = match (true) {
                 $i < 40 => ContractState::ACTIVE,
+                $i === 40 => ContractState::PENDING_CUSTOMER_APPROVAL,
                 $i < 45 => ContractState::REQUESTED,
                 $i < 48 => ContractState::DECLINED,
                 default => ContractState::CANCELLED,
             };
 
             $coursesPerWeek = 1 + ($i % 3);
-            $price = match ($coursesPerWeek) {
-                1 => '59.00',
-                2 => '89.00',
-                default => '119.00',
-            };
 
             $startOffset = match (true) {
                 $i < 15 => '-6 months',
@@ -448,7 +450,6 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 $entry['dogs'][0],
                 $state,
                 $coursesPerWeek,
-                $price,
                 $today->modify($startOffset),
             );
             $manager->persist($contract);
@@ -464,7 +465,6 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         Dog $dog,
         ContractState $state,
         int $coursesPerWeek,
-        string $price,
         \DateTimeImmutable $startDate,
     ): Contract {
         $contract = new Contract();
@@ -472,10 +472,14 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $contract->setDog($dog);
         $contract->setState($state);
         $contract->setCoursesPerWeek($coursesPerWeek);
-        $contract->setPrice($price);
         $contract->setStartDate($startDate);
         $contract->setEndDate($startDate->modify('+1 year'));
         $contract->setType(ContractType::PERPETUAL);
+        $contract->setCustomerComment('Bitte Trainingszeiten flexibel halten.');
+        $this->applyContractPricing($contract, $state === ContractState::PENDING_CUSTOMER_APPROVAL ? 24_00 : 0, true);
+        if ($state === ContractState::PENDING_CUSTOMER_APPROVAL) {
+            $contract->setAdminComment('Preis angepasst wegen zusaetzlicher Einzelbetreuung.');
+        }
 
         return $contract;
     }
@@ -718,13 +722,14 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
             'requested_evening',
             'requested_long',
         ] as $slotIndex => $slotKey) {
-            $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
+            $travelProtection = in_array($slotKey, ['requested_multi_day', 'requested_extended', 'requested_long'], true);
             $window = $this->varyHotelWindow(
                 $timeframes[$slotKey]['start'],
                 $timeframes[$slotKey]['end'],
                 20,
                 $slotIndex,
             );
+            $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
             $this->createHotelBooking(
                 $manager,
                 $dogEntry['customer'],
@@ -733,8 +738,22 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 HotelBookingState::REQUESTED,
                 $window['start'],
                 $window['end'],
+                $travelProtection,
             );
         }
+
+        $dogEntry = $this->shiftHotelDogEntry($hotelDogEntries);
+        $this->createHotelBooking(
+            $manager,
+            $dogEntry['customer'],
+            $dogEntry['dog'],
+            $rooms['apfelhof']['room'],
+            HotelBookingState::PENDING_CUSTOMER_APPROVAL,
+            $today->modify('+1 day')->setTime(8, 30),
+            $today->modify('+2 days')->setTime(10, 0),
+            true,
+            25_00,
+        );
 
         foreach ([
             'declined_one',
@@ -757,6 +776,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
                 HotelBookingState::DECLINED,
                 $window['start'],
                 $window['end'],
+                false,
             );
         }
     }
@@ -769,6 +789,8 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         HotelBookingState $state,
         \DateTimeImmutable $startAt,
         \DateTimeImmutable $endAt,
+        bool $includesTravelProtection = false,
+        int $extraPriceCents = 0,
     ): void {
         $booking = new HotelBooking();
         $booking->setCustomer($customer);
@@ -777,6 +799,12 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setState($state);
         $booking->setStartAt($startAt);
         $booking->setEndAt($endAt);
+        $booking->setIncludesTravelProtection($includesTravelProtection);
+        $booking->setCustomerComment('Bitte moeglichst ruhige Unterbringung.');
+        $this->applyHotelPricing($booking, $extraPriceCents);
+        if ($state === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
+            $booking->setAdminComment('Preis angepasst wegen manueller Zusatzwuensche.');
+        }
         $manager->persist($booking);
     }
 
@@ -825,6 +853,137 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         }
 
         return $value;
+    }
+
+    private function createPricingConfig(ObjectManager $manager): void
+    {
+        if ($manager->getRepository(PricingConfig::class)->findOneBy([]) instanceof PricingConfig) {
+            return;
+        }
+
+        $pricingConfig = new PricingConfig();
+        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
+            $season = new HotelPeakSeason();
+            $season->setStartDate(new \DateTimeImmutable($startDate));
+            $season->setEndDate(new \DateTimeImmutable($endDate));
+            $pricingConfig->addHotelPeakSeason($season);
+        }
+
+        $manager->persist($pricingConfig);
+    }
+
+    private function applyContractPricing(Contract $contract, int $extraMonthlyCents = 0, bool $hasRegistrationFee = true): void
+    {
+        $monthlyPriceCents = match (true) {
+            $contract->getCoursesPerWeek() <= 1 => 89_00,
+            $contract->getCoursesPerWeek() === 2 => 2 * 80_00,
+            $contract->getCoursesPerWeek() === 3 => 3 * 76_00,
+            $contract->getCoursesPerWeek() === 4 => 4 * 71_00,
+            default => $contract->getCoursesPerWeek() * 67_00,
+        };
+        $quotedMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents);
+        $finalMonthlyPrice = PricingEngine::formatAmount($monthlyPriceCents + $extraMonthlyCents);
+        $registrationFee = $hasRegistrationFee ? '149.00' : '0.00';
+
+        $contract->setQuotedMonthlyPrice($quotedMonthlyPrice);
+        $contract->setPrice($finalMonthlyPrice);
+        $contract->setRegistrationFee($registrationFee);
+        $contract->setPricingSnapshot([
+            'type' => 'contract',
+            'coursesPerWeek' => $contract->getCoursesPerWeek(),
+            'monthlyPrice' => $quotedMonthlyPrice,
+            'registrationFee' => $registrationFee,
+            'lineItems' => [
+                [
+                    'key' => 'school_contract_monthly',
+                    'label' => sprintf('%dx Training pro Woche', $contract->getCoursesPerWeek()),
+                    'quantity' => $contract->getCoursesPerWeek(),
+                    'unitPrice' => PricingEngine::formatAmount(intdiv($monthlyPriceCents, $contract->getCoursesPerWeek())),
+                    'amount' => $quotedMonthlyPrice,
+                    'billingPeriod' => 'MONTH',
+                ],
+                [
+                    'key' => 'school_registration_fee',
+                    'label' => 'Anmeldegebühr',
+                    'quantity' => 1,
+                    'unitPrice' => $registrationFee,
+                    'amount' => $registrationFee,
+                    'billingPeriod' => 'ONCE',
+                ],
+            ],
+        ]);
+    }
+
+    private function applyHotelPricing(HotelBooking $booking, int $extraPriceCents = 0): void
+    {
+        $pricingKind = $booking->getStartAt()->format('Y-m-d') === $booking->getEndAt()->format('Y-m-d')
+            ? HotelBookingPricingKind::DAYCARE
+            : HotelBookingPricingKind::HOTEL;
+        $billableDays = PricingEngine::billableCalendarDays($booking->getStartAt(), $booking->getEndAt());
+        $baseDailyPriceCents = match ($pricingKind) {
+            HotelBookingPricingKind::DAYCARE => $this->isPeakSeasonDate($booking->getStartAt()) ? 46_00 : 39_00,
+            HotelBookingPricingKind::HOTEL => 58_00,
+        };
+        $baseAmountCents = $baseDailyPriceCents * $billableDays;
+        $serviceFeeCents = 7_50;
+        $travelProtectionCents = $booking->includesTravelProtection()
+            ? 49_00 + (max(0, $billableDays - 7) * 11_00)
+            : 0;
+        $quotedTotalCents = $baseAmountCents + $serviceFeeCents + $travelProtectionCents;
+
+        $booking->setPricingKind($pricingKind);
+        $booking->setBillableDays($billableDays);
+        $booking->setQuotedTotalPrice(PricingEngine::formatAmount($quotedTotalCents));
+        $booking->setTotalPrice(PricingEngine::formatAmount($quotedTotalCents + $extraPriceCents));
+        $booking->setServiceFee(PricingEngine::formatAmount($serviceFeeCents));
+        $booking->setTravelProtectionPrice(PricingEngine::formatAmount($travelProtectionCents));
+        $booking->setPricingSnapshot([
+            'type' => 'hotelBooking',
+            'pricingKind' => $pricingKind->value,
+            'billableDays' => $billableDays,
+            'quotedTotalPrice' => PricingEngine::formatAmount($quotedTotalCents),
+            'lineItems' => [
+                [
+                    'key' => 'hotel_base',
+                    'label' => $pricingKind === HotelBookingPricingKind::DAYCARE
+                        ? sprintf('HUTA %s', $this->isPeakSeasonDate($booking->getStartAt()) ? 'Hauptsaison' : 'Nebensaison')
+                        : 'Hundehotel',
+                    'quantity' => $billableDays,
+                    'unitPrice' => PricingEngine::formatAmount($baseDailyPriceCents),
+                    'amount' => PricingEngine::formatAmount($baseAmountCents),
+                    'billingPeriod' => 'DAY',
+                ],
+                [
+                    'key' => 'hotel_service_fee',
+                    'label' => 'Servicepauschale',
+                    'quantity' => 1,
+                    'unitPrice' => '7.50',
+                    'amount' => '7.50',
+                    'billingPeriod' => 'ONCE',
+                ],
+                [
+                    'key' => 'hotel_travel_protection',
+                    'label' => 'Reiseschutz',
+                    'quantity' => $booking->includesTravelProtection() ? 1 : 0,
+                    'unitPrice' => PricingEngine::formatAmount($travelProtectionCents),
+                    'amount' => PricingEngine::formatAmount($travelProtectionCents),
+                    'billingPeriod' => 'ONCE',
+                ],
+            ],
+        ]);
+    }
+
+    private function isPeakSeasonDate(\DateTimeImmutable $date): bool
+    {
+        foreach (PricingConfigProvider::defaultPeakSeasonRanges() as [$startDate, $endDate]) {
+            $start = new \DateTimeImmutable($startDate);
+            $end = new \DateTimeImmutable($endDate);
+            if ($date >= $start && $date <= $end->setTime(23, 59, 59)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

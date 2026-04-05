@@ -40,7 +40,19 @@ export const hotelBooking = {
     roomName: 'Waldzimmer',
     startAt: '2026-04-05T08:00:00+02:00',
     endAt: '2026-04-06T18:00:00+02:00',
+    pricingKind: 'HOTEL',
+    billableDays: 2,
+    includesTravelProtection: false,
+    totalPrice: '123.50',
+    quotedTotalPrice: '123.50',
+    serviceFee: '7.50',
+    travelProtectionPrice: '0.00',
     state: 'REQUESTED',
+    customerComment: null,
+    adminComment: null,
+    pricingSnapshot: {
+        lineItems: [],
+    },
     createdAt: '2026-04-01T10:00:00+02:00',
     availableRooms: [],
 };
@@ -111,10 +123,18 @@ export const contract = {
     startDate: '2026-05-01',
     endDate: null,
     price: '79.00',
+    quotedMonthlyPrice: '79.00',
     priceMonthly: '79.00',
+    registrationFee: '149.00',
+    firstInvoiceTotal: '228.00',
     type: 'PERPETUAL',
     coursesPerWeek: 2,
     state: 'REQUESTED',
+    customerComment: null,
+    adminComment: null,
+    pricingSnapshot: {
+        lineItems: [],
+    },
     createdAt: '2026-04-01T10:00:00+02:00',
 };
 
@@ -160,6 +180,8 @@ export function installCustomerGlobals() {
         firstDayOfNextMonthIso: () => '2026-05-01',
         hotelBookingStateLabel: (value: string) => value,
         hotelBookingStateColor: () => 'amber',
+        hotelPricingKindLabel: (value: string) => value === 'DAYCARE' ? 'HUTA' : value === 'HOTEL' ? 'Hundehotel' : value,
+        formatMoney: (value: string | null | undefined) => `${value ?? '0.00'} EUR`,
         formatSquareMeters: (value: number) => `${value} m²`,
         toDateTimeLocalValue: (value: string | Date) => toDateTimeLocalStubValue(value),
         futureDateTimeLocalValue: (offsetHours: number, roundToHour = false) => futureDateTimeLocalStubValue(offsetHours, roundToHour),
@@ -309,10 +331,10 @@ export async function mountHotelBookingsPage() {
         global: {
             stubs: {
                 ...uiPageStubs,
-                HotelBookingsList: namedStub('HotelBookingsList', ['loading', 'bookings']),
+                HotelBookingsList: namedStub('HotelBookingsList', ['loading', 'bookings', 'busyId'], ['accept', 'decline', 'resubmit']),
                 HotelBookingRequestModal: namedStub(
                     'HotelBookingRequestModal',
-                    ['modelValue', 'dogOptions', 'selectedDogName', 'storedShoulderHeightCm', 'form', 'fieldErrors', 'formError', 'saving'],
+                    ['modelValue', 'dogOptions', 'selectedDogName', 'storedShoulderHeightCm', 'form', 'fieldErrors', 'formError', 'saving', 'previewLoading', 'preview'],
                     ['submit', 'cancel', 'clear-field-error', 'update:modelValue'],
                 ),
             },
@@ -328,10 +350,10 @@ export async function mountContractsPage() {
         global: {
             stubs: {
                 ...uiPageStubs,
-                ContractsList: namedStub('ContractsList', ['loading', 'contracts']),
+                ContractsList: namedStub('ContractsList', ['loading', 'contracts', 'busyId'], ['accept', 'decline', 'resubmit']),
                 RequestModal: namedStub(
                     'RequestModal',
-                    ['modelValue', 'dogOptions', 'form', 'fieldErrors', 'formError', 'saving'],
+                    ['modelValue', 'dogOptions', 'form', 'fieldErrors', 'formError', 'saving', 'previewLoading', 'preview'],
                     ['submit', 'cancel', 'normalize-start-date', 'clear-field-error', 'update:modelValue'],
                 ),
             },

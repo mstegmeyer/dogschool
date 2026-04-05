@@ -50,14 +50,38 @@ test('filters contract states, approves, declines, and cancels contracts', async
     await loginAsAdmin();
     await page.goto('/admin/contracts');
 
-    await selectMenuOption(page, page.getByTestId('contract-state-filter'), 'Angefragt');
-    await visibleByTestId(page, `approve-contract-${manifest.contracts.approve}`).click();
-    await expect(visibleByTestId(page, `approve-contract-${manifest.contracts.approve}`)).toHaveCount(0);
-    await visibleByTestId(page, `decline-contract-${manifest.contracts.decline}`).click();
-    await expect(visibleByTestId(page, `decline-contract-${manifest.contracts.decline}`)).toHaveCount(0);
+    await Promise.all([
+        page.waitForResponse(response =>
+            response.url().includes('/api/admin/contracts?')
+            && response.url().includes('state=REQUESTED')
+            && response.request().method() === 'GET'
+            && response.ok(),
+        ),
+        selectMenuOption(page, page.getByTestId('contract-state-filter'), 'Angefragt'),
+    ]);
+
+    const approveReviewButton = page.locator(
+        `[data-testid="review-contract-${manifest.contracts.approve}"], [data-testid="review-contract-mobile-${manifest.contracts.approve}"]`,
+    ).first();
+    await approveReviewButton.click();
+    await expect(page.getByTestId('contract-review-modal')).toBeVisible();
+    await page.getByTestId('approve-contract-review').click();
+    await expect(page.getByTestId('contract-review-modal')).toHaveCount(0);
+    await expect(approveReviewButton).toHaveCount(0);
+
+    const declineReviewButton = page.locator(
+        `[data-testid="review-contract-${manifest.contracts.decline}"], [data-testid="review-contract-mobile-${manifest.contracts.decline}"]`,
+    ).first();
+    await declineReviewButton.click();
+    await expect(page.getByTestId('contract-review-modal')).toBeVisible();
+    await page.getByTestId('decline-contract-review').click();
+    await expect(page.getByTestId('contract-review-modal')).toHaveCount(0);
+    await expect(declineReviewButton).toHaveCount(0);
 
     await selectMenuOption(page, page.getByTestId('contract-state-filter'), 'Aktiv');
-    await visibleByTestId(page, `cancel-contract-${manifest.contracts.cancel}`).click();
+    await page.locator(
+        `[data-testid="cancel-contract-${manifest.contracts.cancel}"], [data-testid="cancel-contract-mobile-${manifest.contracts.cancel}"]`,
+    ).first().click();
     await expect(page.getByTestId('contract-cancel-modal')).toBeVisible();
 
     const contractEndDateInput = visibleByTestId(page, 'contract-end-date');

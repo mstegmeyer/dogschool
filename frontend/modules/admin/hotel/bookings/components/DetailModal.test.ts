@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import HotelBookingDetailModal from './DetailModal.vue';
 import { installComponentGlobals, mountComponent } from '~/tests/components/component-test-helpers';
-import { hotelBooking } from '~/tests/modules/admin-page-helpers';
+import { hotelBooking, pricingConfig } from '~/tests/modules/admin-page-helpers';
 
 describe('HotelBookingDetailModal', () => {
     beforeEach(() => {
@@ -18,6 +18,9 @@ describe('HotelBookingDetailModal', () => {
                 assigning: false,
                 confirming: false,
                 declining: false,
+                finalPrice: hotelBooking.totalPrice,
+                adminComment: '',
+                pricingConfig,
             },
         });
 
@@ -53,6 +56,9 @@ describe('HotelBookingDetailModal', () => {
                 assigning: false,
                 confirming: false,
                 declining: false,
+                finalPrice: hotelBooking.totalPrice,
+                adminComment: '',
+                pricingConfig,
             },
         });
 

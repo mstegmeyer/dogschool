@@ -57,6 +57,7 @@ const navSections: NavSection[] = [
             { label: 'Dashboard', icon: 'i-heroicons-home', to: '/admin' },
             { label: 'Kunden', icon: 'i-heroicons-users', to: '/admin/customers' },
             { label: 'Mitteilungen', icon: 'i-heroicons-bell', to: '/admin/notifications' },
+            { label: 'Preise', icon: 'i-heroicons-banknotes', to: '/admin/pricing' },
         ],
     },
     {

@@ -24,6 +24,8 @@ final class HotelBookingRequestDto
             notInRangeMessage: 'Schulterhöhe muss zwischen {{ min }} und {{ max }} cm liegen.',
         )]
         public ?int $currentShoulderHeightCm = null,
+        public bool $includesTravelProtection = false,
+        public ?string $customerComment = null,
     ) {
     }
 

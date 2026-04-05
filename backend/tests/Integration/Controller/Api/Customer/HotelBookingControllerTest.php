@@ -6,6 +6,9 @@ namespace App\Tests\Integration\Controller\Api\Customer;
 
 use App\Entity\Dog;
 use App\Entity\HotelBooking;
+use App\Entity\Room;
+use App\Enum\HotelBookingState;
+use App\Repository\CustomerRepository;
 use App\Repository\DogRepository;
 use App\Tests\Helper\ApiTestHelper;
 use Doctrine\ORM\EntityManagerInterface;
@@ -34,6 +37,7 @@ final class HotelBookingControllerTest extends WebTestCase
         ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
 
         $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
         $dogRepository = $container->get(DogRepository::class);
         /** @var EntityManagerInterface $entityManager */
         $entityManager = $container->get('doctrine.orm.entity_manager');
@@ -159,6 +163,131 @@ final class HotelBookingControllerTest extends WebTestCase
         self::assertSame(42, $dogRepository->find($dog->getId())?->getShoulderHeightCm());
     }
 
+    public function testPreviewHotelBookingIncludesServiceFeeAndTravelProtection(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $dogRepository = $container->get(DogRepository::class);
+
+        $dog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Preview')
+            ->setShoulderHeightCm(52);
+        $dogRepository->save($dog);
+
+        $helper->customerRequest(Request::METHOD_POST, '/api/customer/hotel-bookings/preview', $token, json_encode([
+            'dogId' => $dog->getId(),
+            'startAt' => '2026-04-05T08:30',
+            'endAt' => '2026-04-05T18:00',
+            'includesTravelProtection' => true,
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('DAYCARE', $data['pricingKind']);
+        self::assertSame(1, $data['billableDays']);
+        self::assertSame('46.00', $data['baseDailyPrice']);
+        self::assertSame('7.50', $data['serviceFee']);
+        self::assertSame('49.00', $data['travelProtectionPrice']);
+        self::assertSame('102.50', $data['quotedTotalPrice']);
+    }
+
+    public function testCustomerCanAcceptAndResubmitRevisedHotelBooking(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token, 'customer' => $customer] = $helper->createCustomerAndLogin();
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $dog = (new Dog())
+            ->setCustomer($customer)
+            ->setName('Review')
+            ->setShoulderHeightCm(50);
+        $dogRepository->save($dog);
+
+        $room = new Room();
+        $room->setName('Review Room');
+        $room->setSquareMeters(20);
+        $entityManager->persist($room);
+        $entityManager->flush();
+        $entityManager->clear();
+        $managedCustomer = $customerRepository->find($customer->getId());
+        $managedDog = $dogRepository->find($dog->getId());
+        $managedRoom = $entityManager->getRepository(Room::class)->find($room->getId());
+        self::assertNotNull($managedCustomer);
+        self::assertNotNull($managedDog);
+        self::assertNotNull($managedRoom);
+
+        $acceptBooking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($managedDog)
+            ->setRoom($managedRoom)
+            ->setState(HotelBookingState::PENDING_CUSTOMER_APPROVAL)
+            ->setStartAt(new \DateTimeImmutable('2026-04-16T08:00:00+02:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-17T10:00:00+02:00'))
+            ->setQuotedTotalPrice('123.50')
+            ->setTotalPrice('148.50')
+            ->setAdminComment('Preis erhöht wegen Zusatzwünschen.');
+        $hotelBookingRepository->save($acceptBooking);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/hotel-bookings/%s/accept-price', $acceptBooking->getId()), $token);
+        self::assertResponseIsSuccessful();
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+        $accepted = $hotelBookingRepository->find($acceptBooking->getId());
+        self::assertNotNull($accepted);
+        self::assertSame(HotelBookingState::CONFIRMED, $accepted->getState());
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        $managedDog = $dogRepository->find($dog->getId());
+        $managedRoom = $entityManager->getRepository(Room::class)->find($room->getId());
+        self::assertNotNull($managedCustomer);
+        self::assertNotNull($managedDog);
+        self::assertNotNull($managedRoom);
+
+        $resubmitBooking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($managedDog)
+            ->setRoom($managedRoom)
+            ->setState(HotelBookingState::PENDING_CUSTOMER_APPROVAL)
+            ->setStartAt(new \DateTimeImmutable('2026-04-16T08:00:00+02:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-04-17T10:00:00+02:00'))
+            ->setIncludesTravelProtection(true)
+            ->setQuotedTotalPrice('172.50')
+            ->setTotalPrice('197.50')
+            ->setAdminComment('Bitte bestätigen.');
+        $hotelBookingRepository->save($resubmitBooking);
+
+        $helper->customerRequest(Request::METHOD_POST, sprintf('/api/customer/hotel-bookings/%s/resubmit', $resubmitBooking->getId()), $token, json_encode([
+            'customerComment' => 'Bitte ohne Einzelzimmer neu prüfen.',
+        ]));
+        self::assertResponseIsSuccessful();
+
+        $reloaded = $hotelBookingRepository->find($resubmitBooking->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(HotelBookingState::REQUESTED, $reloaded->getState());
+        self::assertSame('172.50', $reloaded->getQuotedTotalPrice());
+        self::assertSame('172.50', $reloaded->getTotalPrice());
+        self::assertNull($reloaded->getAdminComment());
+        self::assertSame('Bitte ohne Einzelzimmer neu prüfen.', $reloaded->getCustomerComment());
+        self::assertSame($managedRoom->getId(), $reloaded->getRoom()?->getId());
+    }
+
     public function testCreateHotelBookingDoesNotPersistHeightWhenOverlapRejectsRequest(): void
     {
         $client = static::createClient();
@@ -183,7 +312,7 @@ final class HotelBookingControllerTest extends WebTestCase
             ->setDog($dog)
             ->setStartAt(new \DateTimeImmutable('2026-04-05T08:00:00+02:00'))
             ->setEndAt(new \DateTimeImmutable('2026-04-06T10:00:00+02:00'))
-            ->setState(\App\Enum\HotelBookingState::REQUESTED);
+            ->setState(HotelBookingState::REQUESTED);
         $hotelBookingRepository->save($existingBooking);
 
         $helper->customerRequest(Request::METHOD_POST, '/api/customer/hotel-bookings', $token, json_encode([

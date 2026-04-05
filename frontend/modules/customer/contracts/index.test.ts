@@ -51,6 +51,7 @@ describe('customer contracts page', () => {
             dogId: 'dog-1',
             coursesPerWeek: 3,
             startDate: '2026-05-01',
+            customerComment: null,
         });
     });
 });

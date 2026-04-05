@@ -50,7 +50,12 @@
         :assigning='assigning'
         :confirming='confirming'
         :declining='declining'
+        :final-price='finalPrice'
+        :admin-comment='adminComment'
+        :pricing-config='pricingConfig'
         @update:selected-room-id='selectedRoomId = $event'
+        @update:final-price='finalPrice = $event'
+        @update:admin-comment='adminComment = $event'
         @assign-room='assignRoom'
         @confirm='confirmBooking'
         @decline='declineBooking'
@@ -60,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ApiListResponse, HotelBooking } from '~/types';
+import type { ApiListResponse, HotelBooking, PricingConfig } from '~/types';
 import HotelBookingDetailModal from './components/DetailModal.vue';
 import HotelBookingsTable from './components/BookingsTable.vue';
 
@@ -80,15 +85,19 @@ const fromFilter = ref('');
 const toFilter = ref('');
 const selectedBooking = ref<HotelBooking | null>(null);
 const selectedRoomId = ref('');
+const finalPrice = ref('');
+const adminComment = ref('');
 const currentPage = ref(1);
 const totalBookings = ref(0);
 const totalPages = ref(1);
+const pricingConfig = ref<PricingConfig | null>(null);
 
 const pageSize = 20;
 
 const stateOptions = [
     { label: 'Angefragt', value: 'REQUESTED' },
     { label: 'Alle', value: 'all' },
+    { label: 'Preisprüfung', value: 'PENDING_CUSTOMER_APPROVAL' },
     { label: 'Bestätigt', value: 'CONFIRMED' },
     { label: 'Abgelehnt', value: 'DECLINED' },
 ];
@@ -168,6 +177,10 @@ async function loadBookings(): Promise<void> {
     }
 }
 
+async function loadPricingConfig(): Promise<void> {
+    pricingConfig.value = await api.get<PricingConfig>('/api/admin/pricing');
+}
+
 function applyFilters(): void {
     if (!hasValidFilterRange()) {
         return;
@@ -197,6 +210,8 @@ async function openDetail(booking: HotelBooking): Promise<void> {
     const detail = await api.get<HotelBooking>(`/api/admin/hotel/bookings/${booking.id}`);
     selectedBooking.value = detail;
     selectedRoomId.value = detail.roomId || '';
+    finalPrice.value = detail.totalPrice;
+    adminComment.value = detail.adminComment || '';
     showDetail.value = true;
 }
 
@@ -204,6 +219,8 @@ function closeDetail(): void {
     showDetail.value = false;
     selectedBooking.value = null;
     selectedRoomId.value = '';
+    finalPrice.value = '';
+    adminComment.value = '';
 }
 
 async function assignRoom(): Promise<void> {
@@ -232,7 +249,10 @@ async function confirmBooking(): Promise<void> {
 
     confirming.value = true;
     try {
-        await api.post(`/api/admin/hotel/bookings/${selectedBooking.value.id}/confirm`);
+        await api.post(`/api/admin/hotel/bookings/${selectedBooking.value.id}/confirm`, {
+            totalPrice: finalPrice.value || null,
+            adminComment: adminComment.value || null,
+        });
         toast.add({ title: 'Hotelbuchung bestätigt', color: 'green' });
         closeDetail();
         await loadBookings();
@@ -250,7 +270,9 @@ async function declineBooking(): Promise<void> {
 
     declining.value = true;
     try {
-        await api.post(`/api/admin/hotel/bookings/${selectedBooking.value.id}/decline`);
+        await api.post(`/api/admin/hotel/bookings/${selectedBooking.value.id}/decline`, {
+            adminComment: adminComment.value || null,
+        });
         toast.add({ title: 'Hotelbuchung abgelehnt', color: 'amber' });
         closeDetail();
         await loadBookings();
@@ -266,6 +288,6 @@ watch(currentPage, () => {
 });
 
 onMounted(() => {
-    void loadBookings();
+    void Promise.all([loadBookings(), loadPricingConfig()]);
 });
 </script>

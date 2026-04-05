@@ -30,6 +30,11 @@ class ContractRepository extends ServiceEntityRepository
         return $this->findBy(['customer' => $customer], ['createdAt' => 'DESC']);
     }
 
+    public function findOneByIdAndCustomer(string $id, Customer $customer): ?Contract
+    {
+        return $this->findOneBy(['id' => $id, 'customer' => $customer]);
+    }
+
     /**
      * @return array<int, Contract>
      */
@@ -123,6 +128,24 @@ class ContractRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    public function customerHasActivatedContract(Customer $customer, ?string $excludeId = null): bool
+    {
+        $query = $this->createQueryBuilder('contract')
+            ->select('COUNT(contract.id)')
+            ->andWhere('contract.customer = :customer')
+            ->andWhere('contract.state IN (:states)')
+            ->setParameter('customer', $customer)
+            ->setParameter('states', [ContractState::ACTIVE, ContractState::CANCELLED]);
+
+        if ($excludeId !== null && $excludeId !== '') {
+            $query
+                ->andWhere('contract.id != :excludeId')
+                ->setParameter('excludeId', $excludeId);
+        }
+
+        return (int) $query->getQuery()->getSingleScalarResult() > 0;
     }
 
     private function createAdminListQueryBuilder(?ContractState $state = null): QueryBuilder

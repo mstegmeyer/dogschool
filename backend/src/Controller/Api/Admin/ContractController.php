@@ -10,6 +10,7 @@ use App\Enum\ContractState;
 use App\Repository\ContractRepository;
 use App\Service\ApiNormalizer;
 use App\Service\CreditService;
+use App\Service\PricingEngine;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ final class ContractController extends AbstractController
         private readonly ContractRepository $contractRepository,
         private readonly ApiNormalizer $normalizer,
         private readonly CreditService $creditService,
+        private readonly PricingEngine $pricingEngine,
     ) {
     }
 
@@ -81,15 +83,61 @@ final class ContractController extends AbstractController
     }
 
     #[Route('/{id}/approve', name: 'approve', methods: ['POST'])]
-    public function approve(string $id): JsonResponse
+    public function approve(Request $request, string $id): JsonResponse
     {
-        return $this->setState($id, ContractState::ACTIVE);
+        $contract = $this->contractRepository->find($id);
+        if ($contract === null) {
+            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!in_array($contract->getState(), [ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL], true)) {
+            return $this->json(['error' => 'Only requested contracts can be approved'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $payload = $this->parsePayload($request);
+        if ($payload instanceof JsonResponse) {
+            return $payload;
+        }
+
+        $quote = $this->pricingEngine->previewExistingContract($contract);
+        $contract->setQuotedMonthlyPrice($quote['monthlyPrice']);
+        $contract->setRegistrationFee($quote['registrationFee']);
+        $contract->setPricingSnapshot($quote['snapshot']);
+        $finalPrice = $payload['price'] ?? $quote['monthlyPrice'];
+        $contract->setPrice($finalPrice);
+        $contract->setAdminComment($payload['adminComment'] ?? $contract->getAdminComment());
+        $contract->setState(
+            PricingEngine::amountToCents($finalPrice) > PricingEngine::amountToCents($quote['monthlyPrice'])
+                ? ContractState::PENDING_CUSTOMER_APPROVAL
+                : ContractState::ACTIVE
+        );
+        $this->contractRepository->save($contract);
+
+        return $this->json($this->normalizer->normalizeContract($contract));
     }
 
     #[Route('/{id}/decline', name: 'decline', methods: ['POST'])]
-    public function decline(string $id): JsonResponse
+    public function decline(Request $request, string $id): JsonResponse
     {
-        return $this->setState($id, ContractState::DECLINED);
+        $contract = $this->contractRepository->find($id);
+        if ($contract === null) {
+            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if (!in_array($contract->getState(), [ContractState::REQUESTED, ContractState::PENDING_CUSTOMER_APPROVAL], true)) {
+            return $this->json(['error' => 'Only requested contracts can be declined'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $payload = $this->parsePayload($request, false);
+        if ($payload instanceof JsonResponse) {
+            return $payload;
+        }
+
+        $contract->setState(ContractState::DECLINED);
+        $contract->setAdminComment($payload['adminComment'] ?? $contract->getAdminComment());
+        $this->contractRepository->save($contract);
+
+        return $this->json($this->normalizer->normalizeContract($contract));
     }
 
     #[Route('/{id}/cancel', name: 'cancel', methods: ['POST'])]
@@ -127,23 +175,44 @@ final class ContractController extends AbstractController
 
         $contract->setEndDate($endDate);
 
-        return $this->setState($id, ContractState::CANCELLED);
-    }
-
-    private function setState(string $id, ContractState $state): JsonResponse
-    {
-        $contract = $this->contractRepository->find($id);
-        if ($contract === null) {
-            return $this->json(['error' => 'Contract not found'], Response::HTTP_NOT_FOUND);
-        }
-        $previous = $contract->getState();
-        $contract->setState($state);
+        $contract->setState(ContractState::CANCELLED);
         $this->contractRepository->save($contract);
-
-        if ($state === ContractState::CANCELLED && $previous === ContractState::ACTIVE) {
-            $this->creditService->applyContractCancellationCredits($contract);
-        }
+        $this->creditService->applyContractCancellationCredits($contract);
 
         return $this->json($this->normalizer->normalizeContract($contract));
+    }
+
+    /**
+     * @return array{price?: string, adminComment?: string}|JsonResponse
+     */
+    private function parsePayload(Request $request, bool $allowPrice = true): array|JsonResponse
+    {
+        if (($request->getContent() ?: '') === '') {
+            return [];
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['error' => 'Ungültiger Request Body.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $result = [];
+        if ($allowPrice && array_key_exists('price', $payload)) {
+            if (!is_scalar($payload['price']) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $payload['price'])) {
+                return $this->json(['errors' => ['price' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
+            }
+
+            $result['price'] = number_format((float) str_replace(',', '.', (string) $payload['price']), 2, '.', '');
+        }
+
+        if (array_key_exists('adminComment', $payload) && $payload['adminComment'] !== null && !is_string($payload['adminComment'])) {
+            return $this->json(['errors' => ['adminComment' => 'Der Kommentar ist ungültig.']], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (array_key_exists('adminComment', $payload)) {
+            $result['adminComment'] = $payload['adminComment'];
+        }
+
+        return $result;
     }
 }

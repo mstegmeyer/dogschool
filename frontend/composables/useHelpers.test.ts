@@ -19,6 +19,7 @@ describe('useHelpers', () => {
         contractStateLabel,
         contractStateColor,
         creditTypeLabel,
+        hotelPricingKindLabel,
         levelLabel,
         getWeekMonday,
         formatContractMonthlyPrice,
@@ -201,6 +202,16 @@ describe('useHelpers', () => {
 
         it('returns raw value for unknown types', () => {
             expect(creditTypeLabel('OTHER')).toBe('OTHER');
+        });
+    });
+
+    describe('hotelPricingKindLabel', () => {
+        it('maps DAYCARE to HUTA', () => {
+            expect(hotelPricingKindLabel('DAYCARE')).toBe('HUTA');
+        });
+
+        it('maps HOTEL to Hundehotel', () => {
+            expect(hotelPricingKindLabel('HOTEL')).toBe('Hundehotel');
         });
     });
 

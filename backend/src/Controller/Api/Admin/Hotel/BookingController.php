@@ -244,7 +244,12 @@ final class BookingController extends AbstractController
                     return $this->json(['errors' => ['totalPrice' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
                 }
 
-                $result['totalPrice'] = number_format((float) str_replace(',', '.', (string) $rawTotalPrice), 2, '.', '');
+                $normalizedTotalPrice = (float) str_replace(',', '.', (string) $rawTotalPrice);
+                if ($normalizedTotalPrice < 0) {
+                    return $this->json(['errors' => ['totalPrice' => 'Der Gesamtpreis darf nicht negativ sein.']], Response::HTTP_BAD_REQUEST);
+                }
+
+                $result['totalPrice'] = number_format($normalizedTotalPrice, 2, '.', '');
             }
         }
 

@@ -805,7 +805,7 @@ final class DemoFixtures extends Fixture implements DependentFixtureInterface
         $booking->setCustomerComment('Bitte möglichst ruhige Unterbringung.');
         $this->applyHotelPricing($booking, $extraPriceCents);
         if ($state === HotelBookingState::PENDING_CUSTOMER_APPROVAL) {
-            $booking->setAdminComment('Preis angepasst wegen manueller Zusatzwuensche.');
+            $booking->setAdminComment('Preis angepasst wegen manueller Zusatzwünsche.');
         }
         $manager->persist($booking);
     }

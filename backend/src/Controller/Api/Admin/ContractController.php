@@ -211,7 +211,12 @@ final class ContractController extends AbstractController
                     return $this->json(['errors' => ['price' => 'Bitte einen gültigen Preis angeben.']], Response::HTTP_BAD_REQUEST);
                 }
 
-                $result['price'] = number_format((float) str_replace(',', '.', (string) $price), 2, '.', '');
+                $normalizedPrice = (float) str_replace(',', '.', (string) $price);
+                if ($normalizedPrice < 0) {
+                    return $this->json(['errors' => ['price' => 'Der Preis darf nicht negativ sein.']], Response::HTTP_BAD_REQUEST);
+                }
+
+                $result['price'] = number_format($normalizedPrice, 2, '.', '');
             }
         }
 
@@ -222,7 +227,12 @@ final class ContractController extends AbstractController
                     return $this->json(['errors' => ['registrationFee' => 'Bitte eine gültige Anmeldegebühr angeben.']], Response::HTTP_BAD_REQUEST);
                 }
 
-                $result['registrationFee'] = number_format((float) str_replace(',', '.', (string) $registrationFee), 2, '.', '');
+                $normalizedRegistrationFee = (float) str_replace(',', '.', (string) $registrationFee);
+                if ($normalizedRegistrationFee < 0) {
+                    return $this->json(['errors' => ['registrationFee' => 'Die Anmeldegebühr darf nicht negativ sein.']], Response::HTTP_BAD_REQUEST);
+                }
+
+                $result['registrationFee'] = number_format($normalizedRegistrationFee, 2, '.', '');
             }
         }
 

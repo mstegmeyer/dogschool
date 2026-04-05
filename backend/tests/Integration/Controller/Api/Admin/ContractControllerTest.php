@@ -227,6 +227,44 @@ final class ContractControllerTest extends WebTestCase
         self::assertNull($data['adminComment']);
     }
 
+    public function testApproveRejectsNegativePrice(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('contract-negative-price-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepo = $container->get(CustomerRepository::class);
+        $customer = $customerRepo->find($customer->getId());
+        self::assertNotNull($customer);
+        $dogRepo = $container->get(DogRepository::class);
+        $contractRepo = $container->get(ContractRepository::class);
+
+        $dog = new Dog();
+        $dog->setCustomer($customer);
+        $dog->setName('Negative Price Dog');
+        $dogRepo->save($dog);
+
+        $contract = new Contract();
+        $contract->setCustomer($customer);
+        $contract->setDog($dog);
+        $contract->setState(ContractState::REQUESTED);
+        $contract->setStartDate(new \DateTimeImmutable('2025-01-01'));
+        $contract->setCoursesPerWeek(1);
+        $contract->setPrice('89.00');
+        $contract->setQuotedMonthlyPrice('89.00');
+        $contractRepo->save($contract);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/contracts/'.$contract->getId().'/approve', $token, json_encode([
+            'price' => '-10.00',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der Preis darf nicht negativ sein.', $data['errors']['price'] ?? null);
+    }
+
     public function testListContractsSupportsPaginationAndStateFilter(): void
     {
         $client = static::createClient();
@@ -279,6 +317,11 @@ final class ContractControllerTest extends WebTestCase
         ['token' => $token] = $helper->createAdminAndLogin();
         ['customer' => $customer] = $helper->createCustomerAndLogin('contract-open-filter-'.uniqid('', true).'@example.com');
 
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=100&state=open', $token);
+        self::assertResponseIsSuccessful();
+        $before = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        $openTotalBefore = (int) ($before['pagination']['total'] ?? 0);
+
         $container = static::getContainer();
         $customerRepo = $container->get(CustomerRepository::class);
         $customer = $customerRepo->find($customer->getId());
@@ -302,14 +345,21 @@ final class ContractControllerTest extends WebTestCase
             $contractRepo->save($contract);
         }
 
-        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=20&state=open', $token);
+        $helper->adminRequest(Request::METHOD_GET, '/api/admin/contracts?page=1&limit=100&state=open', $token);
         self::assertResponseIsSuccessful();
 
         $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
-        self::assertSame(2, $data['pagination']['total']);
-        self::assertCount(2, $data['items']);
-        self::assertContains($data['items'][0]['state'], ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
-        self::assertContains($data['items'][1]['state'], ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
+        $states = array_map(
+            static fn (array $item): string => (string) ($item['state'] ?? ''),
+            $data['items'] ?? [],
+        );
+        self::assertSame($openTotalBefore + 2, $data['pagination']['total']);
+        self::assertGreaterThanOrEqual(2, count($data['items']));
+        self::assertContains('REQUESTED', $states);
+        self::assertContains('PENDING_CUSTOMER_APPROVAL', $states);
+        foreach ($states as $state) {
+            self::assertContains($state, ['REQUESTED', 'PENDING_CUSTOMER_APPROVAL']);
+        }
     }
 
     public function testDeclineContract(): void

@@ -59,7 +59,7 @@
                     :model-value='adminComment'
                     :rows='4'
                     placeholder='Begründung für Preisänderungen oder Hinweise zur Anfrage.'
-                    @update:model-value="emit('update:adminComment', $event)"
+                    @update:model-value="emit('update:adminComment', typeof $event === 'string' ? $event : '')"
                 />
             </UFormGroup>
 

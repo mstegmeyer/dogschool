@@ -128,7 +128,7 @@ export const useHelpers = () => {
     }
 
     function hotelPricingKindLabel(kind: HotelBookingPricingKind): string {
-        return kind === 'DAYCARE' ? 'HUTA' : 'Hotel';
+        return kind === 'DAYCARE' ? 'HUTA' : 'Hundehotel';
     }
 
     function creditTypeLabel(type: CreditTransactionType): string {

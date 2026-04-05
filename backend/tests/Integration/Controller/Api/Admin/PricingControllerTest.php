@@ -7,6 +7,7 @@ namespace App\Tests\Integration\Controller\Api\Admin;
 use App\Tests\Helper\ApiTestHelper;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 final class PricingControllerTest extends WebTestCase
 {
@@ -80,5 +81,39 @@ final class PricingControllerTest extends WebTestCase
             ]));
             self::assertResponseIsSuccessful();
         }
+    }
+
+    public function testUpdateRejectsNegativePrices(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+
+        $helper->adminRequest(Request::METHOD_PUT, '/api/admin/pricing', $token, json_encode([
+            'schoolOneCoursePrice' => '-1.00',
+            'schoolTwoCoursesUnitPrice' => '80.00',
+            'schoolThreeCoursesUnitPrice' => '76.00',
+            'schoolFourCoursesUnitPrice' => '71.00',
+            'schoolAdditionalCoursesUnitPrice' => '67.00',
+            'schoolRegistrationFee' => '149.00',
+            'daycareOffSeasonDailyPrice' => '39.00',
+            'daycarePeakSeasonDailyPrice' => '46.00',
+            'hotelDailyPrice' => '58.00',
+            'hotelServiceFee' => '7.50',
+            'hotelTravelProtectionBaseFee' => '49.00',
+            'hotelTravelProtectionAdditionalDailyFee' => '11.00',
+            'hotelSingleRoomDaycareDailyPrice' => '20.00',
+            'hotelSingleRoomHotelDailyPrice' => '29.00',
+            'hotelHeatCycleDailyPrice' => '6.00',
+            'hotelMedicationPerAdministrationPrice' => '3.50',
+            'hotelSupplementPerAdministrationPrice' => '3.50',
+            'hotelPeakSeasons' => [
+                ['startDate' => '2026-01-01', 'endDate' => '2026-01-11'],
+            ],
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Bitte einen gültigen Preis angeben.', $data['errors']['schoolOneCoursePrice'] ?? null);
     }
 }

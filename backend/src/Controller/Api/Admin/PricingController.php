@@ -65,12 +65,18 @@ final class PricingController extends AbstractController
         $normalized = [];
         foreach ($decimalFields as $field) {
             $value = $payload[$field] ?? null;
-            if (!is_scalar($value) || !preg_match('/^-?\d+(?:[.,]\d{1,2})?$/', (string) $value)) {
+            if (!is_scalar($value) || !preg_match('/^\d+(?:[.,]\d{1,2})?$/', (string) $value)) {
                 $errors[$field] = 'Bitte einen gültigen Preis angeben.';
                 continue;
             }
 
-            $normalized[$field] = number_format((float) str_replace(',', '.', (string) $value), 2, '.', '');
+            $normalizedValue = (float) str_replace(',', '.', (string) $value);
+            if ($normalizedValue < 0) {
+                $errors[$field] = 'Bitte einen gültigen Preis angeben.';
+                continue;
+            }
+
+            $normalized[$field] = number_format($normalizedValue, 2, '.', '');
         }
 
         $peakSeasons = $payload['hotelPeakSeasons'] ?? null;

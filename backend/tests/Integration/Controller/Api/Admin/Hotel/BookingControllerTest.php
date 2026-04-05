@@ -216,6 +216,55 @@ final class BookingControllerTest extends WebTestCase
         self::assertNull($data['adminComment']);
     }
 
+    public function testConfirmRejectsNegativeTotalPrice(): void
+    {
+        $client = static::createClient();
+        $helper = ApiTestHelper::create($client);
+        ['token' => $token] = $helper->createAdminAndLogin();
+        ['customer' => $customer] = $helper->createCustomerAndLogin('hotel-negative-price-'.uniqid('', true).'@example.com');
+
+        $container = static::getContainer();
+        $customerRepository = $container->get(CustomerRepository::class);
+        $dogRepository = $container->get(DogRepository::class);
+        /** @var EntityManagerInterface $entityManager */
+        $entityManager = $container->get('doctrine.orm.entity_manager');
+        /** @var \App\Repository\RoomRepository $roomRepository */
+        $roomRepository = $entityManager->getRepository(Room::class);
+        /** @var \App\Repository\HotelBookingRepository $hotelBookingRepository */
+        $hotelBookingRepository = $entityManager->getRepository(HotelBooking::class);
+
+        $managedCustomer = $customerRepository->find($customer->getId());
+        self::assertNotNull($managedCustomer);
+
+        $dog = (new Dog())
+            ->setCustomer($managedCustomer)
+            ->setName('Negative Price Dog')
+            ->setShoulderHeightCm(55);
+        $dogRepository->save($dog);
+
+        $room = (new Room())
+            ->setName('Negative Price Room')
+            ->setSquareMeters(14);
+        $roomRepository->save($room);
+
+        $booking = (new HotelBooking())
+            ->setCustomer($managedCustomer)
+            ->setDog($dog)
+            ->setRoom($room)
+            ->setStartAt(new \DateTimeImmutable('2026-05-05 08:00'))
+            ->setEndAt(new \DateTimeImmutable('2026-05-06 10:00'))
+            ->setState(HotelBookingState::REQUESTED);
+        $hotelBookingRepository->save($booking);
+
+        $helper->adminRequest(Request::METHOD_POST, '/api/admin/hotel/bookings/'.$booking->getId().'/confirm', $token, json_encode([
+            'totalPrice' => '-10.00',
+        ]));
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $data = json_decode($client->getResponse()->getContent() ?: '{}', true);
+        self::assertSame('Der Gesamtpreis darf nicht negativ sein.', $data['errors']['totalPrice'] ?? null);
+    }
+
     public function testDeclineHotelBookingClearsRoom(): void
     {
         $client = static::createClient();

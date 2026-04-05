@@ -332,7 +332,9 @@ final class PricingEngine
         $normalized['quotedRegistrationFee'] = $quotedRegistrationFee;
         $normalized['monthlyPrice'] = $finalMonthlyPrice;
         $normalized['registrationFee'] = $registrationFee;
-        $normalized['lineItems'] = self::synchronizeContractRegistrationFeeLineItem($normalized['lineItems'], $registrationFee);
+        /** @var array<int, array<string, mixed>> $lineItems */
+        $lineItems = $normalized['lineItems'];
+        $normalized['lineItems'] = self::synchronizeContractRegistrationFeeLineItem($lineItems, $registrationFee);
         $normalized['firstInvoiceTotal'] = self::formatAmount(
             self::amountToCents($finalMonthlyPrice) + self::amountToCents($registrationFee)
         );

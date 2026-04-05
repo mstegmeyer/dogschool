@@ -13,13 +13,20 @@ import {
 import { flushPromises } from '~/tests/nuxt/page-test-utils';
 
 describe('admin dashboard page', () => {
+    const priceReviewContract = {
+        ...pendingContract,
+        id: 'contract-3',
+        state: 'PENDING_CUSTOMER_APPROVAL',
+        adminComment: 'Bitte Preis vom Kunden bestätigen lassen.',
+    };
+
     beforeEach(() => {
         vi.resetModules();
         vi.clearAllMocks();
         installAdminGlobals();
         apiGetMock.mockImplementation((url: string) => {
             if (url === '/api/admin/contracts') {
-                return Promise.resolve({ items: [activeContract, pendingContract] });
+                return Promise.resolve({ items: [activeContract, pendingContract, priceReviewContract] });
             }
             if (url === '/api/admin/contracts/contract-2') {
                 return Promise.resolve(pendingContract);
@@ -54,6 +61,7 @@ describe('admin dashboard page', () => {
 
         expect(pendingCard.props('count')).toBe(1);
         expect((pendingCard.props('contracts') as unknown[])).toHaveLength(1);
+        expect((pendingCard.props('contracts') as Array<{ id: string }>)[0]?.id).toBe('contract-2');
         expect((scheduleCard.props('courseDates') as unknown[])).toHaveLength(1);
 
         apiPostMock.mockResolvedValue({});

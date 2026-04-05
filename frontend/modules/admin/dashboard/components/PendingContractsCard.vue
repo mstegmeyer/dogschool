@@ -4,13 +4,13 @@
         <div class='flex items-center justify-between'>
             <div class='flex items-center gap-2'>
                 <h3 class='font-semibold text-slate-800'>
-                    Offene Vertragsfälle
+                    Offene Vertragsanfragen
                 </h3>
                 <UBadge color='amber' variant='soft'>
                     {{ count }}
                 </UBadge>
             </div>
-            <UButton variant='ghost' size='xs' :to='{ path: "/admin/contracts", query: { state: "open" } }'>
+            <UButton variant='ghost' size='xs' :to='{ path: "/admin/contracts", query: { state: "REQUESTED" } }'>
                 Alle anzeigen
             </UButton>
         </div>

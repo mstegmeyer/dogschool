@@ -20,7 +20,7 @@ describe('PendingContractsCard', () => {
             },
         });
 
-        expect(wrapper.text()).toContain('Offene Vertragsfälle');
+        expect(wrapper.text()).toContain('Offene Vertragsanfragen');
         expect(wrapper.text()).toContain('79.00 EUR');
         expect(wrapper.text()).toContain('REQUESTED');
 

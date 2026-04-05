@@ -9,8 +9,8 @@
     <div class='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <PendingContractsCard
             :loading='loading'
-            :count='openContracts.length'
-            :contracts='openContractPreview'
+            :count='requestedContracts.length'
+            :contracts='requestedContractPreview'
             @review='openReview'
         />
         <TodayScheduleCard :loading='loading' :course-dates='todaySchedule' />
@@ -59,10 +59,8 @@ const reviewDeclining = ref(false);
 const reviewForm = reactive({ price: '', registrationFee: '', adminComment: '' });
 
 const activeContracts = computed(() => contracts.value.filter(contract => contract.state === 'ACTIVE'));
-const openContracts = computed(() => contracts.value.filter(contract =>
-    contract.state === 'REQUESTED' || contract.state === 'PENDING_CUSTOMER_APPROVAL',
-));
-const openContractPreview = computed(() => openContracts.value.slice(0, 5));
+const requestedContracts = computed(() => contracts.value.filter(contract => contract.state === 'REQUESTED'));
+const requestedContractPreview = computed(() => requestedContracts.value.slice(0, 5));
 const todaySchedule = computed(() => calendarItems.value
     .filter(courseDate => courseDate.date === todayIso())
     .sort((a, b) => a.startTime.localeCompare(b.startTime)));

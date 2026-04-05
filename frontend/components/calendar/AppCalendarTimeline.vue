@@ -1,5 +1,5 @@
 <template>
-<div class='overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/80 shadow-sm'>
+<div class='relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/80 shadow-sm'>
     <div class='overflow-x-auto overflow-y-clip overscroll-x-contain [touch-action:pan-x_pan-y]'>
         <div class='min-w-full' :style='{ minWidth: containerMinWidth }'>
             <div class='grid border-b border-slate-200 bg-white/80' :style='{ gridTemplateColumns }'>

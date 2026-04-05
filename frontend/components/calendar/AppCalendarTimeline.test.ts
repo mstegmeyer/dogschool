@@ -81,4 +81,19 @@ describe('AppCalendarTimeline', () => {
         expect(wrapper.text()).toContain('Keine Termine');
         expect(wrapper.findAll('[data-testid="calendar-event"]')).toHaveLength(0);
     });
+
+    it('creates a local stacking context for sticky timeline layers', () => {
+        const wrapper = mount(AppCalendarTimeline, {
+            props: {
+                days: [makeDay([])],
+                viewMode: 'day',
+            },
+            slots: {
+                event: ({ courseDate }: { courseDate: CourseDate }) => h('span', courseDate.courseType?.name ?? 'Kurs'),
+            },
+        });
+
+        expect(wrapper.classes()).toContain('relative');
+        expect(wrapper.classes()).toContain('isolate');
+    });
 });
